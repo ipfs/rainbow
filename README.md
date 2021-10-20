@@ -1,4 +1,4 @@
-# rainbow
+# Rainbow
 
 > Because ipfs should just work like unicorns and rainbows
 
