@@ -170,12 +170,13 @@ func Setup(ctx context.Context, cfg *Config) (*Node, error) {
 
 	bsctx := metri.CtxScope(ctx, "rainbow")
 
-	// TODO: Ideally we could configure bitswap to not call provide on blocks
-	// it has fetched. The gateways job is not to reprovide content, just to
-	// serve it over http
+	// TODO: Ideally we could configure bitswap to not serve content over bitswap.
+	// The gateway's job is not to serve content over libp2p, just http.
+	// Perhaps we're willing to respond to requests from other gateways in a cluster.
 	bsnet := bsnet.NewFromIpfsHost(h, frt)
 
 	bswap := bitswap.New(bsctx, bsnet, blkst,
+		bitswap.ProvideEnabled(false),
 		bitswap.EngineBlockstoreWorkerCount(600),
 		bitswap.TaskWorkerCount(600),
 		bitswap.MaxOutstandingBytesPerPeer(5<<20),
