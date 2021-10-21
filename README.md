@@ -1,4 +1,6 @@
-# rainbow
+⚠️ This is a research EXPERIMENT. For production use, see [go-ipfs](https://github.com/ipfs/go-ipfs)' [gateway recipes](https://github.com/ipfs/go-ipfs/blob/master/docs/config.md#gateway-recipes). <!-- omit in toc -->
+
+# rainbow 
 
 > Because ipfs should just work like unicorns and rainbows
 
