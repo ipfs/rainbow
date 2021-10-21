@@ -108,6 +108,7 @@ func main() {
 		if err != nil {
 			return err
 		}
+		//mux.Handle("/v0/api", &ipfsApiShim{&Api{gnd}})
 
 		s := &http.Server{
 			Addr:    cctx.String("listen"),

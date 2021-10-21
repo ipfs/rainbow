@@ -102,7 +102,7 @@ func newGatewayHandler(c GatewayConfig, nd *Node) *gatewayHandler {
 
 	i := &gatewayHandler{
 		config:          c,
-		api:             &Api{nd},
+		api:             &Api{nd: nd},
 		unixfsGetMetric: unixfsGetMetric,
 	}
 	return i

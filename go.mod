@@ -69,7 +69,7 @@ require (
 	github.com/ipfs/go-block-format v0.0.3 // indirect
 	github.com/ipfs/go-blockservice v0.1.7 // indirect
 	github.com/ipfs/go-cidutil v0.0.2 // indirect
-	github.com/ipfs/go-fetcher v1.5.0 // indirect
+	github.com/ipfs/go-fetcher v1.5.1-0.20211021174458-204874a0030c // indirect
 	github.com/ipfs/go-filestore v0.0.3 // indirect
 	github.com/ipfs/go-graphsync v0.8.0 // indirect
 	github.com/ipfs/go-ipfs v0.10.0 // indirect
@@ -89,7 +89,7 @@ require (
 	github.com/ipfs/go-ipld-legacy v0.1.0 // indirect
 	github.com/ipfs/go-ipns v0.1.2 // indirect
 	github.com/ipfs/go-log/v2 v2.3.0 // indirect
-	github.com/ipfs/go-merkledag v0.4.1 // indirect
+	github.com/ipfs/go-merkledag v0.4.2-0.20211021024200-7602f0e4a625 // indirect
 	github.com/ipfs/go-mfs v0.1.2 // indirect
 	github.com/ipfs/go-peertaskqueue v0.4.0 // indirect
 	github.com/ipfs/go-unixfs v0.2.5 // indirect

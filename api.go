@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	gopath "path"
 	"strings"
 
+	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-cid"
+	"github.com/ipfs/go-fetcher"
 	files "github.com/ipfs/go-ipfs-files"
 	format "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-merkledag"
@@ -22,10 +25,44 @@ import (
 
 type Api struct {
 	nd *Node
+
+	bsses *blockservice.Session
 }
 
-func (api *Api) dag() format.DAGService {
+func (api *Api) session(ctx context.Context) *Api {
+	sess := blockservice.NewSession(ctx, api.nd.Blockservice)
+
+	return &Api{
+		nd:    api.nd,
+		bsses: sess,
+	}
+}
+
+func (api *Api) dag(ctx context.Context) format.DAGService {
+	if api.bsses != nil {
+		return merkledag.NewReadOnlyDagService(merkledag.WrapSession(api.bsses))
+	}
 	return merkledag.NewDAGService(api.nd.Blockservice)
+}
+
+type fetcherSessioner interface {
+	FetcherWithSession(context.Context, *blockservice.Session) fetcher.Fetcher
+}
+
+func (api *Api) fetcher(ctx context.Context) fetcher.Fetcher {
+	if api.bsses != nil {
+		fs := api.nd.unixFSFetcherFactory.(fetcherSessioner)
+		return fs.FetcherWithSession(ctx, api.bsses)
+	}
+	return api.nd.unixFSFetcherFactory.NewSession(ctx)
+}
+
+type fetcherFactoryShim struct {
+	f fetcher.Fetcher
+}
+
+func (ffs *fetcherFactoryShim) NewSession(ctx context.Context) fetcher.Fetcher {
+	return ffs.f
 }
 
 func (api *Api) ResolvePath(ctx context.Context, p path.Path) (path.Resolved, error) {
@@ -56,9 +93,8 @@ func (api *Api) ResolvePath(ctx context.Context, p path.Path) (path.Resolved, er
 			dataFetcher = api.unixFSFetcherFactory
 		}
 	*/
-	dataFetcher := api.nd.unixFSFetcherFactory
 
-	resolver := ipfspathresolver.NewBasicResolver(dataFetcher)
+	resolver := ipfspathresolver.NewBasicResolver(&fetcherFactoryShim{api.fetcher(ctx)})
 
 	node, rest, err := resolver.ResolveToLastNode(ctx, ipath)
 	if err != nil {
@@ -79,7 +115,7 @@ func (api *Api) ResolveNode(ctx context.Context, p path.Path) (format.Node, erro
 		return nil, err
 	}
 
-	node, err := api.dag().Get(ctx, rp.Cid())
+	node, err := api.dag(ctx).Get(ctx, rp.Cid())
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +131,7 @@ func (api *Api) Get(ctx context.Context, p path.Path) (files.Node, error) {
 		return nil, err
 	}
 
-	return unixfile.NewUnixfsFile(ctx, api.dag(), nd)
+	return unixfile.NewUnixfsFile(ctx, api.dag(ctx), nd)
 }
 
 func (api *Api) NameResolve(ctx context.Context, name string, opts ...options.NameResolveOption) (path.Path, error) {
@@ -159,4 +195,8 @@ func (api *Api) Search(ctx context.Context, name string, opts ...options.NameRes
 	}()
 
 	return out, nil
+}
+
+func (api *Api) DagExport(ctx context.Context, c cid.Cid, w io.Writer) error {
+	panic("NYI")
 }
