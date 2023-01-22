@@ -1,4 +1,4 @@
-⚠️ This is a research EXPERIMENT. For production use, see [go-ipfs](https://github.com/ipfs/go-ipfs)' [gateway recipes](https://github.com/ipfs/go-ipfs/blob/master/docs/config.md#gateway-recipes). <!-- omit in toc -->
+# ⚠️ This is an old research EXPERIMENT. For production use, see [Kubo's](https://github.com/ipfs/go-ipfs)' [gateway recipes](https://github.com/ipfs/go-ipfs/blob/master/docs/config.md#gateway-recipes) and  ongoing [work to extract gateway code to standalone library](https://github.com/ipfs/kubo/issues/8524). <!-- omit in toc -->
 
 # rainbow 
 
