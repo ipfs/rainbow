@@ -4,89 +4,53 @@ import (
 	"context"
 	crand "crypto/rand"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/ipfs/go-bitswap"
-	bsnet "github.com/ipfs/go-bitswap/network"
-	"github.com/ipfs/go-blockservice"
+	bsclient "github.com/ipfs/boxo/bitswap/client"
+	bsnet "github.com/ipfs/boxo/bitswap/network"
+	"github.com/ipfs/boxo/blockservice"
+	"github.com/ipfs/boxo/blockstore"
+	"github.com/ipfs/boxo/gateway"
+	"github.com/ipfs/boxo/namesys"
+	routingv1client "github.com/ipfs/boxo/routing/http/client"
+	httpcontentrouter "github.com/ipfs/boxo/routing/http/contentrouter"
 	"github.com/ipfs/go-datastore"
 	flatfs "github.com/ipfs/go-ds-flatfs"
 	levelds "github.com/ipfs/go-ds-leveldb"
-	"github.com/ipfs/go-fetcher"
-	bsfetcher "github.com/ipfs/go-fetcher/impl/blockservice"
-	blockstore "github.com/ipfs/go-ipfs-blockstore"
-	"github.com/ipfs/go-ipfs-provider/batched"
-	logging "github.com/ipfs/go-log"
+	logging "github.com/ipfs/go-log/v2"
 	metri "github.com/ipfs/go-metrics-interface"
 	mprome "github.com/ipfs/go-metrics-prometheus"
-	"github.com/ipfs/go-namesys"
 	"github.com/libp2p/go-libp2p"
-	connmgr "github.com/libp2p/go-libp2p-connmgr"
-	crypto "github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/host"
-	metrics "github.com/libp2p/go-libp2p-core/metrics"
-	"github.com/libp2p/go-libp2p-core/peer"
-	dht "github.com/libp2p/go-libp2p-kad-dht"
-	"github.com/libp2p/go-libp2p-kad-dht/fullrt"
-	libp2pquic "github.com/libp2p/go-libp2p-quic-transport"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/metrics"
+	"github.com/libp2p/go-libp2p/core/routing"
+	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/multiformats/go-multiaddr"
-	"golang.org/x/xerrors"
 )
 
 var log = logging.Logger("rainbow")
-
-var bootstrappers = []string{
-	"/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-	"/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
-	"/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
-	"/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
-}
-
-var BootstrapPeers []peer.AddrInfo
 
 func init() {
 	if err := mprome.Inject(); err != nil {
 		panic(err)
 	}
-
-	for _, bsp := range bootstrappers {
-		ma, err := multiaddr.NewMultiaddr(bsp)
-		if err != nil {
-			log.Errorf("failed to parse bootstrap address: ", err)
-			continue
-		}
-
-		ai, err := peer.AddrInfoFromP2pAddr(ma)
-		if err != nil {
-			log.Errorf("failed to create address info: ", err)
-			continue
-		}
-
-		BootstrapPeers = append(BootstrapPeers, *ai)
-	}
 }
 
 type Node struct {
-	Dht      *dht.IpfsDHT
-	Provider *batched.BatchProvidingSystem
-	FullRT   *fullrt.FullRT
-	Host     host.Host
+	vs   routing.ValueStore
+	host host.Host
 
-	Datastore    datastore.Batching
-	Blockstore   blockstore.Blockstore
-	Bitswap      *bitswap.Bitswap
-	Blockservice blockservice.BlockService
+	datastore  datastore.Batching
+	blockstore blockstore.Blockstore
+	bsClient   *bsclient.Client
+	bsrv       blockservice.BlockService
 
-	Namesys namesys.NameSystem
+	ns namesys.NameSystem
 
-	Bwc *metrics.BandwidthCounter
-
-	unixFSFetcherFactory fetcher.Factory
-
-	mux *http.ServeMux
+	bwc *metrics.BandwidthCounter
 }
 
 type Config struct {
@@ -102,6 +66,8 @@ type Config struct {
 	ConnMgrLow   int
 	ConnMgrHi    int
 	ConnMgrGrace time.Duration
+
+	RoutingV1 string
 }
 
 func Setup(ctx context.Context, cfg *Config) (*Node, error) {
@@ -117,14 +83,19 @@ func Setup(ctx context.Context, cfg *Config) (*Node, error) {
 
 	bwc := metrics.NewBandwidthCounter()
 
+	cmgr, err := connmgr.NewConnManager(cfg.ConnMgrLow, cfg.ConnMgrHi, connmgr.WithGracePeriod(cfg.ConnMgrGrace))
+	if err != nil {
+		return nil, err
+	}
+
 	opts := []libp2p.Option{
 		libp2p.ListenAddrStrings(cfg.ListenAddrs...),
 		libp2p.NATPortMap(),
-		libp2p.ConnectionManager(connmgr.NewConnManager(cfg.ConnMgrLow, cfg.ConnMgrHi, cfg.ConnMgrGrace)),
+		libp2p.ConnectionManager(cmgr),
 		libp2p.Identity(peerkey),
 		libp2p.BandwidthReporter(bwc),
 		libp2p.DefaultTransports,
-		libp2p.Transport(libp2pquic.NewTransport),
+		libp2p.DefaultMuxers,
 	}
 
 	if len(cfg.AnnounceAddrs) > 0 {
@@ -141,66 +112,53 @@ func Setup(ctx context.Context, cfg *Config) (*Node, error) {
 		}))
 	}
 
-	h, err := libp2p.New(ctx, opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	dhtopts := fullrt.DHTOption(
-		//dht.Validator(in.Validator),
-		dht.Datastore(ds),
-		dht.BootstrapPeers(BootstrapPeers...),
-		dht.BucketSize(20),
-	)
-
-	frt, err := fullrt.NewFullRT(h, dht.DefaultPrefix, dhtopts)
-	if err != nil {
-		return nil, xerrors.Errorf("constructing fullrt: %w", err)
-	}
-
-	ipfsdht, err := dht.New(ctx, h, dht.Datastore(ds))
-	if err != nil {
-		return nil, xerrors.Errorf("constructing dht: %w", err)
-	}
-
 	blkst, err := loadBlockstore("flatfs", cfg.Blockstore)
 	if err != nil {
 		return nil, err
 	}
+	blkst = blockstore.NewIdStore(blkst)
 
 	bsctx := metri.CtxScope(ctx, "rainbow")
 
-	// TODO: Ideally we could configure bitswap to not serve content over bitswap.
-	// The gateway's job is not to serve content over libp2p, just http.
-	// Perhaps we're willing to respond to requests from other gateways in a cluster.
-	bsnet := bsnet.NewFromIpfsHost(h, frt)
-
-	bswap := bitswap.New(bsctx, bsnet, blkst,
-		bitswap.ProvideEnabled(false),
-		bitswap.EngineBlockstoreWorkerCount(600),
-		bitswap.TaskWorkerCount(600),
-		bitswap.MaxOutstandingBytesPerPeer(5<<20),
-	)
-
-	nsys, err := namesys.NewNameSystem(frt)
+	r1, err := routingv1client.New(cfg.RoutingV1, routingv1client.WithStreamResultsRequired())
 	if err != nil {
 		return nil, err
 	}
 
-	bserv := blockservice.New(blkst, bswap)
-	ff := bsfetcher.NewFetcherConfig(bserv)
+	vs := httpcontentrouter.NewContentRoutingClient(r1)
+
+	opts = append(opts, libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
+		return vs, nil
+	}))
+	h, err := libp2p.New(opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	bn := bsnet.NewFromIpfsHost(h, vs)
+	bswap := bsclient.New(bsctx, bn, blkst)
+	bn.Start(bswap)
+
+	bsrv := blockservice.New(blkst, bswap)
+
+	dns, err := gateway.NewDNSResolver(nil)
+	if err != nil {
+		return nil, err
+	}
+	ns, err := namesys.NewNameSystem(vs, namesys.WithDNSResolver(dns))
+	if err != nil {
+		return nil, err
+	}
 
 	return &Node{
-		Dht:                  ipfsdht,
-		FullRT:               frt,
-		Host:                 h,
-		Blockstore:           blkst,
-		Datastore:            ds,
-		Bitswap:              bswap.(*bitswap.Bitswap),
-		Namesys:              nsys,
-		Blockservice:         bserv,
-		Bwc:                  bwc,
-		unixFSFetcherFactory: ff,
+		host:       h,
+		blockstore: blkst,
+		datastore:  ds,
+		bsClient:   bswap,
+		ns:         ns,
+		vs:         vs,
+		bsrv:       bsrv,
+		bwc:        bwc,
 	}, nil
 }
 
@@ -217,14 +175,14 @@ func loadBlockstore(spec string, path string) (blockstore.Blockstore, error) {
 			return nil, err
 		}
 
-		return blockstore.NewBlockstoreNoPrefix(ds), nil
+		return blockstore.NewBlockstore(ds, blockstore.NoPrefix()), nil
 	default:
 		return nil, fmt.Errorf("unsupported blockstore type: %s", spec)
 	}
 }
 
 func loadOrInitPeerKey(kf string) (crypto.PrivKey, error) {
-	data, err := ioutil.ReadFile(kf)
+	data, err := os.ReadFile(kf)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return nil, err
@@ -240,11 +198,71 @@ func loadOrInitPeerKey(kf string) (crypto.PrivKey, error) {
 			return nil, err
 		}
 
-		if err := ioutil.WriteFile(kf, data, 0600); err != nil {
+		if err := os.WriteFile(kf, data, 0600); err != nil {
 			return nil, err
 		}
 
 		return k, nil
 	}
 	return crypto.UnmarshalPrivateKey(data)
+}
+
+func setupHandler(nd *Node) (http.Handler, error) {
+	backend, err := gateway.NewBlocksBackend(nd.bsrv, gateway.WithValueStore(nd.vs), gateway.WithNameSystem(nd.ns))
+	if err != nil {
+		return nil, err
+	}
+
+	headers := map[string][]string{}
+	gateway.AddAccessControlHeaders(headers)
+
+	// Note: in the future we may want to make this more configurable.
+	noDNSLink := false
+
+	// TODO: allow appending hostnames to this list via ENV variable (separate PATH_GATEWAY_HOSTS & SUBDOMAIN_GATEWAY_HOSTS)
+	publicGateways := map[string]*gateway.PublicGateway{
+		"localhost": {
+			Paths:                 []string{"/ipfs", "/ipns", "/version"},
+			NoDNSLink:             noDNSLink,
+			InlineDNSLink:         false,
+			DeserializedResponses: true,
+			UseSubdomains:         true,
+		},
+	}
+
+	gwConf := gateway.Config{
+		DeserializedResponses: true,
+		Headers:               headers,
+		PublicGateways:        publicGateways,
+		NoDNSLink:             noDNSLink,
+	}
+	gwHandler := gateway.NewHandler(gwConf, backend)
+
+	topMux := http.NewServeMux()
+	hostNameMux := http.NewServeMux()
+	topMux.Handle("/", gateway.NewHostnameHandler(gwConf, backend, hostNameMux))
+	hostNameMux.Handle("/ipfs/", gwHandler)
+	hostNameMux.Handle("/ipns/", gwHandler)
+	hostNameMux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Client: %s\n", name)
+		fmt.Fprintf(w, "Version: %s\n", version)
+	})
+
+	handler := withConnect(topMux)
+
+	return handler, nil
+}
+
+func withConnect(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// ServeMux does not support requests with CONNECT method,
+		// so we need to handle them separately
+		// https://golang.org/src/net/http/request.go#L111
+		if r.Method == http.MethodConnect {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

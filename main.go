@@ -37,7 +37,7 @@ func main() {
 
 		&cli.IntFlag{
 			Name:  "connmgr-low",
-			Value: 2000,
+			Value: 100,
 			Usage: "libp2p connection manager 'low' water mark",
 		},
 		&cli.IntFlag{
@@ -50,10 +50,16 @@ func main() {
 			Value: time.Minute,
 			Usage: "libp2p connection manager grace period",
 		},
+		&cli.StringFlag{
+			Name:  "routing",
+			Value: "http://127.0.0.1:8090",
+			Usage: "RoutingV1 Endpoint",
+		},
 	}
 
 	app.Name = "rainbow"
 	app.Usage = "a standalone ipfs gateway"
+	app.Version = version
 	app.Action = func(cctx *cli.Context) error {
 		ddir := cctx.String("datadir")
 		gnd, err := Setup(cctx.Context, &Config{
@@ -63,6 +69,7 @@ func main() {
 			Blockstore:    filepath.Join(ddir, "blockstore"),
 			Datastore:     filepath.Join(ddir, "datastore"),
 			Libp2pKeyFile: filepath.Join(ddir, "libp2p.key"),
+			RoutingV1:     cctx.String("routing"),
 		})
 		if err != nil {
 			return err
@@ -83,16 +90,14 @@ func main() {
 				}
 
 				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-					http.Error(w, err.Error(), 500)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
 
 				if err := gnd.GC(r.Context(), body.BytesToFree); err != nil {
-					http.Error(w, err.Error(), 500)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
-
-				return
 			})
 
 			if err := http.ListenAndServe(cctx.String("api-listen"), nil); err != nil {
@@ -100,19 +105,14 @@ func main() {
 			}
 		}()
 
-		paths := []string{""}
-		cfgheaders := map[string][]string{}
-		pathPrefixes := []string{}
-
-		mux, err := setupHandlerMux(paths, cfgheaders, pathPrefixes, gnd)
+		handler, err := setupHandler(gnd)
 		if err != nil {
 			return err
 		}
-		//mux.Handle("/v0/api", &ipfsApiShim{&Api{gnd}})
 
 		s := &http.Server{
 			Addr:    cctx.String("listen"),
-			Handler: mux,
+			Handler: handler,
 		}
 
 		ctx, cancel := context.WithCancel(cctx.Context)

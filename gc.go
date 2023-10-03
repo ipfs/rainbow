@@ -4,7 +4,7 @@ import "context"
 
 // really stupid simple algorithm where we just delete things until weve deleted enough things
 func (nd *Node) GC(ctx context.Context, todelete int64) error {
-	keys, err := nd.Blockstore.AllKeysChan(ctx)
+	keys, err := nd.blockstore.AllKeysChan(ctx)
 	if err != nil {
 		return err
 	}
@@ -16,12 +16,12 @@ func (nd *Node) GC(ctx context.Context, todelete int64) error {
 				return nil
 			}
 
-			size, err := nd.Blockstore.GetSize(k)
+			size, err := nd.blockstore.GetSize(ctx, k)
 			if err != nil {
 				log.Warnf("failed to get size for block we are about to delete: %s", err)
 			}
 
-			if err := nd.Blockstore.DeleteBlock(k); err != nil {
+			if err := nd.blockstore.DeleteBlock(ctx, k); err != nil {
 				return err
 			}
 
