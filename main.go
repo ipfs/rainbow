@@ -1,18 +1,29 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
+	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
+	"strings"
+	"sync"
 	"time"
 
+	logging "github.com/ipfs/go-log/v2"
 	"github.com/urfave/cli/v2"
+	"go.opentelemetry.io/contrib/propagators/autoprop"
+	"go.opentelemetry.io/otel"
 )
+
+const EnvKuboRPC = "KUBO_RPC_URL"
+
+var goLog = logging.Logger("rainbow")
 
 func main() {
 	app := cli.NewApp()
@@ -24,14 +35,14 @@ func main() {
 			Value: "",
 			Usage: "specify the directory that cache data will be stored",
 		},
-		&cli.StringFlag{
-			Name:  "listen",
-			Value: ":8080",
+		&cli.IntFlag{
+			Name:  "gateway-port",
+			Value: 8080,
 			Usage: "specify the listen address for the gateway endpoint",
 		},
-		&cli.StringFlag{
-			Name:  "api-listen",
-			Value: "127.0.0.1:8081",
+		&cli.IntFlag{
+			Name:  "api-port",
+			Value: 8081,
 			Usage: "specify the api listening address for the internal control api",
 		},
 
@@ -70,66 +81,91 @@ func main() {
 			Datastore:     filepath.Join(ddir, "datastore"),
 			Libp2pKeyFile: filepath.Join(ddir, "libp2p.key"),
 			RoutingV1:     cctx.String("routing"),
+			KuboRPCURLs:   getEnvs(EnvKuboRPC, DefaultKuboRPC),
 		})
 		if err != nil {
 			return err
 		}
 
-		go func() {
-			http.HandleFunc("/debug/stack", func(w http.ResponseWriter, r *http.Request) {
-				if err := writeAllGoroutineStacks(w); err != nil {
-					log.Error(err)
-				}
-			})
+		gatewayPort := cctx.Int("gateway-port")
+		apiPort := cctx.Int("api-port")
 
-			http.HandleFunc("/mgr/gc", func(w http.ResponseWriter, r *http.Request) {
-				defer r.Body.Close()
-
-				var body struct {
-					BytesToFree int64
-				}
-
-				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-
-				if err := gnd.GC(r.Context(), body.BytesToFree); err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-			})
-
-			if err := http.ListenAndServe(cctx.String("api-listen"), nil); err != nil {
-				panic(err)
-			}
-		}()
-
-		handler, err := setupHandler(gnd)
+		handler, err := setupGatewayHandler(gnd)
 		if err != nil {
 			return err
 		}
 
-		s := &http.Server{
-			Addr:    cctx.String("listen"),
+		gatewaySrv := &http.Server{
+			Addr:    fmt.Sprintf("127.0.0.1:%d", gatewayPort),
 			Handler: handler,
 		}
 
-		ctx, cancel := context.WithCancel(cctx.Context)
+		fmt.Printf("Starting %s %s", name, version)
+		registerVersionMetric(version)
+
+		tp, shutdown, err := newTracerProvider(cctx.Context)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			_ = shutdown(cctx.Context)
+		}()
+		otel.SetTracerProvider(tp)
+		otel.SetTextMapPropagator(autoprop.NewTextMapPropagator())
+
+		cdns := newCachedDNS(dnsCacheRefreshInterval)
+		defer cdns.Close()
+
+		apiMux := makeMetricsAndDebuggingHandler()
+		apiMux.HandleFunc("/mgr/gc", GCHandler(gnd))
+
+		apiSrv := &http.Server{
+			Addr:    fmt.Sprintf("127.0.0.1:%d", apiPort),
+			Handler: apiMux,
+		}
+
+		quit := make(chan os.Signal, 1)
+		var wg sync.WaitGroup
+		wg.Add(2)
 
 		go func() {
-			defer cancel()
-			if err := s.ListenAndServe(); err != nil {
-				log.Error(err)
+			defer wg.Done()
+
+			// log important configuration flags
+			log.Printf("Legacy RPC at /api/v0 (%s) provided by %s", EnvKuboRPC, strings.Join(gnd.kuboRPCs, " "))
+			log.Printf("Path gateway listening on http://127.0.0.1:%d", gatewayPort)
+			log.Printf("  Smoke test (JPG): http://127.0.0.1:%d/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", gatewayPort)
+			log.Printf("Subdomain gateway configured on dweb.link and http://localhost:%d", gatewayPort)
+			log.Printf("  Smoke test (Subdomain+DNSLink+UnixFS+HAMT): http://localhost:%d/ipns/en.wikipedia-on-ipfs.org/wiki/", gatewayPort)
+			err := gatewaySrv.ListenAndServe()
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Printf("Failed to start gateway: %s", err)
+				quit <- os.Interrupt
 			}
 		}()
 
-		<-ctx.Done()
-		return s.Shutdown(context.TODO())
+		go func() {
+			defer wg.Done()
+			log.Printf("API port exposed at http://127.0.0.1:%d", apiPort)
+			log.Printf("Metrics exposed at http://127.0.0.1:%d/debug/metrics/prometheus", apiPort)
+			err := apiSrv.ListenAndServe()
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Printf("Failed to start metrics: %s", err)
+				quit <- os.Interrupt
+			}
+		}()
+
+		signal.Notify(quit, os.Interrupt)
+		<-quit
+		log.Printf("Closing servers...")
+		go gatewaySrv.Close()
+		go apiSrv.Close()
+		wg.Wait()
+		return nil
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Error(err)
+		log.Print(err)
 		os.Exit(1)
 	}
 }
@@ -150,4 +186,16 @@ func writeAllGoroutineStacks(w io.Writer) error {
 	}
 	_, err := w.Write(buf)
 	return err
+}
+
+func getEnvs(key, defaultValue string) []string {
+	value := os.Getenv(key)
+	if value == "" {
+		if defaultValue == "" {
+			return []string{}
+		}
+		value = defaultValue
+	}
+	value = strings.TrimSpace(value)
+	return strings.Split(value, ",")
 }

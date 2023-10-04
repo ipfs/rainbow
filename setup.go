@@ -4,7 +4,6 @@ import (
 	"context"
 	crand "crypto/rand"
 	"fmt"
-	"net/http"
 	"os"
 	"time"
 
@@ -19,7 +18,6 @@ import (
 	"github.com/ipfs/go-datastore"
 	flatfs "github.com/ipfs/go-ds-flatfs"
 	levelds "github.com/ipfs/go-ds-leveldb"
-	logging "github.com/ipfs/go-log/v2"
 	metri "github.com/ipfs/go-metrics-interface"
 	mprome "github.com/ipfs/go-metrics-prometheus"
 	"github.com/libp2p/go-libp2p"
@@ -30,8 +28,6 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/multiformats/go-multiaddr"
 )
-
-var log = logging.Logger("rainbow")
 
 func init() {
 	if err := mprome.Inject(); err != nil {
@@ -48,7 +44,8 @@ type Node struct {
 	bsClient   *bsclient.Client
 	bsrv       blockservice.BlockService
 
-	ns namesys.NameSystem
+	ns       namesys.NameSystem
+	kuboRPCs []string
 
 	bwc *metrics.BandwidthCounter
 }
@@ -67,7 +64,8 @@ type Config struct {
 	ConnMgrHi    int
 	ConnMgrGrace time.Duration
 
-	RoutingV1 string
+	RoutingV1   string
+	KuboRPCURLs []string
 }
 
 func Setup(ctx context.Context, cfg *Config) (*Node, error) {
@@ -159,6 +157,7 @@ func Setup(ctx context.Context, cfg *Config) (*Node, error) {
 		vs:         vs,
 		bsrv:       bsrv,
 		bwc:        bwc,
+		kuboRPCs:   cfg.KuboRPCURLs,
 	}, nil
 }
 
@@ -205,64 +204,4 @@ func loadOrInitPeerKey(kf string) (crypto.PrivKey, error) {
 		return k, nil
 	}
 	return crypto.UnmarshalPrivateKey(data)
-}
-
-func setupHandler(nd *Node) (http.Handler, error) {
-	backend, err := gateway.NewBlocksBackend(nd.bsrv, gateway.WithValueStore(nd.vs), gateway.WithNameSystem(nd.ns))
-	if err != nil {
-		return nil, err
-	}
-
-	headers := map[string][]string{}
-	gateway.AddAccessControlHeaders(headers)
-
-	// Note: in the future we may want to make this more configurable.
-	noDNSLink := false
-
-	// TODO: allow appending hostnames to this list via ENV variable (separate PATH_GATEWAY_HOSTS & SUBDOMAIN_GATEWAY_HOSTS)
-	publicGateways := map[string]*gateway.PublicGateway{
-		"localhost": {
-			Paths:                 []string{"/ipfs", "/ipns", "/version"},
-			NoDNSLink:             noDNSLink,
-			InlineDNSLink:         false,
-			DeserializedResponses: true,
-			UseSubdomains:         true,
-		},
-	}
-
-	gwConf := gateway.Config{
-		DeserializedResponses: true,
-		Headers:               headers,
-		PublicGateways:        publicGateways,
-		NoDNSLink:             noDNSLink,
-	}
-	gwHandler := gateway.NewHandler(gwConf, backend)
-
-	topMux := http.NewServeMux()
-	hostNameMux := http.NewServeMux()
-	topMux.Handle("/", gateway.NewHostnameHandler(gwConf, backend, hostNameMux))
-	hostNameMux.Handle("/ipfs/", gwHandler)
-	hostNameMux.Handle("/ipns/", gwHandler)
-	hostNameMux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Client: %s\n", name)
-		fmt.Fprintf(w, "Version: %s\n", version)
-	})
-
-	handler := withConnect(topMux)
-
-	return handler, nil
-}
-
-func withConnect(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// ServeMux does not support requests with CONNECT method,
-		// so we need to handle them separately
-		// https://golang.org/src/net/http/request.go#L111
-		if r.Method == http.MethodConnect {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
 }

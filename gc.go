@@ -19,7 +19,7 @@ func (nd *Node) GC(ctx context.Context, todelete int64) error {
 
 			size, err := nd.blockstore.GetSize(ctx, k)
 			if err != nil {
-				log.Warnf("failed to get size for block we are about to delete: %s", err)
+				goLog.Warnf("failed to get size for block we are about to delete: %s", err)
 			}
 
 			if err := nd.blockstore.DeleteBlock(ctx, k); err != nil {
