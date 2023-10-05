@@ -84,7 +84,7 @@ func withRequestLogger(next http.Handler) http.Handler {
 }
 
 func setupGatewayHandler(nd *Node) (http.Handler, error) {
-	backend, err := gateway.NewBlocksBackend(nd.bsrv, gateway.WithValueStore(nd.vs), gateway.WithNameSystem(nd.ns))
+	backend, err := gateway.NewBlocksBackend(nd.bsrv, gateway.WithValueStore(nd.router), gateway.WithNameSystem(nd.ns))
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +146,8 @@ func setupGatewayHandler(nd *Node) (http.Handler, error) {
 	})
 	// TODO: below is legacy which we want to remove, measuring this separately
 	// allows us to decide when is the time to do it.
-	legacyKuboRpcHandler := withHTTPMetrics(newKuboRPCHandler(nd.kuboRPCs), "legacyKuboRpc")
-	topMux.Handle("/api/v0/", legacyKuboRpcHandler)
+	legacyKuboRPCHandler := withHTTPMetrics(newKuboRPCHandler(nd.kuboRPCs), "legacyKuboRpc")
+	topMux.Handle("/api/v0/", legacyKuboRPCHandler)
 
 	// Construct the HTTP handler for the gateway.
 	handler := withConnect(topMux)

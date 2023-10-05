@@ -73,6 +73,7 @@ func main() {
 	app.Version = version
 	app.Action = func(cctx *cli.Context) error {
 		ddir := cctx.String("datadir")
+
 		gnd, err := Setup(cctx.Context, &Config{
 			ConnMgrLow:    cctx.Int("connmgr-low"),
 			ConnMgrHi:     cctx.Int("connmgr-hi"),
@@ -112,9 +113,6 @@ func main() {
 		}()
 		otel.SetTracerProvider(tp)
 		otel.SetTextMapPropagator(autoprop.NewTextMapPropagator())
-
-		cdns := newCachedDNS(dnsCacheRefreshInterval)
-		defer cdns.Close()
 
 		apiMux := makeMetricsAndDebuggingHandler()
 		apiMux.HandleFunc("/mgr/gc", GCHandler(gnd))
@@ -161,6 +159,7 @@ func main() {
 		go gatewaySrv.Close()
 		go apiSrv.Close()
 		wg.Wait()
+		gnd.Close()
 		return nil
 	}
 

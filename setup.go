@@ -12,6 +12,7 @@ import (
 	"github.com/ipfs/boxo/blockservice"
 	"github.com/ipfs/boxo/blockstore"
 	"github.com/ipfs/boxo/gateway"
+	"github.com/ipfs/boxo/ipns"
 	"github.com/ipfs/boxo/namesys"
 	routingv1client "github.com/ipfs/boxo/routing/http/client"
 	httpcontentrouter "github.com/ipfs/boxo/routing/http/contentrouter"
@@ -21,12 +22,16 @@ import (
 	metri "github.com/ipfs/go-metrics-interface"
 	mprome "github.com/ipfs/go-metrics-prometheus"
 	"github.com/libp2p/go-libp2p"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
+	"github.com/libp2p/go-libp2p-kad-dht/fullrt"
+	record "github.com/libp2p/go-libp2p-record"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/metrics"
 	"github.com/libp2p/go-libp2p/core/routing"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/multiformats/go-multiaddr"
+	"go.uber.org/multierr"
 )
 
 func init() {
@@ -36,8 +41,8 @@ func init() {
 }
 
 type Node struct {
-	vs   routing.ValueStore
-	host host.Host
+	router routing.Routing
+	host   host.Host
 
 	datastore  datastore.Batching
 	blockstore blockstore.Blockstore
@@ -46,8 +51,17 @@ type Node struct {
 
 	ns       namesys.NameSystem
 	kuboRPCs []string
+	dns      *cachedDNS
 
 	bwc *metrics.BandwidthCounter
+}
+
+// Close closes services run by the Node.
+func (nd *Node) Close() error {
+	return multierr.Combine(
+		nd.host.Close(),
+		nd.dns.Close(),
+	)
 }
 
 type Config struct {
@@ -64,8 +78,8 @@ type Config struct {
 	ConnMgrHi    int
 	ConnMgrGrace time.Duration
 
-	RoutingV1   string
 	KuboRPCURLs []string
+	RoutingV1   string
 }
 
 func Setup(ctx context.Context, cfg *Config) (*Node, error) {
@@ -118,22 +132,22 @@ func Setup(ctx context.Context, cfg *Config) (*Node, error) {
 
 	bsctx := metri.CtxScope(ctx, "rainbow")
 
-	r1, err := routingv1client.New(cfg.RoutingV1, routingv1client.WithStreamResultsRequired())
-	if err != nil {
-		return nil, err
-	}
-
-	vs := httpcontentrouter.NewContentRoutingClient(r1)
+	var finalRouter routing.Routing
+	cdns := newCachedDNS(dnsCacheRefreshInterval)
 
 	opts = append(opts, libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
-		return vs, nil
+		finalRouter, err = newRouting(h, cfg, ds, cdns)
+		if err != nil {
+			return nil, err
+		}
+		return finalRouter, nil
 	}))
 	h, err := libp2p.New(opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	bn := bsnet.NewFromIpfsHost(h, vs)
+	bn := bsnet.NewFromIpfsHost(h, finalRouter)
 	bswap := bsclient.New(bsctx, bn, blkst)
 	bn.Start(bswap)
 
@@ -143,7 +157,8 @@ func Setup(ctx context.Context, cfg *Config) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
-	ns, err := namesys.NewNameSystem(vs, namesys.WithDNSResolver(dns))
+
+	ns, err := namesys.NewNameSystem(finalRouter, namesys.WithDNSResolver(dns))
 	if err != nil {
 		return nil, err
 	}
@@ -154,11 +169,58 @@ func Setup(ctx context.Context, cfg *Config) (*Node, error) {
 		datastore:  ds,
 		bsClient:   bswap,
 		ns:         ns,
-		vs:         vs,
+		router:     finalRouter,
 		bsrv:       bsrv,
 		bwc:        bwc,
-		kuboRPCs:   cfg.KuboRPCURLs,
+		dns:        cdns,
 	}, nil
+}
+
+func newRouting(h host.Host, cfg *Config, ds datastore.Batching, cdns *cachedDNS) (routing.Routing, error) {
+	var baseRouting routing.Routing
+	var err error
+
+	if cfg.RoutingV1 != "" {
+		r1, err := routingv1client.New(cfg.RoutingV1, routingv1client.WithStreamResultsRequired())
+		if err != nil {
+			return nil, err
+		}
+		v1cr := httpcontentrouter.NewContentRoutingClient(r1)
+		baseRouting = &httpRoutingWrapper{
+			ContentRouting:    v1cr,
+			PeerRouting:       v1cr,
+			ValueStore:        v1cr,
+			ProvideManyRouter: v1cr,
+		}
+	} else {
+		baseRouting, err = fullrt.NewFullRT(h,
+			dht.DefaultPrefix,
+			fullrt.DHTOption(
+				dht.NamespacedValidator("pk", record.PublicKeyValidator{}),
+				dht.NamespacedValidator("ipns", ipns.Validator{KeyBook: h.Peerstore()}),
+				dht.Datastore(ds),
+				dht.BucketSize(20),
+			),
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	finalRouter := &Composer{
+		GetValueRouter:      baseRouting,
+		PutValueRouter:      baseRouting,
+		FindPeersRouter:     baseRouting,
+		FindProvidersRouter: baseRouting,
+		ProvideRouter:       baseRouting,
+	}
+
+	if len(cfg.KuboRPCURLs) > 0 {
+		proxyRouting := newProxyRouting(cfg.KuboRPCURLs, cdns)
+		finalRouter.GetValueRouter = proxyRouting
+		finalRouter.PutValueRouter = proxyRouting
+	}
+	return finalRouter, nil
 }
 
 func loadBlockstore(spec string, path string) (blockstore.Blockstore, error) {

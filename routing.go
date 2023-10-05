@@ -14,6 +14,9 @@ import (
 	"time"
 
 	"github.com/ipfs/boxo/ipns"
+	"github.com/ipfs/go-cid"
+	routinghelpers "github.com/libp2p/go-libp2p-routing-helpers"
+	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/routing"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -26,7 +29,7 @@ type proxyRouting struct {
 	rand       *rand.Rand
 }
 
-func newProxyRouting(kuboRPC []string, cdns *cachedDNS) routing.ValueStore {
+func newProxyRouting(kuboRPC []string, cdns *cachedDNS) routing.Routing {
 	s := rand.NewSource(time.Now().Unix())
 	rand := rand.New(s)
 
@@ -50,12 +53,30 @@ func newProxyRouting(kuboRPC []string, cdns *cachedDNS) routing.ValueStore {
 	}
 }
 
+func (ps *proxyRouting) Bootstrap(context.Context) error {
+	return nil
+}
+
 func (ps *proxyRouting) PutValue(context.Context, string, []byte, ...routing.Option) error {
 	return routing.ErrNotSupported
 }
 
 func (ps *proxyRouting) GetValue(ctx context.Context, k string, opts ...routing.Option) ([]byte, error) {
 	return ps.fetch(ctx, k)
+}
+
+func (ps *proxyRouting) FindPeer(context.Context, peer.ID) (peer.AddrInfo, error) {
+	return peer.AddrInfo{}, routing.ErrNotSupported
+}
+
+func (ps *proxyRouting) FindProvidersAsync(context.Context, cid.Cid, int) <-chan peer.AddrInfo {
+	ch := make(chan peer.AddrInfo)
+	close(ch)
+	return ch
+}
+
+func (ps *proxyRouting) Provide(context.Context, cid.Cid, bool) error {
+	return routing.ErrNotSupported
 }
 
 func (ps *proxyRouting) SearchValue(ctx context.Context, k string, opts ...routing.Option) (<-chan []byte, error) {
@@ -155,4 +176,17 @@ func (ps *proxyRouting) fetch(ctx context.Context, key string) (rb []byte, err e
 
 func (ps *proxyRouting) getRandomKuboURL() string {
 	return ps.kuboRPC[ps.rand.Intn(len(ps.kuboRPC))]
+}
+
+// httpRoutingWrapper is a wrapper needed to construct the routing.Routing interface from
+// http delegated routing.
+type httpRoutingWrapper struct {
+	routing.ContentRouting
+	routing.PeerRouting
+	routing.ValueStore
+	routinghelpers.ProvideManyRouter
+}
+
+func (c *httpRoutingWrapper) Bootstrap(ctx context.Context) error {
+	return nil
 }
