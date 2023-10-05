@@ -49,9 +49,6 @@ elif [ "$GIT_BRANCH" = "main" ]; then
   echoImageName "main-${BUILD_NUM}-${GIT_SHA1_SHORT}"
   echoImageName "main-latest"
 
-#elif [ "$GIT_BRANCH" = "staging" ]; then
-#  echoImageName "staging-${BUILD_NUM}-${GIT_SHA1_SHORT}"
-#  echoImageName "staging-latest"
 
 else
   echo "Nothing to do. No docker tag defined for branch: $GIT_BRANCH, tag: $GIT_TAG"

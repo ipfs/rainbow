@@ -41,7 +41,7 @@ func main() {
 			Usage: "specify the listen address for the gateway endpoint",
 		},
 		&cli.IntFlag{
-			Name:  "api-port",
+			Name:  "ctl-port",
 			Value: 8081,
 			Usage: "specify the api listening address for the internal control api",
 		},
@@ -146,7 +146,7 @@ func main() {
 
 		go func() {
 			defer wg.Done()
-			log.Printf("API port exposed at http://127.0.0.1:%d", apiPort)
+			log.Printf("CTL port exposed at http://127.0.0.1:%d", apiPort)
 			log.Printf("Metrics exposed at http://127.0.0.1:%d/debug/metrics/prometheus", apiPort)
 			err := apiSrv.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {

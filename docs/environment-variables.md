@@ -1,6 +1,6 @@
-# Bifrost Gateway Environment Variables
+# Rainbow Environment Variables
 
-`bifrost-gateway` ships with some implicit defaults that can be adjusted via env variables below.
+`rainbow` ships with some implicit defaults that can be adjusted via env variables below.
 
 - [Configuration](#configuration)
   - [`KUBO_RPC_URL`](#kubo_rpc_url)
