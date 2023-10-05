@@ -7,7 +7,8 @@ import (
 
 var name = "rainbow"
 var version = buildVersion()
-var userAgent = name + "/" + version
+
+// var userAgent = name + "/" + version
 
 func buildVersion() string {
 	var revision string
