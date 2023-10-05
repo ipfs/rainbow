@@ -2,7 +2,8 @@ package main
 
 import "context"
 
-// really stupid simple algorithm where we just delete things until weve deleted enough things
+// GC is a really stupid simple algorithm where we just delete things until
+// weve deleted enough things
 func (nd *Node) GC(ctx context.Context, todelete int64) error {
 	keys, err := nd.blockstore.AllKeysChan(ctx)
 	if err != nil {
