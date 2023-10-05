@@ -45,10 +45,10 @@ elif [[ $GIT_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echoImageName "$GIT_TAG"
   echoImageName "latest"
 
-#elif [ "$GIT_BRANCH" = "main" ]; then
-#  echoImageName "main-${BUILD_NUM}-${GIT_SHA1_SHORT}"
-#  echoImageName "main-latest"
-#
+elif [ "$GIT_BRANCH" = "main" ]; then
+  echoImageName "main-${BUILD_NUM}-${GIT_SHA1_SHORT}"
+  echoImageName "main-latest"
+
 #elif [ "$GIT_BRANCH" = "staging" ]; then
 #  echoImageName "staging-${BUILD_NUM}-${GIT_SHA1_SHORT}"
 #  echoImageName "staging-latest"
