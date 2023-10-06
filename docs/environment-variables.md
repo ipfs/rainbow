@@ -22,8 +22,7 @@ Default: see `DefaultKuboRPC`
 
 Single URL or a comma separated list of RPC endpoints that provide `/api/v0` from Kubo.
 
-We use this as temporary solution for IPNS Record routing until [IPIP-351](https://github.com/ipfs/specs/pull/351) ships with Kubo 0.19,
-and we also redirect some legacy `/api/v0` commands that need to be handled on `ipfs.io`.
+We use this to redirect some legacy `/api/v0` commands that need to be handled on `ipfs.io`.
 
 ## Logging
 
