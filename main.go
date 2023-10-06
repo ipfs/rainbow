@@ -71,6 +71,11 @@ func main() {
 			Value: false,
 			Usage: "If using an Amino DHT client should the libp2p host be shared with the data downloading host",
 		},
+		&cli.StringFlag{
+			Name:  "dht-fallback-type",
+			Value: "combined",
+			Usage: "the type of Amino client to be used as a fallback (standard, accelerated, combined)",
+		},
 	}
 
 	app.Name = "rainbow"
