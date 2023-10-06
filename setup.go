@@ -62,14 +62,6 @@ type Node struct {
 	bwc *metrics.BandwidthCounter
 }
 
-type DHTType int
-
-const (
-	Combined DHTType = iota
-	Standard
-	Accelerated
-)
-
 type Config struct {
 	ListenAddrs   []string
 	AnnounceAddrs []string
@@ -87,7 +79,6 @@ type Config struct {
 	RoutingV1     string
 	KuboRPCURLs   []string
 	DHTSharedHost bool
-	DHTType       DHTType
 	DNSCache      *cachedDNS
 }
 
@@ -198,49 +189,32 @@ func Setup(ctx context.Context, cfg *Config) (*Node, error) {
 				}
 			}
 
-			var standardClient *dht.IpfsDHT
-			var fullRTClient *fullrt.FullRT
+			standardClient, err := dht.New(ctx, dhtHost,
+				dht.Datastore(memDS),
+				dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
+				dht.Mode(dht.ModeClient),
+			)
+			if err != nil {
+				return nil, err
+			}
 
-			if cfg.DHTType == Combined || cfg.DHTType == Standard {
-				standardClient, err = dht.New(ctx, dhtHost,
+			fullRTClient, err := fullrt.NewFullRT(dhtHost, dht.DefaultPrefix,
+				fullrt.DHTOption(
+					dht.Validator(record.NamespacedValidator{
+						"pk":   record.PublicKeyValidator{},
+						"ipns": ipns.Validator{KeyBook: h.Peerstore()},
+					}),
 					dht.Datastore(memDS),
 					dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
-					dht.Mode(dht.ModeClient),
-				)
-				if err != nil {
-					return nil, err
-				}
+					dht.BucketSize(20),
+				))
+			if err != nil {
+				return nil, err
 			}
 
-			if cfg.DHTType == Combined || cfg.DHTType == Accelerated {
-				fullRTClient, err = fullrt.NewFullRT(dhtHost, dht.DefaultPrefix,
-					fullrt.DHTOption(
-						dht.Validator(record.NamespacedValidator{
-							"pk":   record.PublicKeyValidator{},
-							"ipns": ipns.Validator{KeyBook: h.Peerstore()},
-						}),
-						dht.Datastore(memDS),
-						dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
-						dht.BucketSize(20),
-					))
-				if err != nil {
-					return nil, err
-				}
-			}
-
-			var dhtRouter routing.Routing
-			switch cfg.DHTType {
-			case Combined:
-				dhtRouter = &bundledDHT{
-					standard: standardClient,
-					fullRT:   fullRTClient,
-				}
-			case Standard:
-				dhtRouter = standardClient
-			case Accelerated:
-				dhtRouter = fullRTClient
-			default:
-				return nil, fmt.Errorf("unsupported DHT type")
+			dhtRouter := &bundledDHT{
+				standard: standardClient,
+				fullRT:   fullRTClient,
 			}
 
 			// we want to also use the default HTTP routers, so wrap the FullRT client

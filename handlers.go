@@ -148,8 +148,8 @@ func setupGatewayHandler(nd *Node) (http.Handler, error) {
 	})
 	// TODO: below is legacy which we want to remove, measuring this separately
 	// allows us to decide when is the time to do it.
-	legacyKuboRpcHandler := withHTTPMetrics(newKuboRPCHandler(nd.kuboRPCs), "legacyKuboRpc")
-	topMux.Handle("/api/v0/", legacyKuboRpcHandler)
+	legacyKuboRPCHandler := withHTTPMetrics(newKuboRPCHandler(nd.kuboRPCs), "legacyKuboRpc")
+	topMux.Handle("/api/v0/", legacyKuboRPCHandler)
 
 	// Construct the HTTP handler for the gateway.
 	handler := withConnect(topMux)

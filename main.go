@@ -71,11 +71,6 @@ func main() {
 			Value: false,
 			Usage: "If using an Amino DHT client should the libp2p host be shared with the data downloading host",
 		},
-		&cli.StringFlag{
-			Name:  "dht-fallback-type",
-			Value: "combined",
-			Usage: "the type of Amino client to be used as a fallback (standard, accelerated, combined)",
-		},
 	}
 
 	app.Name = "rainbow"
@@ -83,6 +78,9 @@ func main() {
 	app.Version = version
 	app.Action = func(cctx *cli.Context) error {
 		ddir := cctx.String("datadir")
+		cdns := newCachedDNS(dnsCacheRefreshInterval)
+		defer cdns.Close()
+
 		gnd, err := Setup(cctx.Context, &Config{
 			ConnMgrLow:    cctx.Int("connmgr-low"),
 			ConnMgrHi:     cctx.Int("connmgr-hi"),
@@ -93,7 +91,7 @@ func main() {
 			RoutingV1:     cctx.String("routing"),
 			KuboRPCURLs:   getEnvs(EnvKuboRPC, DefaultKuboRPC),
 			DHTSharedHost: cctx.Bool("dht-fallback-shared-host"),
-			DNSCache:      newCachedDNS(dnsCacheRefreshInterval),
+			DNSCache:      cdns,
 		})
 		if err != nil {
 			return err
@@ -124,9 +122,6 @@ func main() {
 		}()
 		otel.SetTracerProvider(tp)
 		otel.SetTextMapPropagator(autoprop.NewTextMapPropagator())
-
-		cdns := newCachedDNS(dnsCacheRefreshInterval)
-		defer cdns.Close()
 
 		apiMux := makeMetricsAndDebuggingHandler()
 		apiMux.HandleFunc("/mgr/gc", GCHandler(gnd))
