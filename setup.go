@@ -36,6 +36,7 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/multiformats/go-multiaddr"
 	"go.opencensus.io/stats/view"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func init() {
@@ -87,6 +88,7 @@ type Config struct {
 	KuboRPCURLs   []string
 	DHTSharedHost bool
 	DHTType       DHTType
+	DNSCache      *cachedDNS
 }
 
 func Setup(ctx context.Context, cfg *Config) (*Node, error) {
@@ -143,9 +145,29 @@ func Setup(ctx context.Context, cfg *Config) (*Node, error) {
 	var vs routing.ValueStore
 	var cr routing.ContentRouting
 
+	// Increase per-host connection pool since we are making lots of concurrent requests.
+	httpClient := &http.Client{
+		Transport: otelhttp.NewTransport(
+			&routingv1client.ResponseBodyLimitedTransport{
+				RoundTripper: &customTransport{
+					// Roundtripper with increased defaults than http.Transport such that retrieving
+					// multiple lookups concurrently is fast.
+					RoundTripper: &http.Transport{
+						MaxIdleConns:        1000,
+						MaxConnsPerHost:     100,
+						MaxIdleConnsPerHost: 100,
+						IdleConnTimeout:     90 * time.Second,
+						DialContext:         cfg.DNSCache.dialWithCachedDNS,
+						ForceAttemptHTTP2:   true,
+					},
+				},
+				LimitBytes: 1 << 20,
+			}),
+	}
+
 	opts = append(opts, libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
 		if cfg.RoutingV1 != "" {
-			routingClient, err := delegatedHTTPContentRouter(cfg.RoutingV1, routingv1client.WithStreamResultsRequired())
+			routingClient, err := delegatedHTTPContentRouter(cfg.RoutingV1, routingv1client.WithStreamResultsRequired(), routingv1client.WithHTTPClient(httpClient))
 			if err != nil {
 				return nil, err
 			}
@@ -223,7 +245,7 @@ func Setup(ctx context.Context, cfg *Config) (*Node, error) {
 
 			// we want to also use the default HTTP routers, so wrap the FullRT client
 			// in a parallel router that calls them in parallel
-			httpRouters, err := delegatedHTTPContentRouter(ipniFallbackEndpoint)
+			httpRouters, err := delegatedHTTPContentRouter(ipniFallbackEndpoint, routingv1client.WithHTTPClient(httpClient))
 			if err != nil {
 				return nil, err
 			}
@@ -327,22 +349,9 @@ func (b *bundledDHT) Bootstrap(ctx context.Context) error {
 var _ routing.Routing = (*bundledDHT)(nil)
 
 func delegatedHTTPContentRouter(endpoint string, rv1Opts ...routingv1client.Option) (routing.Routing, error) {
-	// Increase per-host connection pool since we are making lots of concurrent requests.
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.MaxIdleConns = 500
-	transport.MaxIdleConnsPerHost = 100
-
-	delegateHTTPClient := &http.Client{
-		Transport: &routingv1client.ResponseBodyLimitedTransport{
-			RoundTripper: transport,
-			LimitBytes:   1 << 20,
-		},
-	}
-
 	cli, err := routingv1client.New(
 		endpoint,
 		append([]routingv1client.Option{
-			routingv1client.WithHTTPClient(delegateHTTPClient),
 			routingv1client.WithUserAgent(buildVersion()),
 		}, rv1Opts...)...,
 	)

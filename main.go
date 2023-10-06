@@ -93,6 +93,7 @@ func main() {
 			RoutingV1:     cctx.String("routing"),
 			KuboRPCURLs:   getEnvs(EnvKuboRPC, DefaultKuboRPC),
 			DHTSharedHost: cctx.Bool("dht-fallback-shared-host"),
+			DNSCache:      newCachedDNS(dnsCacheRefreshInterval),
 		})
 		if err != nil {
 			return err
