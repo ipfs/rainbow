@@ -63,8 +63,18 @@ func main() {
 		},
 		&cli.StringFlag{
 			Name:  "routing",
-			Value: "http://127.0.0.1:8090",
-			Usage: "RoutingV1 Endpoint",
+			Value: "",
+			Usage: "RoutingV1 Endpoint (if none is supplied use the Amino DHT and cid.contact)",
+		},
+		&cli.BoolFlag{
+			Name:  "dht-fallback-shared-host",
+			Value: false,
+			Usage: "If using an Amino DHT client should the libp2p host be shared with the data downloading host",
+		},
+		&cli.StringFlag{
+			Name:  "dht-fallback-type",
+			Value: "combined",
+			Usage: "the type of Amino client to be used as a fallback (standard, accelerated, combined)",
 		},
 	}
 
@@ -82,6 +92,7 @@ func main() {
 			Libp2pKeyFile: filepath.Join(ddir, "libp2p.key"),
 			RoutingV1:     cctx.String("routing"),
 			KuboRPCURLs:   getEnvs(EnvKuboRPC, DefaultKuboRPC),
+			DHTSharedHost: cctx.Bool("dht-fallback-shared-host"),
 		})
 		if err != nil {
 			return err

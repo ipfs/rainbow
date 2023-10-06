@@ -11,12 +11,16 @@ require (
 	github.com/ipfs/go-metrics-interface v0.0.1
 	github.com/ipfs/go-metrics-prometheus v0.0.2
 	github.com/libp2p/go-libp2p v0.30.0
+	github.com/libp2p/go-libp2p-kad-dht v0.23.0
+	github.com/libp2p/go-libp2p-record v0.2.0
+	github.com/libp2p/go-libp2p-routing-helpers v0.7.3
 	github.com/mitchellh/go-server-timing v1.0.1
 	github.com/multiformats/go-multiaddr v0.11.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417
 	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.0.0
+	go.opencensus.io v0.24.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.42.0
 	go.opentelemetry.io/contrib/propagators/autoprop v0.40.0
 	go.opentelemetry.io/otel v1.16.0
@@ -25,6 +29,7 @@ require (
 )
 
 require (
+	github.com/Jorropo/jsync v1.0.1 // indirect
 	github.com/alecthomas/units v0.0.0-20211218093645-b94a6e3cc137 // indirect
 	github.com/alexbrainman/goissue34681 v0.0.0-20191006012335-3fc7a47baff5 // indirect
 	github.com/benbjohnson/clock v1.3.5 // indirect
@@ -91,10 +96,8 @@ require (
 	github.com/libp2p/go-doh-resolver v0.4.0 // indirect
 	github.com/libp2p/go-flow-metrics v0.1.0 // indirect
 	github.com/libp2p/go-libp2p-asn-util v0.3.0 // indirect
-	github.com/libp2p/go-libp2p-kad-dht v0.23.0 // indirect
 	github.com/libp2p/go-libp2p-kbucket v0.5.0 // indirect
-	github.com/libp2p/go-libp2p-record v0.2.0 // indirect
-	github.com/libp2p/go-libp2p-routing-helpers v0.7.0 // indirect
+	github.com/libp2p/go-libp2p-xor v0.1.0 // indirect
 	github.com/libp2p/go-msgio v0.3.0 // indirect
 	github.com/libp2p/go-nat v0.2.0 // indirect
 	github.com/libp2p/go-netroute v0.2.1 // indirect
@@ -144,7 +147,6 @@ require (
 	github.com/whyrusleeping/cbor v0.0.0-20171005072247-63513f603b11 // indirect
 	github.com/whyrusleeping/cbor-gen v0.0.0-20230126041949-52956bd4c9aa // indirect
 	github.com/whyrusleeping/go-keyspace v0.0.0-20160322163242-5b898ac5add1 // indirect
-	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/propagators/aws v1.15.0 // indirect
 	go.opentelemetry.io/contrib/propagators/b3 v1.15.0 // indirect
 	go.opentelemetry.io/contrib/propagators/jaeger v1.15.0 // indirect
