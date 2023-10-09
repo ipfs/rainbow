@@ -56,6 +56,11 @@ func main() {
 			Value: 3000,
 			Usage: "libp2p connection manager 'high' water mark",
 		},
+		&cli.IntFlag{
+			Name:  "inmem-block-cache",
+			Value: 1 << 30,
+			Usage: "Size of the in-memory block cache. 0 to disable (disables compression too)",
+		},
 		&cli.DurationFlag{
 			Name:  "connmgr-grace",
 			Value: time.Minute,
@@ -81,17 +86,16 @@ func main() {
 		cdns := newCachedDNS(dnsCacheRefreshInterval)
 		defer cdns.Close()
 
-		gnd, err := Setup(cctx.Context, &Config{
-			ConnMgrLow:    cctx.Int("connmgr-low"),
-			ConnMgrHi:     cctx.Int("connmgr-hi"),
-			ConnMgrGrace:  cctx.Duration("connmgr-grace"),
-			Blockstore:    filepath.Join(ddir, "blockstore"),
-			Datastore:     filepath.Join(ddir, "datastore"),
-			Libp2pKeyFile: filepath.Join(ddir, "libp2p.key"),
-			RoutingV1:     cctx.String("routing"),
-			KuboRPCURLs:   getEnvs(EnvKuboRPC, DefaultKuboRPC),
-			DHTSharedHost: cctx.Bool("dht-fallback-shared-host"),
-			DNSCache:      cdns,
+		gnd, err := Setup(cctx.Context, Config{
+			ConnMgrLow:      cctx.Int("connmgr-low"),
+			ConnMgrHi:       cctx.Int("connmgr-hi"),
+			ConnMgrGrace:    cctx.Duration("connmgr-grace"),
+			InMemBlockCache: cctx.Int64("inmem-block-cache"),
+			Libp2pKeyFile:   filepath.Join(ddir, "libp2p.key"),
+			RoutingV1:       cctx.String("routing"),
+			KuboRPCURLs:     getEnvs(EnvKuboRPC, DefaultKuboRPC),
+			DHTSharedHost:   cctx.Bool("dht-fallback-shared-host"),
+			DNSCache:        cdns,
 		})
 		if err != nil {
 			return err
