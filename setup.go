@@ -10,13 +10,17 @@ import (
 
 	badger "github.com/dgraph-io/badger/v4"
 	options "github.com/dgraph-io/badger/v4/options"
+	"github.com/ipfs-shipyard/nopfs"
+	nopfsipfs "github.com/ipfs-shipyard/nopfs/ipfs"
 	bsclient "github.com/ipfs/boxo/bitswap/client"
 	bsnet "github.com/ipfs/boxo/bitswap/network"
 	"github.com/ipfs/boxo/blockservice"
 	"github.com/ipfs/boxo/blockstore"
+	bsfetcher "github.com/ipfs/boxo/fetcher/impl/blockservice"
 	"github.com/ipfs/boxo/gateway"
 	"github.com/ipfs/boxo/ipns"
 	"github.com/ipfs/boxo/namesys"
+	"github.com/ipfs/boxo/path/resolver"
 	routingv1client "github.com/ipfs/boxo/routing/http/client"
 	httpcontentrouter "github.com/ipfs/boxo/routing/http/contentrouter"
 	"github.com/ipfs/go-cid"
@@ -25,6 +29,11 @@ import (
 	levelds "github.com/ipfs/go-ds-leveldb"
 	metri "github.com/ipfs/go-metrics-interface"
 	mprome "github.com/ipfs/go-metrics-prometheus"
+	"github.com/ipfs/go-unixfsnode"
+	dagpb "github.com/ipld/go-codec-dagpb"
+	"github.com/ipld/go-ipld-prime"
+	"github.com/ipld/go-ipld-prime/node/basicnode"
+	"github.com/ipld/go-ipld-prime/schema"
 	"github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p-kad-dht/fullrt"
@@ -57,6 +66,7 @@ type Node struct {
 	blockstore blockstore.Blockstore
 	bsClient   *bsclient.Client
 	bsrv       blockservice.BlockService
+	resolver   resolver.Resolver
 
 	ns       namesys.NameSystem
 	kuboRPCs []string
@@ -260,6 +270,15 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 	bswap := bsclient.New(bsctx, bn, blkst)
 	bn.Start(bswap)
 
+	files, err := nopfs.GetDenylistFiles()
+	if err != nil {
+		return nil, err
+	}
+	blocker, err := nopfs.NewBlocker(files)
+	if err != nil {
+		return nil, err
+	}
+
 	bsrv := blockservice.New(blkst, bswap,
 		// if we are doing things right, our bitswap wantlists should
 		// not have blocks that we already have (see
@@ -269,6 +288,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 		// before writing new blocks.
 		blockservice.WriteThrough(),
 	)
+	bsrv = nopfsipfs.WrapBlockService(bsrv, blocker)
 
 	dns, err := gateway.NewDNSResolver(nil)
 	if err != nil {
@@ -278,6 +298,18 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+	ns = nopfsipfs.WrapNameSystem(ns, blocker)
+
+	fetcherConfig := bsfetcher.NewFetcherConfig(bsrv)
+	fetcherConfig.PrototypeChooser = dagpb.AddSupportToChooser(func(lnk ipld.Link, lnkCtx ipld.LinkContext) (ipld.NodePrototype, error) {
+		if tlnkNd, ok := lnkCtx.LinkNode.(schema.TypedLinkNode); ok {
+			return tlnkNd.LinkTargetNodePrototype(), nil
+		}
+		return basicnode.Prototype.Any, nil
+	})
+	fetcher := fetcherConfig.WithReifier(unixfsnode.Reify)
+	r := resolver.NewBasicResolver(fetcher)
+	r = nopfsipfs.WrapResolver(r, blocker)
 
 	return &Node{
 		host:       h,
@@ -287,6 +319,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 		ns:         ns,
 		vs:         vs,
 		bsrv:       bsrv,
+		resolver:   r,
 		bwc:        bwc,
 		kuboRPCs:   cfg.KuboRPCURLs,
 	}, nil
