@@ -198,6 +198,7 @@ func newKuboRPCHandler(endpoints []string) http.Handler {
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
+			return
 		}
 		codec := r.URL.Query().Get("output-codec")
 		if codec == "" {
