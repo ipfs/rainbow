@@ -29,11 +29,6 @@ import (
 	levelds "github.com/ipfs/go-ds-leveldb"
 	metri "github.com/ipfs/go-metrics-interface"
 	mprome "github.com/ipfs/go-metrics-prometheus"
-	"github.com/ipfs/go-unixfsnode"
-	dagpb "github.com/ipld/go-codec-dagpb"
-	"github.com/ipld/go-ipld-prime"
-	"github.com/ipld/go-ipld-prime/node/basicnode"
-	"github.com/ipld/go-ipld-prime/schema"
 	"github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p-kad-dht/fullrt"
@@ -300,14 +295,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 	}
 	ns = nopfsipfs.WrapNameSystem(ns, blocker)
 
-	fetcherConfig := bsfetcher.NewFetcherConfig(bsrv)
-	fetcherConfig.PrototypeChooser = dagpb.AddSupportToChooser(func(lnk ipld.Link, lnkCtx ipld.LinkContext) (ipld.NodePrototype, error) {
-		if tlnkNd, ok := lnkCtx.LinkNode.(schema.TypedLinkNode); ok {
-			return tlnkNd.LinkTargetNodePrototype(), nil
-		}
-		return basicnode.Prototype.Any, nil
-	})
-	fetcher := fetcherConfig.WithReifier(unixfsnode.Reify)
+	fetcher := bsfetcher.NewFetcherConfig(bsrv)
 	r := resolver.NewBasicResolver(fetcher)
 	r = nopfsipfs.WrapResolver(r, blocker)
 
