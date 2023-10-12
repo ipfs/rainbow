@@ -37,12 +37,12 @@ func main() {
 		},
 		&cli.IntFlag{
 			Name:  "gateway-port",
-			Value: 8080,
+			Value: 8090,
 			Usage: "specify the listen address for the gateway endpoint",
 		},
 		&cli.IntFlag{
 			Name:  "ctl-port",
-			Value: 8081,
+			Value: 8091,
 			Usage: "specify the api listening address for the internal control api",
 		},
 
