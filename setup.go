@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	badger "github.com/dgraph-io/badger/v4"
+	options "github.com/dgraph-io/badger/v4/options"
 	bsclient "github.com/ipfs/boxo/bitswap/client"
 	bsnet "github.com/ipfs/boxo/bitswap/network"
 	"github.com/ipfs/boxo/blockservice"
@@ -19,7 +21,7 @@ import (
 	httpcontentrouter "github.com/ipfs/boxo/routing/http/contentrouter"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
-	flatfs "github.com/ipfs/go-ds-flatfs"
+	badger4 "github.com/ipfs/go-ds-badger4"
 	levelds "github.com/ipfs/go-ds-leveldb"
 	metri "github.com/ipfs/go-metrics-interface"
 	mprome "github.com/ipfs/go-metrics-prometheus"
@@ -66,15 +68,13 @@ type Config struct {
 	ListenAddrs   []string
 	AnnounceAddrs []string
 
-	Blockstore string
-
 	Libp2pKeyFile string
-
-	Datastore string
 
 	ConnMgrLow   int
 	ConnMgrHi    int
 	ConnMgrGrace time.Duration
+
+	InMemBlockCache int64
 
 	RoutingV1     string
 	KuboRPCURLs   []string
@@ -82,13 +82,13 @@ type Config struct {
 	DNSCache      *cachedDNS
 }
 
-func Setup(ctx context.Context, cfg *Config) (*Node, error) {
+func Setup(ctx context.Context, cfg Config) (*Node, error) {
 	peerkey, err := loadOrInitPeerKey(cfg.Libp2pKeyFile)
 	if err != nil {
 		return nil, err
 	}
 
-	ds, err := levelds.NewDatastore(cfg.Datastore, nil)
+	ds, err := setupDatastore(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -124,10 +124,14 @@ func Setup(ctx context.Context, cfg *Config) (*Node, error) {
 		}))
 	}
 
-	blkst, err := loadBlockstore("flatfs", cfg.Blockstore)
-	if err != nil {
-		return nil, err
-	}
+	blkst := blockstore.NewBlockstore(ds,
+		blockstore.NoPrefix(),
+		// Every Has() for every written block is a transaction with a
+		// seek onto LSM. If not in memory it will be a pain.
+		// We opt to write every block Put into the blockstore.
+		// See also comment in blockservice.
+		blockstore.WriteThrough(),
+	)
 	blkst = blockstore.NewIdStore(blkst)
 
 	bsctx := metri.CtxScope(ctx, "rainbow")
@@ -256,7 +260,15 @@ func Setup(ctx context.Context, cfg *Config) (*Node, error) {
 	bswap := bsclient.New(bsctx, bn, blkst)
 	bn.Start(bswap)
 
-	bsrv := blockservice.New(blkst, bswap)
+	bsrv := blockservice.New(blkst, bswap,
+		// if we are doing things right, our bitswap wantlists should
+		// not have blocks that we already have (see
+		// https://github.com/ipfs/boxo/blob/e0d4b3e9b91e9904066a10278e366c9a6d9645c7/blockservice/blockservice.go#L272). Thus
+		// we should not be writing many blocks that we already
+		// have. Thus, no point in checking whether we have a block
+		// before writing new blocks.
+		blockservice.WriteThrough(),
+	)
 
 	dns, err := gateway.NewDNSResolver(nil)
 	if err != nil {
@@ -278,6 +290,55 @@ func Setup(ctx context.Context, cfg *Config) (*Node, error) {
 		bwc:        bwc,
 		kuboRPCs:   cfg.KuboRPCURLs,
 	}, nil
+}
+
+func setupDatastore(cfg Config) (datastore.Batching, error) {
+	badgerOpts := badger.DefaultOptions("")
+	badgerOpts.CompactL0OnClose = false
+	// ValueThreshold: defaults to 1MB! For us that means everything goes
+	// into the LSM tree and that means more stuff in memory.  We only
+	// put very small things on the LSM tree by default (i.e. a single
+	// CID).
+	badgerOpts.ValueThreshold = 256
+
+	// BlockCacheSize: instead of using blockstore, we cache things
+	// here. This only makes sense if using compression, according to
+	// docs.
+	badgerOpts.BlockCacheSize = cfg.InMemBlockCache // default 1 GiB.
+
+	// Compression: default. Trades reading less from disk for using more
+	// CPU. Given gateways are usually IO bound, I think we can make this
+	// trade.
+	if badgerOpts.BlockCacheSize == 0 {
+		badgerOpts.Compression = options.None
+	} else {
+		badgerOpts.Compression = options.Snappy
+	}
+
+	// If we write something twice, we do it with the same values so
+	// *shrugh*.
+	badgerOpts.DetectConflicts = false
+
+	// MemTableSize: Defaults to 64MiB which seems an ok amount to flush
+	// to disk from time to time.
+	badgerOpts.MemTableSize = 64 << 20
+	// NumMemtables: more means more memory, faster writes, but more to
+	// commit to disk if they get full. Default is 5.
+	badgerOpts.NumMemtables = 5
+
+	// IndexCacheSize: 0 means all in memory (default). All means indexes,
+	// bloom filters etc. Usually not huge amount of memory usage from
+	// this.
+	badgerOpts.IndexCacheSize = 0
+
+	opts := badger4.Options{
+		GcDiscardRatio: 0.3,
+		GcInterval:     20 * time.Minute,
+		GcSleep:        10 * time.Second,
+		Options:        badgerOpts,
+	}
+
+	return badger4.NewDatastore("badger4", &opts)
 }
 
 type bundledDHT struct {
@@ -347,25 +408,6 @@ func delegatedHTTPContentRouter(endpoint string, rv1Opts ...routingv1client.Opti
 		PeerRouting:    cr,
 		ContentRouting: cr,
 	}, nil
-}
-
-func loadBlockstore(spec string, path string) (blockstore.Blockstore, error) {
-	switch spec {
-	case "flatfs":
-		sf, err := flatfs.ParseShardFunc("/repo/flatfs/shard/v1/next-to-last/3")
-		if err != nil {
-			return nil, err
-		}
-
-		ds, err := flatfs.CreateOrOpen(path, sf, false)
-		if err != nil {
-			return nil, err
-		}
-
-		return blockstore.NewBlockstore(ds, blockstore.NoPrefix()), nil
-	default:
-		return nil, fmt.Errorf("unsupported blockstore type: %s", spec)
-	}
 }
 
 func loadOrInitPeerKey(kf string) (crypto.PrivKey, error) {
