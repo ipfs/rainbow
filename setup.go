@@ -29,6 +29,8 @@ import (
 	levelds "github.com/ipfs/go-ds-leveldb"
 	metri "github.com/ipfs/go-metrics-interface"
 	mprome "github.com/ipfs/go-metrics-prometheus"
+	"github.com/ipfs/go-unixfsnode"
+	dagpb "github.com/ipld/go-codec-dagpb"
 	"github.com/libp2p/go-libp2p"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p-kad-dht/fullrt"
@@ -295,7 +297,9 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 	}
 	ns = nopfsipfs.WrapNameSystem(ns, blocker)
 
-	fetcher := bsfetcher.NewFetcherConfig(bsrv)
+	fetcherCfg := bsfetcher.NewFetcherConfig(bsrv)
+	fetcherCfg.PrototypeChooser = dagpb.AddSupportToChooser(bsfetcher.DefaultPrototypeChooser)
+	fetcher := fetcherCfg.WithReifier(unixfsnode.Reify)
 	r := resolver.NewBasicResolver(fetcher)
 	r = nopfsipfs.WrapResolver(r, blocker)
 
