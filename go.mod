@@ -6,11 +6,12 @@ require (
 	github.com/dgraph-io/badger/v4 v4.2.0
 	github.com/ipfs-shipyard/nopfs v0.0.12-0.20231012170252-ab19c8a36941
 	github.com/ipfs-shipyard/nopfs/ipfs v0.13.2-0.20231012170819-d73899390a71
-	github.com/ipfs/boxo v0.13.2-0.20231012132507-6602207a8fa3
+	github.com/ipfs/boxo v0.13.2-0.20231013160006-ef6adea52299
 	github.com/ipfs/go-cid v0.4.1
 	github.com/ipfs/go-datastore v0.6.0
 	github.com/ipfs/go-ds-badger4 v0.0.0-20231006150127-9137bcc6b981
 	github.com/ipfs/go-ds-leveldb v0.5.0
+	github.com/ipfs/go-ipfs-delay v0.0.1
 	github.com/ipfs/go-log/v2 v2.5.1
 	github.com/ipfs/go-metrics-interface v0.0.1
 	github.com/ipfs/go-metrics-prometheus v0.0.2
@@ -83,7 +84,6 @@ require (
 	github.com/ipfs/bbloom v0.0.4 // indirect
 	github.com/ipfs/go-bitfield v1.1.0 // indirect
 	github.com/ipfs/go-block-format v0.1.2 // indirect
-	github.com/ipfs/go-ipfs-delay v0.0.1 // indirect
 	github.com/ipfs/go-ipfs-redirects-file v0.1.1 // indirect
 	github.com/ipfs/go-ipfs-util v0.0.2 // indirect
 	github.com/ipfs/go-ipld-cbor v0.0.6 // indirect

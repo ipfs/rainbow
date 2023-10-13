@@ -27,6 +27,7 @@ import (
 	"github.com/ipfs/go-datastore"
 	badger4 "github.com/ipfs/go-ds-badger4"
 	levelds "github.com/ipfs/go-ds-leveldb"
+	delay "github.com/ipfs/go-ipfs-delay"
 	metri "github.com/ipfs/go-metrics-interface"
 	mprome "github.com/ipfs/go-metrics-prometheus"
 	"github.com/ipfs/go-unixfsnode"
@@ -264,7 +265,18 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 	}
 
 	bn := bsnet.NewFromIpfsHost(h, cr)
-	bswap := bsclient.New(bsctx, bn, blkst)
+	bswap := bsclient.New(bsctx, bn, blkst,
+		// default is 1 minute to search for a random live-want (1
+		// CID).  I think we want to search for random live-wants more
+		// often although probably it overlaps with general
+		// rebroadcasts.
+		bsclient.RebroadcastDelay(delay.Fixed(5*time.Second)),
+		// ProviderSearchDelay: default is 1 second. Worth giving a
+		// little bit more time for peers to answer before asking them
+		// again.
+		bsclient.ProviderSearchDelay(3*time.Second),
+		bsclient.WithoutDuplicatedBlockStats(),
+	)
 	bn.Start(bswap)
 
 	files, err := nopfs.GetDenylistFiles()
