@@ -12,8 +12,8 @@ import (
 
 	_ "net/http/pprof"
 
-	"github.com/ipfs/boxo/coreiface/path"
 	"github.com/ipfs/boxo/gateway"
+	"github.com/ipfs/boxo/path"
 	servertiming "github.com/mitchellh/go-server-timing"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -165,6 +165,17 @@ func setupGatewayHandler(nd *Node) (http.Handler, error) {
 	return handler, nil
 }
 
+// Prefixes with /ipfs/ unprefixed paths.
+func prefixPath(p string) string {
+	if len(p) == 0 {
+		return p
+	}
+	if p[0] != '/' {
+		return "/ipfs/" + p
+	}
+	return p // let NewPath handle whatever issues from here.
+}
+
 func newKuboRPCHandler(endpoints []string) http.Handler {
 	mux := http.NewServeMux()
 
@@ -174,7 +185,12 @@ func newKuboRPCHandler(endpoints []string) http.Handler {
 	// - https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/303
 	redirectToGateway := func(format string) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			path := path.New(r.URL.Query().Get("arg"))
+			path, err := path.NewPath(prefixPath(r.URL.Query().Get("arg")))
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(err.Error()))
+				return
+			}
 			url := path.String()
 			if format != "" {
 				url += "?format=" + format
@@ -189,7 +205,12 @@ func newKuboRPCHandler(endpoints []string) http.Handler {
 	mux.HandleFunc("/api/v0/dag/export", redirectToGateway("car"))
 	mux.HandleFunc("/api/v0/block/get", redirectToGateway("raw"))
 	mux.HandleFunc("/api/v0/dag/get", func(w http.ResponseWriter, r *http.Request) {
-		path := path.New(r.URL.Query().Get("arg"))
+		path, err := path.NewPath(prefixPath(r.URL.Query().Get("arg")))
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(err.Error()))
+			return
+		}
 		codec := r.URL.Query().Get("output-codec")
 		if codec == "" {
 			codec = "dag-json"
