@@ -41,6 +41,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/metrics"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/routing"
+	rcmgr "github.com/libp2p/go-libp2p/p2p/host/resource-manager"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/multiformats/go-multiaddr"
 	"go.opencensus.io/stats/view"
@@ -82,6 +83,8 @@ type Config struct {
 	ConnMgrGrace time.Duration
 
 	InMemBlockCache int64
+	MaxMemory       uint64
+	MaxFD           int
 
 	RoutingV1     string
 	KuboRPCURLs   []string
@@ -107,6 +110,12 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 		return nil, err
 	}
 
+	limiter := rcmgr.NewFixedLimiter(makeResourceManagerConfig(cfg.MaxMemory, cfg.MaxFD, cfg.ConnMgrHi))
+	mgr, err := rcmgr.NewResourceManager(limiter)
+	if err != nil {
+		return nil, err
+	}
+
 	opts := []libp2p.Option{
 		libp2p.ListenAddrStrings(cfg.ListenAddrs...),
 		libp2p.NATPortMap(),
@@ -115,6 +124,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 		libp2p.BandwidthReporter(bwc),
 		libp2p.DefaultTransports,
 		libp2p.DefaultMuxers,
+		libp2p.ResourceManager(mgr),
 	}
 
 	if len(cfg.AnnounceAddrs) > 0 {
