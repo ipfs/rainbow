@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	badger "github.com/dgraph-io/badger/v4"
 	options "github.com/dgraph-io/badger/v4/options"
-	"github.com/ipfs-shipyard/nopfs"
+	nopfs "github.com/ipfs-shipyard/nopfs"
 	nopfsipfs "github.com/ipfs-shipyard/nopfs/ipfs"
 	bsclient "github.com/ipfs/boxo/bitswap/client"
 	bsnet "github.com/ipfs/boxo/bitswap/network"
@@ -71,6 +72,9 @@ type Node struct {
 	kuboRPCs []string
 
 	bwc *metrics.BandwidthCounter
+
+	denylistSubs []*nopfs.HTTPSubscriber
+	blocker      *nopfs.Blocker
 }
 
 type Config struct {
@@ -91,6 +95,8 @@ type Config struct {
 	KuboRPCURLs   []string
 	DHTSharedHost bool
 	DNSCache      *cachedDNS
+
+	DenylistSubs []string
 }
 
 func Setup(ctx context.Context, cfg Config) (*Node, error) {
@@ -287,7 +293,18 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 	)
 	bn.Start(bswap)
 
-	files, err := nopfs.GetDenylistFiles()
+	err = os.Mkdir("denylists", 0755)
+	if err != nil {
+		return nil, err
+	}
+
+	var denylists []*nopfs.HTTPSubscriber
+	for _, dl := range cfg.DenylistSubs {
+		s := nopfs.NewHTTPSubscriber(dl, filepath.Join("denylists", filepath.Base(dl)), time.Minute)
+		denylists = append(denylists, s)
+	}
+
+	files, err := nopfs.GetDenylistFilesInDir("denylists")
 	if err != nil {
 		return nil, err
 	}
@@ -324,16 +341,18 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 	r = nopfsipfs.WrapResolver(r, blocker)
 
 	return &Node{
-		host:       h,
-		blockstore: blkst,
-		datastore:  ds,
-		bsClient:   bswap,
-		ns:         ns,
-		vs:         vs,
-		bsrv:       bsrv,
-		resolver:   r,
-		bwc:        bwc,
-		kuboRPCs:   cfg.KuboRPCURLs,
+		host:         h,
+		blockstore:   blkst,
+		datastore:    ds,
+		bsClient:     bswap,
+		ns:           ns,
+		vs:           vs,
+		bsrv:         bsrv,
+		resolver:     r,
+		bwc:          bwc,
+		kuboRPCs:     cfg.KuboRPCURLs,
+		blocker:      blocker,
+		denylistSubs: denylists,
 	}, nil
 }
 

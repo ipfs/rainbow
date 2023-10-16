@@ -86,6 +86,11 @@ func main() {
 			Value: false,
 			Usage: "If using an Amino DHT client should the libp2p host be shared with the data downloading host",
 		},
+		&cli.StringFlag{
+			Name:  "denylists",
+			Value: "https://denyli.st/badbits.deny",
+			Usage: "Denylist subscriptions (comma-separated)",
+		},
 	}
 
 	app.Name = "rainbow"
@@ -108,6 +113,7 @@ func main() {
 			KuboRPCURLs:     getEnvs(EnvKuboRPC, DefaultKuboRPC),
 			DHTSharedHost:   cctx.Bool("dht-fallback-shared-host"),
 			DNSCache:        cdns,
+			DenylistSubs:    strings.Split(cctx.String("denylists"), ","),
 		})
 		if err != nil {
 			return err
@@ -183,6 +189,9 @@ func main() {
 		log.Printf("Closing servers...")
 		go gatewaySrv.Close()
 		go apiSrv.Close()
+		for _, sub := range gnd.denylistSubs {
+			sub.Stop()
+		}
 		wg.Wait()
 		return nil
 	}
