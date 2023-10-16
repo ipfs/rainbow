@@ -270,11 +270,9 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 		// CID).  I think we want to search for random live-wants more
 		// often although probably it overlaps with general
 		// rebroadcasts.
-		bsclient.RebroadcastDelay(delay.Fixed(5*time.Second)),
-		// ProviderSearchDelay: default is 1 second. Worth giving a
-		// little bit more time for peers to answer before asking them
-		// again.
-		bsclient.ProviderSearchDelay(3*time.Second),
+		bsclient.RebroadcastDelay(delay.Fixed(10*time.Second)),
+		// ProviderSearchDelay: default is 1 second.
+		bsclient.ProviderSearchDelay(time.Second),
 		bsclient.WithoutDuplicatedBlockStats(),
 	)
 	bn.Start(bswap)
