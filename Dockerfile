@@ -46,6 +46,7 @@ RUN mkdir -p $RAINBOW_GATEWAY_PATH && \
     adduser -D -h $RAINBOW_GATEWAY_PATH -u 1000 -G users ipfs && \
     chown ipfs:users $RAINBOW_GATEWAY_PATH
 VOLUME $RAINBOW_GATEWAY_PATH
+WORKDIR $RAINBOW_GATEWAY_PATH
 
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
 

@@ -102,6 +102,7 @@ func main() {
 		defer cdns.Close()
 
 		gnd, err := Setup(cctx.Context, Config{
+			DataDir:         ddir,
 			ConnMgrLow:      cctx.Int("connmgr-low"),
 			ConnMgrHi:       cctx.Int("connmgr-hi"),
 			ConnMgrGrace:    cctx.Duration("connmgr-grace"),
@@ -132,7 +133,7 @@ func main() {
 			Handler: handler,
 		}
 
-		fmt.Printf("Starting %s %s", name, version)
+		fmt.Printf("Starting %s %s\n\n", name, version)
 		registerVersionMetric(version)
 
 		tp, shutdown, err := newTracerProvider(cctx.Context)
@@ -153,40 +154,42 @@ func main() {
 			Handler: apiMux,
 		}
 
-		quit := make(chan os.Signal, 1)
+		quit := make(chan os.Signal, 3)
 		var wg sync.WaitGroup
 		wg.Add(2)
+
+		fmt.Printf("Legacy RPC at /api/v0 (%s): %s\n", EnvKuboRPC, strings.Join(gnd.kuboRPCs, " "))
+		fmt.Printf("Path gateway: http://127.0.0.1:%d\n", gatewayPort)
+		fmt.Printf("  Smoke test (JPG): http://127.0.0.1:%d/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi\n", gatewayPort)
+		fmt.Printf("Subdomain gateway: http://localhost:%d\n", gatewayPort)
+		fmt.Printf("  Smoke test (Subdomain+DNSLink+UnixFS+HAMT): http://localhost:%d/ipns/en.wikipedia-on-ipfs.org/wiki/\n\n\n", gatewayPort)
+
+		fmt.Printf("CTL port: http://127.0.0.1:%d\n", apiPort)
+		fmt.Printf("Metrics: http://127.0.0.1:%d/debug/metrics/prometheus\n\n", apiPort)
 
 		go func() {
 			defer wg.Done()
 
-			// log important configuration flags
-			log.Printf("Legacy RPC at /api/v0 (%s) provided by %s", EnvKuboRPC, strings.Join(gnd.kuboRPCs, " "))
-			log.Printf("Path gateway listening on http://127.0.0.1:%d", gatewayPort)
-			log.Printf("  Smoke test (JPG): http://127.0.0.1:%d/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi", gatewayPort)
-			log.Printf("Subdomain gateway configured on dweb.link and http://localhost:%d", gatewayPort)
-			log.Printf("  Smoke test (Subdomain+DNSLink+UnixFS+HAMT): http://localhost:%d/ipns/en.wikipedia-on-ipfs.org/wiki/", gatewayPort)
 			err := gatewaySrv.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				log.Printf("Failed to start gateway: %s", err)
+				fmt.Fprintf(os.Stderr, "Failed to start gateway: %s\n", err)
 				quit <- os.Interrupt
 			}
 		}()
 
 		go func() {
 			defer wg.Done()
-			log.Printf("CTL port exposed at http://127.0.0.1:%d", apiPort)
-			log.Printf("Metrics exposed at http://127.0.0.1:%d/debug/metrics/prometheus", apiPort)
+
 			err := apiSrv.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				log.Printf("Failed to start metrics: %s", err)
+				fmt.Fprintf(os.Stderr, "Failed to start metrics: %s\n", err)
 				quit <- os.Interrupt
 			}
 		}()
 
 		signal.Notify(quit, os.Interrupt)
 		<-quit
-		log.Printf("Closing servers...")
+		log.Printf("Closing servers...\n")
 		go gatewaySrv.Close()
 		go apiSrv.Close()
 		for _, sub := range gnd.denylistSubs {

@@ -134,8 +134,8 @@ func makeResourceManagerConfig(maxMemory uint64, maxFD int, connMgrHighWater int
 	log.Printf(`
 
 go-libp2p Resource Manager limits based on:
-    - '--max-memory': %q
-    - '--max-fd': %d
+    - --max-memory: %s
+    - --max-fd: %d
 
 `, humanize.Bytes(maxMemory), maxFD)
 
