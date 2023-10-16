@@ -61,6 +61,16 @@ func main() {
 			Value: 1 << 30,
 			Usage: "Size of the in-memory block cache. 0 to disable (disables compression too)",
 		},
+		&cli.Uint64Flag{
+			Name:  "max-memory",
+			Value: 0,
+			Usage: "Libp2p resource manager max memory. Defaults to system's memory * 0.85",
+		},
+		&cli.Uint64Flag{
+			Name:  "max-fd",
+			Value: 0,
+			Usage: "Libp2p resource manager file description limit. Defaults to the process' fd-limit/2",
+		},
 		&cli.DurationFlag{
 			Name:  "connmgr-grace",
 			Value: time.Minute,
@@ -90,6 +100,8 @@ func main() {
 			ConnMgrLow:      cctx.Int("connmgr-low"),
 			ConnMgrHi:       cctx.Int("connmgr-hi"),
 			ConnMgrGrace:    cctx.Duration("connmgr-grace"),
+			MaxMemory:       cctx.Uint64("max-memory"),
+			MaxFD:           cctx.Int("max-fd"),
 			InMemBlockCache: cctx.Int64("inmem-block-cache"),
 			Libp2pKeyFile:   filepath.Join(ddir, "libp2p.key"),
 			RoutingV1:       cctx.String("routing"),
