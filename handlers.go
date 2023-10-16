@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	_ "embed"
 	_ "net/http/pprof"
 
 	"github.com/ipfs/boxo/gateway"
@@ -19,6 +20,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
+
+//go:embed static/index.html
+var indexHTML []byte
 
 const DefaultKuboRPC = "http://127.0.0.1:5001"
 
@@ -240,10 +244,14 @@ func newKuboRPCHandler(endpoints []string) http.Handler {
 	mux.HandleFunc("/api/v0/dns", redirectToKubo)
 
 	// Remaining requests to the API receive a 501, as well as an explanation.
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotImplemented)
 		goLog.Debugw("api request returned 501", "url", r.URL)
 		w.Write([]byte("The /api/v0 Kubo RPC is now discontinued on this server as it is not part of the gateway specification. If you need this API, please self-host a Kubo instance yourself: https://docs.ipfs.tech/install/command-line/"))
+	})
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write(indexHTML)
 	})
 
 	return mux
