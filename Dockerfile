@@ -32,7 +32,7 @@ FROM alpine:3.18
 # This runs rainbow
 
 # Instal binaries for $TARGETARCH
-RUN apk add --no-cache tini su-exec ca-certificates
+RUN apk add --no-cache tini su-exec ca-certificates curl
 
 ENV GOPATH                 /go
 ENV SRC_PATH               $GOPATH/src/github.com/ipfs/rainbow

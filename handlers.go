@@ -154,6 +154,9 @@ func setupGatewayHandler(nd *Node) (http.Handler, error) {
 	// allows us to decide when is the time to do it.
 	legacyKuboRPCHandler := withHTTPMetrics(newKuboRPCHandler(nd.kuboRPCs), "legacyKuboRpc")
 	topMux.Handle("/api/v0/", legacyKuboRPCHandler)
+	topMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write(indexHTML)
+	})
 
 	// Construct the HTTP handler for the gateway.
 	handler := withConnect(topMux)
@@ -244,14 +247,10 @@ func newKuboRPCHandler(endpoints []string) http.Handler {
 	mux.HandleFunc("/api/v0/dns", redirectToKubo)
 
 	// Remaining requests to the API receive a 501, as well as an explanation.
-	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v0/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotImplemented)
 		goLog.Debugw("api request returned 501", "url", r.URL)
 		w.Write([]byte("The /api/v0 Kubo RPC is now discontinued on this server as it is not part of the gateway specification. If you need this API, please self-host a Kubo instance yourself: https://docs.ipfs.tech/install/command-line/"))
-	})
-
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write(indexHTML)
 	})
 
 	return mux
