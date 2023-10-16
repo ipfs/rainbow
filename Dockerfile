@@ -49,4 +49,4 @@ VOLUME $RAINBOW_GATEWAY_PATH
 
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
 
-CMD ["--gateway-port", "8080", "--api-port", "8081"]
+CMD ["--gateway-port", "8080", "--ctl-port", "8081"]

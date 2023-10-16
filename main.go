@@ -120,7 +120,7 @@ func main() {
 		}
 
 		gatewayPort := cctx.Int("gateway-port")
-		apiPort := cctx.Int("api-port")
+		apiPort := cctx.Int("ctl-port")
 
 		handler, err := setupGatewayHandler(gnd)
 		if err != nil {
