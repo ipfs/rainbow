@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	crand "crypto/rand"
 	"crypto/sha256"
+	"errors"
 	"io"
 
 	libp2p "github.com/libp2p/go-libp2p/core/crypto"
@@ -28,6 +29,9 @@ func deriveKey(b58secret string, info []byte) (libp2p.PrivKey, error) {
 	secret, err := base58.Decode(b58secret)
 	if err != nil {
 		return nil, err
+	}
+	if len(secret) < seedBytes {
+		return nil, errors.New("derivation seed is too short")
 	}
 
 	hash := sha256.New
