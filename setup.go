@@ -29,7 +29,6 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	badger4 "github.com/ipfs/go-ds-badger4"
-	levelds "github.com/ipfs/go-ds-leveldb"
 	delay "github.com/ipfs/go-ipfs-delay"
 	metri "github.com/ipfs/go-metrics-interface"
 	mprome "github.com/ipfs/go-metrics-prometheus"
@@ -195,12 +194,6 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 		} else {
 			// If there are no delegated routing endpoints run an accelerated Amino DHT client and send IPNI requests to cid.contact
 
-			// TODO: This datastore shouldn't end up containing anything anyway so this could potentially just be a null datastore
-			memDS, err := levelds.NewDatastore("", nil)
-			if err != nil {
-				return nil, err
-			}
-
 			var dhtHost host.Host
 			if cfg.DHTSharedHost {
 				dhtHost = h
@@ -217,7 +210,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 			}
 
 			standardClient, err := dht.New(ctx, dhtHost,
-				dht.Datastore(memDS),
+				dht.Datastore(ds),
 				dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
 				dht.Mode(dht.ModeClient),
 			)
@@ -231,7 +224,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 						"pk":   record.PublicKeyValidator{},
 						"ipns": ipns.Validator{KeyBook: h.Peerstore()},
 					}),
-					dht.Datastore(memDS),
+					dht.Datastore(ds),
 					dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
 					dht.BucketSize(20),
 				))
@@ -401,7 +394,7 @@ func setupDatastore(cfg Config) (datastore.Batching, error) {
 		Options:        badgerOpts,
 	}
 
-	return badger4.NewDatastore("badger4", &opts)
+	return badger4.NewDatastore(filepath.Join(cfg.DataDir, "badger4"), &opts)
 }
 
 type bundledDHT struct {
