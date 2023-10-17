@@ -33,9 +33,10 @@ func main() {
 	app.Flags = []cli.Flag{
 
 		&cli.StringFlag{
-			Name:  "datadir",
-			Value: "",
-			Usage: "specify the directory that cache data will be stored",
+			Name:    "datadir",
+			Value:   "",
+			EnvVars: []string{"RAINBOW_DATADIR"},
+			Usage:   "specify the directory that cache data will be stored",
 		},
 		&cli.StringFlag{
 			Name:    "seed",
@@ -50,45 +51,53 @@ func main() {
 			Usage:   "Specify an index to derivate the peerID from the key (needs --seed)",
 		},
 		&cli.IntFlag{
-			Name:  "gateway-port",
-			Value: 8090,
-			Usage: "specify the listen address for the gateway endpoint",
+			Name:    "gateway-port",
+			Value:   8090,
+			EnvVars: []string{"RAINBOW_GATEWAY_PORT"},
+			Usage:   "specify the listen address for the gateway endpoint",
 		},
 		&cli.IntFlag{
-			Name:  "ctl-port",
-			Value: 8091,
-			Usage: "specify the api listening address for the internal control api",
+			Name:    "ctl-port",
+			Value:   8091,
+			EnvVars: []string{"RAINBOW_CTL_PORT"},
+			Usage:   "specify the api listening address for the internal control api",
 		},
 
 		&cli.IntFlag{
-			Name:  "connmgr-low",
-			Value: 100,
-			Usage: "libp2p connection manager 'low' water mark",
+			Name:    "connmgr-low",
+			Value:   100,
+			EnvVars: []string{"RAINBOW_CONNMGR_LOW"},
+			Usage:   "libp2p connection manager 'low' water mark",
 		},
 		&cli.IntFlag{
-			Name:  "connmgr-hi",
-			Value: 3000,
-			Usage: "libp2p connection manager 'high' water mark",
-		},
-		&cli.IntFlag{
-			Name:  "inmem-block-cache",
-			Value: 1 << 30,
-			Usage: "Size of the in-memory block cache. 0 to disable (disables compression too)",
-		},
-		&cli.Uint64Flag{
-			Name:  "max-memory",
-			Value: 0,
-			Usage: "Libp2p resource manager max memory. Defaults to system's memory * 0.85",
-		},
-		&cli.Uint64Flag{
-			Name:  "max-fd",
-			Value: 0,
-			Usage: "Libp2p resource manager file description limit. Defaults to the process' fd-limit/2",
+			Name:    "connmgr-high",
+			Value:   3000,
+			EnvVars: []string{"RAINBOW_CONNMGR_HIGH"},
+			Usage:   "libp2p connection manager 'high' water mark",
 		},
 		&cli.DurationFlag{
-			Name:  "connmgr-grace",
-			Value: time.Minute,
-			Usage: "libp2p connection manager grace period",
+			Name:    "connmgr-grace",
+			Value:   time.Minute,
+			EnvVars: []string{"RAINBOW_CONNMGR_GRACE_PERIOD"},
+			Usage:   "libp2p connection manager grace period",
+		},
+		&cli.IntFlag{
+			Name:    "inmem-block-cache",
+			Value:   1 << 30,
+			EnvVars: []string{"RAINBOW_INMEM_BLOCK_CACHE"},
+			Usage:   "Size of the in-memory block cache. 0 to disable (disables compression too)",
+		},
+		&cli.Uint64Flag{
+			Name:    "max-memory",
+			Value:   0,
+			EnvVars: []string{"RAINBOW_MAX_MEMORY"},
+			Usage:   "Libp2p resource manager max memory. Defaults to system's memory * 0.85",
+		},
+		&cli.Uint64Flag{
+			Name:    "max-fd",
+			Value:   0,
+			EnvVars: []string{"RAINBOW_MAX_FD"},
+			Usage:   "Libp2p resource manager file description limit. Defaults to the process' fd-limit/2",
 		},
 		&cli.StringFlag{
 			Name:  "routing",
@@ -101,9 +110,10 @@ func main() {
 			Usage: "If using an Amino DHT client should the libp2p host be shared with the data downloading host",
 		},
 		&cli.StringFlag{
-			Name:  "denylists",
-			Value: "https://denyli.st/badbits.deny",
-			Usage: "Denylist subscriptions (comma-separated)",
+			Name:    "denylists",
+			Value:   "https://denyli.st/badbits.deny",
+			EnvVars: []string{"RAINBOW_DENYLISTS"},
+			Usage:   "Denylist subscriptions (comma-separated)",
 		},
 	}
 
