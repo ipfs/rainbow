@@ -31,7 +31,6 @@ var goLog = logging.Logger("rainbow")
 
 func init() {
 	logging.SetLogLevel("rainbow", "INFO")
-	logging.SetLogLevel("nopfs", "INFO")
 }
 
 func main() {
