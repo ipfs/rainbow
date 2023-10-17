@@ -90,7 +90,12 @@ func withRequestLogger(next http.Handler) http.Handler {
 }
 
 func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
-	backend, err := gateway.NewBlocksBackend(nd.bsrv, gateway.WithValueStore(nd.vs), gateway.WithNameSystem(nd.ns))
+	backend, err := gateway.NewBlocksBackend(
+		nd.bsrv,
+		gateway.WithValueStore(nd.vs),
+		gateway.WithNameSystem(nd.ns),
+		gateway.WithResolver(nd.resolver),
+	)
 	if err != nil {
 		return nil, err
 	}
