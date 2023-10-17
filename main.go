@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	sddaemon "github.com/coreos/go-systemd/v22/daemon"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	peer "github.com/libp2p/go-libp2p/core/peer"
@@ -275,8 +276,10 @@ to create libp2p identities for the gateway.
 			}
 		}()
 
+		sddaemon.SdNotify(false, sddaemon.SdNotifyReady)
 		signal.Notify(quit, os.Interrupt)
 		<-quit
+		sddaemon.SdNotify(false, sddaemon.SdNotifyStopping)
 		log.Printf("Closing servers...\n")
 		go gatewaySrv.Close()
 		go apiSrv.Close()
