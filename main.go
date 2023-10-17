@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	sddaemon "github.com/coreos/go-systemd/v22/daemon"
@@ -277,10 +277,15 @@ to create libp2p identities for the gateway.
 		}()
 
 		sddaemon.SdNotify(false, sddaemon.SdNotifyReady)
-		signal.Notify(quit, os.Interrupt)
+		signal.Notify(
+			quit,
+			syscall.SIGINT,
+			syscall.SIGTERM,
+			syscall.SIGHUP,
+		)
 		<-quit
 		sddaemon.SdNotify(false, sddaemon.SdNotifyStopping)
-		log.Printf("Closing servers...\n")
+		goLog.Info("Closing servers...")
 		go gatewaySrv.Close()
 		go apiSrv.Close()
 		for _, sub := range gnd.denylistSubs {
@@ -291,7 +296,7 @@ to create libp2p identities for the gateway.
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Print(err)
+		goLog.Error(err)
 		os.Exit(1)
 	}
 }
