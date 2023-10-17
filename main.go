@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -153,7 +154,7 @@ to create libp2p identities for the gateway.
 		// attempt to read seed from disk
 		if credDir := os.Getenv("CREDENTIALS_DIRECTORY"); credDir != "" {
 			seedBytes, err := os.ReadFile(filepath.Join(credDir, "seed"))
-			if err != nil {
+			if err != nil && !errors.Is(err, fs.ErrNotExist) {
 				return fmt.Errorf("error reading seed credentials: %w", err)
 			}
 			seed = strings.TrimSpace(string(seedBytes))
@@ -163,8 +164,10 @@ to create libp2p identities for the gateway.
 
 		index := cctx.Int("seed-index")
 		if len(seed) > 0 && index >= 0 {
+			fmt.Println("Deriving identity from seed")
 			priv, err = deriveKey(seed, []byte(fmt.Sprintf("rainbow-%d", index)))
 		} else {
+			fmt.Println("Setting identity from libp2p.key")
 			keyFile := filepath.Join(ddir, "libp2p.key")
 			priv, err = loadOrInitPeerKey(keyFile)
 		}
