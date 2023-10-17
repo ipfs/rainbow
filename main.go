@@ -29,6 +29,11 @@ const EnvKuboRPC = "KUBO_RPC_URL"
 
 var goLog = logging.Logger("rainbow")
 
+func init() {
+	logging.SetLogLevel("rainbow", "INFO")
+	logging.SetLogLevel("nopfs", "INFO")
+}
+
 func main() {
 	app := cli.NewApp()
 

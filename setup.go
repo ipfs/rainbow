@@ -293,7 +293,10 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 
 	var denylists []*nopfs.HTTPSubscriber
 	for _, dl := range cfg.DenylistSubs {
-		s := nopfs.NewHTTPSubscriber(dl, filepath.Join(cfg.DataDir, "denylists", filepath.Base(dl)), time.Minute)
+		s, err := nopfs.NewHTTPSubscriber(dl, filepath.Join(cfg.DataDir, "denylists", filepath.Base(dl)), time.Minute)
+		if err != nil {
+			return nil, err
+		}
 		denylists = append(denylists, s)
 	}
 
