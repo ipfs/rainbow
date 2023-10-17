@@ -52,6 +52,12 @@ func main() {
 			EnvVars: []string{"RAINBOW_SEED_INDEX"},
 			Usage:   "Specify an index to derivate the peerID from the key (needs --seed)",
 		},
+		&cli.StringFlag{
+			Name:    "gateway-domain",
+			Value:   "",
+			EnvVars: []string{"RAINBOW_GATEWAY_DOMAIN"},
+			Usage:   "Set to enable subdomain gateway on this domain",
+		},
 		&cli.IntFlag{
 			Name:    "gateway-port",
 			Value:   8090,
@@ -185,8 +191,9 @@ to create libp2p identities for the gateway.
 			return err
 		}
 
-		gnd, err := Setup(cctx.Context, Config{
+		cfg := Config{
 			DataDir:         ddir,
+			GatewayDomain:   cctx.String("gateway-domain"),
 			ConnMgrLow:      cctx.Int("connmgr-low"),
 			ConnMgrHi:       cctx.Int("connmgr-hi"),
 			ConnMgrGrace:    cctx.Duration("connmgr-grace"),
@@ -199,7 +206,8 @@ to create libp2p identities for the gateway.
 			DHTSharedHost:   cctx.Bool("dht-fallback-shared-host"),
 			DNSCache:        cdns,
 			DenylistSubs:    strings.Split(cctx.String("denylists"), ","),
-		})
+		}
+		gnd, err := Setup(cctx.Context, cfg)
 		if err != nil {
 			return err
 		}
@@ -207,7 +215,7 @@ to create libp2p identities for the gateway.
 		gatewayPort := cctx.Int("gateway-port")
 		apiPort := cctx.Int("ctl-port")
 
-		handler, err := setupGatewayHandler(gnd)
+		handler, err := setupGatewayHandler(cfg, gnd)
 		if err != nil {
 			return err
 		}

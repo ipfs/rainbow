@@ -89,7 +89,7 @@ func withRequestLogger(next http.Handler) http.Handler {
 	})
 }
 
-func setupGatewayHandler(nd *Node) (http.Handler, error) {
+func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	backend, err := gateway.NewBlocksBackend(nd.bsrv, gateway.WithValueStore(nd.vs), gateway.WithNameSystem(nd.ns))
 	if err != nil {
 		return nil, err
@@ -110,13 +110,15 @@ func setupGatewayHandler(nd *Node) (http.Handler, error) {
 			DeserializedResponses: true,
 			UseSubdomains:         true,
 		},
-		"dweb.link": {
+	}
+	if cfg.GatewayDomain != "" {
+		publicGateways[cfg.GatewayDomain] = &gateway.PublicGateway{
 			Paths:                 []string{"/ipfs", "/ipns", "/version", "/api/v0"},
 			NoDNSLink:             noDNSLink,
 			InlineDNSLink:         true,
 			DeserializedResponses: true,
 			UseSubdomains:         true,
-		},
+		}
 	}
 
 	// If we're doing tests, ensure the right public gateways are enabled.
