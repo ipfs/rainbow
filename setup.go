@@ -285,7 +285,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 	)
 	bn.Start(bswap)
 
-	err = os.Mkdir("denylists", 0755)
+	err = os.Mkdir(filepath.Join(cfg.DataDir, "denylists"), 0755)
 	if err != nil && !errors.Is(err, fs.ErrExist) {
 		return nil, err
 	}
