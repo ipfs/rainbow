@@ -151,15 +151,24 @@ to create libp2p identities for the gateway.
 		var priv crypto.PrivKey
 		var err error
 
+		credDir := os.Getenv("CREDENTIALS_DIRECTORY")
+		secretsDir := ddir
+
+		if len(credDir) > 0 {
+			secretsDir = credDir
+		}
+
 		// attempt to read seed from disk
-		if credDir := os.Getenv("CREDENTIALS_DIRECTORY"); credDir != "" {
-			seedBytes, err := os.ReadFile(filepath.Join(credDir, "seed"))
-			if err != nil && !errors.Is(err, fs.ErrNotExist) {
+		seedBytes, err := os.ReadFile(filepath.Join(secretsDir, "seed"))
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) {
+				// set seed from command line or env-var
+				seed = cctx.String("seed")
+			} else {
 				return fmt.Errorf("error reading seed credentials: %w", err)
 			}
-			seed = strings.TrimSpace(string(seedBytes))
 		} else {
-			seed = cctx.String("seed")
+			seed = strings.TrimSpace(string(seedBytes))
 		}
 
 		index := cctx.Int("seed-index")
@@ -168,7 +177,7 @@ to create libp2p identities for the gateway.
 			priv, err = deriveKey(seed, []byte(fmt.Sprintf("rainbow-%d", index)))
 		} else {
 			fmt.Println("Setting identity from libp2p.key")
-			keyFile := filepath.Join(ddir, "libp2p.key")
+			keyFile := filepath.Join(secretsDir, "libp2p.key")
 			priv, err = loadOrInitPeerKey(keyFile)
 		}
 		if err != nil {
