@@ -42,7 +42,7 @@ func main() {
 			Name:    "seed",
 			Value:   "",
 			EnvVars: []string{"RAINBOW_SEED"},
-			Usage:   "Specify a seed to derive peerID from (needs --seed-index)",
+			Usage:   "Specify a seed to derive peerID from (needs --seed-index). Best to use CREDENTIALS_DIRECTORY/seed",
 		},
 		&cli.IntFlag{
 			Name:    "seed-index",
@@ -146,9 +146,20 @@ to create libp2p identities for the gateway.
 		cdns := newCachedDNS(dnsCacheRefreshInterval)
 		defer cdns.Close()
 
+		var seed string
 		var priv crypto.PrivKey
 		var err error
-		seed := cctx.String("seed")
+
+		// attempt to read seed from disk
+		if credDir := os.Getenv("CREDENTIALS_DIRECTORY"); credDir != "" {
+			seedBytes, err := os.ReadFile(filepath.Join(credDir, "seed"))
+			if err != nil {
+				return fmt.Errorf("error reading seed credentials: %w", err)
+			}
+			seed = strings.TrimSpace(string(seedBytes))
+		} else {
+			seed = cctx.String("seed")
+		}
 
 		index := cctx.Int("seed-index")
 		if len(seed) > 0 && index >= 0 {
