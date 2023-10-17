@@ -17,6 +17,7 @@ import (
 
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p/core/crypto"
+	peer "github.com/libp2p/go-libp2p/core/peer"
 	"github.com/urfave/cli/v2"
 	"go.opentelemetry.io/contrib/propagators/autoprop"
 	"go.opentelemetry.io/otel"
@@ -182,7 +183,12 @@ to create libp2p identities for the gateway.
 			Handler: handler,
 		}
 
-		fmt.Printf("Starting %s %s\n\n", name, version)
+		fmt.Printf("Starting %s %s\n", name, version)
+		pid, err := peer.IDFromPublicKey(priv.GetPublic())
+		if err != nil {
+			return err
+		}
+		fmt.Printf("PeerID: %s\n\n", pid)
 		registerVersionMetric(version)
 
 		tp, shutdown, err := newTracerProvider(cctx.Context)

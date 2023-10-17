@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	crand "crypto/rand"
+	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -291,7 +293,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 	bn.Start(bswap)
 
 	err = os.Mkdir("denylists", 0755)
-	if err != nil {
+	if err != nil && !errors.Is(err, fs.ErrExist) {
 		return nil, err
 	}
 
