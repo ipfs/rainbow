@@ -16,6 +16,7 @@ import (
 	"time"
 
 	logging "github.com/ipfs/go-log/v2"
+	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/urfave/cli/v2"
 	"go.opentelemetry.io/contrib/propagators/autoprop"
 	"go.opentelemetry.io/otel"
@@ -34,6 +35,18 @@ func main() {
 			Name:  "datadir",
 			Value: "",
 			Usage: "specify the directory that cache data will be stored",
+		},
+		&cli.StringFlag{
+			Name:    "seed",
+			Value:   "",
+			EnvVars: []string{"RAINBOW_SEED"},
+			Usage:   "Specify a seed to derive peerID from (needs --seed-index)",
+		},
+		&cli.IntFlag{
+			Name:    "seed-index",
+			Value:   -1,
+			EnvVars: []string{"RAINBOW_SEED_INDEX"},
+			Usage:   "Specify an index to derivate the peerID from the key (needs --seed)",
 		},
 		&cli.IntFlag{
 			Name:  "gateway-port",
@@ -93,6 +106,27 @@ func main() {
 		},
 	}
 
+	app.Commands = []*cli.Command{
+		{
+			Name:  "gen-seed",
+			Usage: "Generate a seed for key derivation",
+			Description: `
+Running this command will generate a random seed and print it. The value can
+be used with the RAINBOW_SEED env-var to use key-derivation from a single seed
+to create libp2p identities for the gateway.
+`,
+			Flags: []cli.Flag{},
+			Action: func(c *cli.Context) error {
+				seed, err := newSeed()
+				if err != nil {
+					return err
+				}
+				fmt.Println(seed)
+				return nil
+			},
+		},
+	}
+
 	app.Name = "rainbow"
 	app.Usage = "a standalone ipfs gateway"
 	app.Version = version
@@ -100,6 +134,21 @@ func main() {
 		ddir := cctx.String("datadir")
 		cdns := newCachedDNS(dnsCacheRefreshInterval)
 		defer cdns.Close()
+
+		var priv crypto.PrivKey
+		var err error
+		seed := cctx.String("seed")
+
+		index := cctx.Int("seed-index")
+		if len(seed) > 0 && index >= 0 {
+			priv, err = deriveKey(seed, []byte(fmt.Sprintf("rainbow-%d", index)))
+		} else {
+			keyFile := filepath.Join(ddir, "libp2p.key")
+			priv, err = loadOrInitPeerKey(keyFile)
+		}
+		if err != nil {
+			return err
+		}
 
 		gnd, err := Setup(cctx.Context, Config{
 			DataDir:         ddir,
@@ -109,7 +158,7 @@ func main() {
 			MaxMemory:       cctx.Uint64("max-memory"),
 			MaxFD:           cctx.Int("max-fd"),
 			InMemBlockCache: cctx.Int64("inmem-block-cache"),
-			Libp2pKeyFile:   filepath.Join(ddir, "libp2p.key"),
+			Libp2pKey:       priv,
 			RoutingV1:       cctx.String("routing"),
 			KuboRPCURLs:     getEnvs(EnvKuboRPC, DefaultKuboRPC),
 			DHTSharedHost:   cctx.Bool("dht-fallback-shared-host"),

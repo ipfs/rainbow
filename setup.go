@@ -83,7 +83,7 @@ type Config struct {
 	ListenAddrs   []string
 	AnnounceAddrs []string
 
-	Libp2pKeyFile string
+	Libp2pKey crypto.PrivKey
 
 	ConnMgrLow   int
 	ConnMgrHi    int
@@ -102,11 +102,6 @@ type Config struct {
 }
 
 func Setup(ctx context.Context, cfg Config) (*Node, error) {
-	peerkey, err := loadOrInitPeerKey(cfg.Libp2pKeyFile)
-	if err != nil {
-		return nil, err
-	}
-
 	ds, err := setupDatastore(cfg)
 	if err != nil {
 		return nil, err
@@ -129,7 +124,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 		libp2p.ListenAddrStrings(cfg.ListenAddrs...),
 		libp2p.NATPortMap(),
 		libp2p.ConnectionManager(cmgr),
-		libp2p.Identity(peerkey),
+		libp2p.Identity(cfg.Libp2pKey),
 		libp2p.BandwidthReporter(bwc),
 		libp2p.DefaultTransports,
 		libp2p.DefaultMuxers,
