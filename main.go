@@ -123,7 +123,7 @@ func main() {
 		},
 		&cli.StringFlag{
 			Name:    "denylists",
-			Value:   "https://denyli.st/badbits.deny",
+			Value:   "",
 			EnvVars: []string{"RAINBOW_DENYLISTS"},
 			Usage:   "Denylist subscriptions (comma-separated)",
 		},
