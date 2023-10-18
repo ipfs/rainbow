@@ -195,6 +195,11 @@ to create libp2p identities for the gateway.
 			return err
 		}
 
+		var denylists []string
+		if list := cctx.String("denylists"); len(list) > 0 {
+			denylists = strings.Split(list, ",")
+		}
+
 		cfg := Config{
 			DataDir:         ddir,
 			GatewayDomain:   cctx.String("gateway-domain"),
@@ -209,7 +214,7 @@ to create libp2p identities for the gateway.
 			KuboRPCURLs:     getEnvs(EnvKuboRPC, DefaultKuboRPC),
 			DHTSharedHost:   cctx.Bool("dht-fallback-shared-host"),
 			DNSCache:        cdns,
-			DenylistSubs:    strings.Split(cctx.String("denylists"), ","),
+			DenylistSubs:    denylists,
 		}
 		gnd, err := Setup(cctx.Context, cfg)
 		if err != nil {
