@@ -154,8 +154,6 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 	)
 	blkst = blockstore.NewIdStore(blkst)
 
-	bsctx := metri.CtxScope(ctx, "rainbow")
-
 	var pr routing.PeerRouting
 	var vs routing.ValueStore
 	var cr routing.ContentRouting
@@ -270,6 +268,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		return nil, err
 	}
 
+	bsctx := metri.CtxScope(ctx, "ipfs")
 	bn := bsnet.NewFromIpfsHost(h, cr)
 	bswap := bsclient.New(bsctx, bn, blkst,
 		// default is 1 minute to search for a random live-want (1
