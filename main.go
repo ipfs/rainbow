@@ -212,6 +212,15 @@ to create libp2p identities for the gateway.
 			DNSCache:        cdns,
 			DenylistSubs:    denylists,
 		}
+
+		fmt.Printf(`
+
+Rainbow config:
+
+%+v
+
+`, cfg)
+
 		gnd, err := Setup(cctx.Context, cfg)
 		if err != nil {
 			return err
