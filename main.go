@@ -200,7 +200,7 @@ to create libp2p identities for the gateway.
 			DataDir:         ddir,
 			GatewayDomain:   cctx.String("gateway-domain"),
 			ConnMgrLow:      cctx.Int("connmgr-low"),
-			ConnMgrHi:       cctx.Int("connmgr-hi"),
+			ConnMgrHi:       cctx.Int("connmgr-high"),
 			ConnMgrGrace:    cctx.Duration("connmgr-grace"),
 			MaxMemory:       cctx.Uint64("max-memory"),
 			MaxFD:           cctx.Int("max-fd"),
