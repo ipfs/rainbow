@@ -268,7 +268,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		return nil, err
 	}
 
-	bsctx := metri.CtxScope(ctx, "ipfs")
+	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
 	bn := bsnet.NewFromIpfsHost(h, cr)
 	bswap := bsclient.New(bsctx, bn, blkst,
 		// default is 1 minute to search for a random live-want (1
