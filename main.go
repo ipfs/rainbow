@@ -205,11 +205,9 @@ to create libp2p identities for the gateway.
 			MaxMemory:       cctx.Uint64("max-memory"),
 			MaxFD:           cctx.Int("max-fd"),
 			InMemBlockCache: cctx.Int64("inmem-block-cache"),
-			Libp2pKey:       priv,
 			RoutingV1:       cctx.String("routing"),
 			KuboRPCURLs:     getEnvs(EnvKuboRPC, DefaultKuboRPC),
 			DHTSharedHost:   cctx.Bool("dht-fallback-shared-host"),
-			DNSCache:        cdns,
 			DenylistSubs:    denylists,
 		}
 
@@ -221,7 +219,7 @@ Rainbow config:
 
 `, cfg)
 
-		gnd, err := Setup(cctx.Context, cfg)
+		gnd, err := Setup(cctx.Context, cfg, priv, cdns)
 		if err != nil {
 			return err
 		}

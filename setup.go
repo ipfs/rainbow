@@ -84,8 +84,6 @@ type Config struct {
 	ListenAddrs   []string
 	AnnounceAddrs []string
 
-	Libp2pKey crypto.PrivKey
-
 	ConnMgrLow   int
 	ConnMgrHi    int
 	ConnMgrGrace time.Duration
@@ -98,12 +96,11 @@ type Config struct {
 	RoutingV1     string
 	KuboRPCURLs   []string
 	DHTSharedHost bool
-	DNSCache      *cachedDNS
 
 	DenylistSubs []string
 }
 
-func Setup(ctx context.Context, cfg Config) (*Node, error) {
+func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cachedDNS) (*Node, error) {
 	ds, err := setupDatastore(cfg)
 	if err != nil {
 		return nil, err
@@ -126,7 +123,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 		libp2p.ListenAddrStrings(cfg.ListenAddrs...),
 		libp2p.NATPortMap(),
 		libp2p.ConnectionManager(cmgr),
-		libp2p.Identity(cfg.Libp2pKey),
+		libp2p.Identity(key),
 		libp2p.BandwidthReporter(bwc),
 		libp2p.DefaultTransports,
 		libp2p.DefaultMuxers,
@@ -175,7 +172,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 						MaxConnsPerHost:     100,
 						MaxIdleConnsPerHost: 100,
 						IdleConnTimeout:     90 * time.Second,
-						DialContext:         cfg.DNSCache.dialWithCachedDNS,
+						DialContext:         dnsCache.dialWithCachedDNS,
 						ForceAttemptHTTP2:   true,
 					},
 				},
