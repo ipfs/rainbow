@@ -211,13 +211,7 @@ to create libp2p identities for the gateway.
 			DenylistSubs:    denylists,
 		}
 
-		fmt.Printf(`
-
-Rainbow config:
-
-%+v
-
-`, cfg)
+		goLog.Debugf("Rainbow config: %+v", cfg)
 
 		gnd, err := Setup(cctx.Context, cfg, priv, cdns)
 		if err != nil {
