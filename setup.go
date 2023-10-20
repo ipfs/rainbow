@@ -92,10 +92,11 @@ type Config struct {
 	MaxMemory       uint64
 	MaxFD           int
 
-	GatewayDomain string
-	RoutingV1     string
-	KuboRPCURLs   []string
-	DHTSharedHost bool
+	GatewayDomains          []string
+	SubdomainGatewayDomains []string
+	RoutingV1               string
+	KuboRPCURLs             []string
+	DHTSharedHost           bool
 
 	DenylistSubs []string
 }

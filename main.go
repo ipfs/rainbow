@@ -53,10 +53,16 @@ func main() {
 			Usage:   "Specify an index to derivate the peerID from the key (needs --seed)",
 		},
 		&cli.StringFlag{
-			Name:    "gateway-domain",
+			Name:    "gateway-domains",
 			Value:   "",
-			EnvVars: []string{"RAINBOW_GATEWAY_DOMAIN"},
-			Usage:   "Set to enable subdomain gateway on this domain",
+			EnvVars: []string{"RAINBOW_GATEWAY_DOMAINS"},
+			Usage:   "Set to enable legacy gateway on these domains. Comma-separated list.",
+		},
+		&cli.StringFlag{
+			Name:    "subdomain-gateway-domains",
+			Value:   "",
+			EnvVars: []string{"RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS"},
+			Usage:   "Set to enable legacy gateway on these domains. Comma-separated list.",
 		},
 		&cli.IntFlag{
 			Name:    "gateway-port",
@@ -191,24 +197,20 @@ to create libp2p identities for the gateway.
 			return err
 		}
 
-		var denylists []string
-		if list := cctx.String("denylists"); len(list) > 0 {
-			denylists = strings.Split(list, ",")
-		}
-
 		cfg := Config{
-			DataDir:         ddir,
-			GatewayDomain:   cctx.String("gateway-domain"),
-			ConnMgrLow:      cctx.Int("connmgr-low"),
-			ConnMgrHi:       cctx.Int("connmgr-high"),
-			ConnMgrGrace:    cctx.Duration("connmgr-grace"),
-			MaxMemory:       cctx.Uint64("max-memory"),
-			MaxFD:           cctx.Int("max-fd"),
-			InMemBlockCache: cctx.Int64("inmem-block-cache"),
-			RoutingV1:       cctx.String("routing"),
-			KuboRPCURLs:     getEnvs(EnvKuboRPC, DefaultKuboRPC),
-			DHTSharedHost:   cctx.Bool("dht-fallback-shared-host"),
-			DenylistSubs:    denylists,
+			DataDir:                 ddir,
+			GatewayDomains:          getCommaSeparatedList(cctx.String("gateway-domains")),
+			SubdomainGatewayDomains: getCommaSeparatedList(cctx.String("subdomain-gateway-domains")),
+			ConnMgrLow:              cctx.Int("connmgr-low"),
+			ConnMgrHi:               cctx.Int("connmgr-high"),
+			ConnMgrGrace:            cctx.Duration("connmgr-grace"),
+			MaxMemory:               cctx.Uint64("max-memory"),
+			MaxFD:                   cctx.Int("max-fd"),
+			InMemBlockCache:         cctx.Int64("inmem-block-cache"),
+			RoutingV1:               cctx.String("routing"),
+			KuboRPCURLs:             getEnvs(EnvKuboRPC, DefaultKuboRPC),
+			DHTSharedHost:           cctx.Bool("dht-fallback-shared-host"),
+			DenylistSubs:            getCommaSeparatedList(cctx.String("denylists")),
 		}
 
 		goLog.Debugf("Rainbow config: %+v", cfg)
@@ -343,4 +345,15 @@ func getEnvs(key, defaultValue string) []string {
 	}
 	value = strings.TrimSpace(value)
 	return strings.Split(value, ",")
+}
+
+func getCommaSeparatedList(val string) []string {
+	if val == "" {
+		return nil
+	}
+	items := strings.Split(val, ",")
+	for i, item := range items {
+		items[i] = strings.TrimSpace(item)
+	}
+	return items
 }

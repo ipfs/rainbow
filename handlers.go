@@ -116,8 +116,18 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 			UseSubdomains:         true,
 		},
 	}
-	if cfg.GatewayDomain != "" {
-		publicGateways[cfg.GatewayDomain] = &gateway.PublicGateway{
+	for _, domain := range cfg.GatewayDomains {
+		publicGateways[domain] = &gateway.PublicGateway{
+			Paths:                 []string{"/ipfs", "/ipns", "/version", "/api/v0"},
+			NoDNSLink:             noDNSLink,
+			InlineDNSLink:         true,
+			DeserializedResponses: true,
+			UseSubdomains:         false,
+		}
+	}
+
+	for _, domain := range cfg.SubdomainGatewayDomains {
+		publicGateways[domain] = &gateway.PublicGateway{
 			Paths:                 []string{"/ipfs", "/ipns", "/version", "/api/v0"},
 			NoDNSLink:             noDNSLink,
 			InlineDNSLink:         true,
