@@ -50,4 +50,3 @@ WORKDIR $RAINBOW_GATEWAY_PATH
 
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
 
-CMD ["--gateway-port", "8080", "--ctl-port", "8081"]
