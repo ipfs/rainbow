@@ -3,15 +3,15 @@ module github.com/ipfs/rainbow
 go 1.20
 
 require (
+	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dgraph-io/badger/v4 v4.2.0
 	github.com/dustin/go-humanize v1.0.0
-	github.com/ipfs-shipyard/nopfs v0.0.12-0.20231016145930-853ce79d9b97
-	github.com/ipfs-shipyard/nopfs/ipfs v0.13.2-0.20231016145930-853ce79d9b97
-	github.com/ipfs/boxo v0.13.2-0.20231013160006-ef6adea52299
+	github.com/ipfs-shipyard/nopfs v0.0.12-0.20231023110018-765003708b27
+	github.com/ipfs-shipyard/nopfs/ipfs v0.13.2-0.20231023110018-765003708b27
+	github.com/ipfs/boxo v0.13.2-0.20231019090647-a7e134e54ff9
 	github.com/ipfs/go-cid v0.4.1
 	github.com/ipfs/go-datastore v0.6.0
 	github.com/ipfs/go-ds-badger4 v0.0.0-20231006150127-9137bcc6b981
-	github.com/ipfs/go-ds-leveldb v0.5.0
 	github.com/ipfs/go-ipfs-delay v0.0.1
 	github.com/ipfs/go-log/v2 v2.5.1
 	github.com/ipfs/go-metrics-interface v0.0.1
@@ -48,7 +48,6 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/containerd/cgroups v1.1.0 // indirect
-	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/crackcomm/go-gitignore v0.0.0-20170627025303-887ab5e44cc3 // indirect
 	github.com/cskr/pubsub v1.0.2 // indirect
@@ -150,7 +149,6 @@ require (
 	github.com/samber/lo v1.36.0 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/ucarion/urlpath v0.0.0-20200424170820-7ccc79b76bbb // indirect
 	github.com/whyrusleeping/base32 v0.0.0-20170828182744-c30ac30633cc // indirect
 	github.com/whyrusleeping/cbor v0.0.0-20171005072247-63513f603b11 // indirect

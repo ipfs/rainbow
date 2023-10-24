@@ -29,7 +29,6 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	badger4 "github.com/ipfs/go-ds-badger4"
-	levelds "github.com/ipfs/go-ds-leveldb"
 	delay "github.com/ipfs/go-ipfs-delay"
 	metri "github.com/ipfs/go-metrics-interface"
 	mprome "github.com/ipfs/go-metrics-prometheus"
@@ -85,8 +84,6 @@ type Config struct {
 	ListenAddrs   []string
 	AnnounceAddrs []string
 
-	Libp2pKey crypto.PrivKey
-
 	ConnMgrLow   int
 	ConnMgrHi    int
 	ConnMgrGrace time.Duration
@@ -95,15 +92,16 @@ type Config struct {
 	MaxMemory       uint64
 	MaxFD           int
 
-	RoutingV1     string
-	KuboRPCURLs   []string
-	DHTSharedHost bool
-	DNSCache      *cachedDNS
+	GatewayDomains          []string
+	SubdomainGatewayDomains []string
+	RoutingV1               string
+	KuboRPCURLs             []string
+	DHTSharedHost           bool
 
 	DenylistSubs []string
 }
 
-func Setup(ctx context.Context, cfg Config) (*Node, error) {
+func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cachedDNS) (*Node, error) {
 	ds, err := setupDatastore(cfg)
 	if err != nil {
 		return nil, err
@@ -126,7 +124,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 		libp2p.ListenAddrStrings(cfg.ListenAddrs...),
 		libp2p.NATPortMap(),
 		libp2p.ConnectionManager(cmgr),
-		libp2p.Identity(cfg.Libp2pKey),
+		libp2p.Identity(key),
 		libp2p.BandwidthReporter(bwc),
 		libp2p.DefaultTransports,
 		libp2p.DefaultMuxers,
@@ -157,8 +155,6 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 	)
 	blkst = blockstore.NewIdStore(blkst)
 
-	bsctx := metri.CtxScope(ctx, "rainbow")
-
 	var pr routing.PeerRouting
 	var vs routing.ValueStore
 	var cr routing.ContentRouting
@@ -175,7 +171,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 						MaxConnsPerHost:     100,
 						MaxIdleConnsPerHost: 100,
 						IdleConnTimeout:     90 * time.Second,
-						DialContext:         cfg.DNSCache.dialWithCachedDNS,
+						DialContext:         dnsCache.dialWithCachedDNS,
 						ForceAttemptHTTP2:   true,
 					},
 				},
@@ -195,12 +191,6 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 		} else {
 			// If there are no delegated routing endpoints run an accelerated Amino DHT client and send IPNI requests to cid.contact
 
-			// TODO: This datastore shouldn't end up containing anything anyway so this could potentially just be a null datastore
-			memDS, err := levelds.NewDatastore("", nil)
-			if err != nil {
-				return nil, err
-			}
-
 			var dhtHost host.Host
 			if cfg.DHTSharedHost {
 				dhtHost = h
@@ -217,7 +207,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 			}
 
 			standardClient, err := dht.New(ctx, dhtHost,
-				dht.Datastore(memDS),
+				dht.Datastore(ds),
 				dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
 				dht.Mode(dht.ModeClient),
 			)
@@ -231,7 +221,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 						"pk":   record.PublicKeyValidator{},
 						"ipns": ipns.Validator{KeyBook: h.Peerstore()},
 					}),
-					dht.Datastore(memDS),
+					dht.Datastore(ds),
 					dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
 					dht.BucketSize(20),
 				))
@@ -279,6 +269,7 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 		return nil, err
 	}
 
+	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
 	bn := bsnet.NewFromIpfsHost(h, cr)
 	bswap := bsclient.New(bsctx, bn, blkst,
 		// default is 1 minute to search for a random live-want (1
@@ -292,14 +283,17 @@ func Setup(ctx context.Context, cfg Config) (*Node, error) {
 	)
 	bn.Start(bswap)
 
-	err = os.Mkdir("denylists", 0755)
+	err = os.Mkdir(filepath.Join(cfg.DataDir, "denylists"), 0755)
 	if err != nil && !errors.Is(err, fs.ErrExist) {
 		return nil, err
 	}
 
 	var denylists []*nopfs.HTTPSubscriber
 	for _, dl := range cfg.DenylistSubs {
-		s := nopfs.NewHTTPSubscriber(dl, filepath.Join(cfg.DataDir, "denylists", filepath.Base(dl)), time.Minute)
+		s, err := nopfs.NewHTTPSubscriber(dl, filepath.Join(cfg.DataDir, "denylists", filepath.Base(dl)), time.Minute)
+		if err != nil {
+			return nil, err
+		}
 		denylists = append(denylists, s)
 	}
 
@@ -401,7 +395,7 @@ func setupDatastore(cfg Config) (datastore.Batching, error) {
 		Options:        badgerOpts,
 	}
 
-	return badger4.NewDatastore("badger4", &opts)
+	return badger4.NewDatastore(filepath.Join(cfg.DataDir, "badger4"), &opts)
 }
 
 type bundledDHT struct {
