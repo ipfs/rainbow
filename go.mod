@@ -6,8 +6,8 @@ require (
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dgraph-io/badger/v4 v4.2.0
 	github.com/dustin/go-humanize v1.0.0
-	github.com/ipfs-shipyard/nopfs v0.0.12-0.20231020230641-82a98a2ab538
-	github.com/ipfs-shipyard/nopfs/ipfs v0.13.2-0.20231020230641-82a98a2ab538
+	github.com/ipfs-shipyard/nopfs v0.0.12-0.20231023110018-765003708b27
+	github.com/ipfs-shipyard/nopfs/ipfs v0.13.2-0.20231023110018-765003708b27
 	github.com/ipfs/boxo v0.13.2-0.20231019090647-a7e134e54ff9
 	github.com/ipfs/go-cid v0.4.1
 	github.com/ipfs/go-datastore v0.6.0
