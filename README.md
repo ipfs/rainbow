@@ -5,7 +5,7 @@
 ## About
 
 Rainbow is an implementation of the [IPFS HTTP Gateway API](https://specs.ipfs.tech/http-gateways),
-based on [boxo](https://github.com/ipfs/boxo) which is the tooling the powers [kubo](https://github.com/ipfs/kubo).
+based on [boxo](https://github.com/ipfs/boxo) which is the tooling the powers [Kubo](https://github.com/ipfs/kubo).
 
 Rainbow uses the same Go code as the HTTP gateway in Kubo, but is fully specialized to just be a gateway:
 
