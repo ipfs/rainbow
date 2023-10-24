@@ -64,17 +64,17 @@ func main() {
 			EnvVars: []string{"RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS"},
 			Usage:   "Set to enable legacy gateway on these domains. Comma-separated list.",
 		},
-		&cli.IntFlag{
-			Name:    "gateway-port",
-			Value:   8090,
-			EnvVars: []string{"RAINBOW_GATEWAY_PORT"},
-			Usage:   "specify the listen address for the gateway endpoint",
+		&cli.StringFlag{
+			Name:    "gateway-listen-address",
+			Value:   "127.0.0.1:8090",
+			EnvVars: []string{"RAINBOW_GATEWAY_LISTEN_ADDRESS"},
+			Usage:   "listen address for the gateway endpoint",
 		},
-		&cli.IntFlag{
-			Name:    "ctl-port",
-			Value:   8091,
-			EnvVars: []string{"RAINBOW_CTL_PORT"},
-			Usage:   "specify the api listening address for the internal control api",
+		&cli.StringFlag{
+			Name:    "ctl-listen-address",
+			Value:   "127.0.0.1:8091",
+			EnvVars: []string{"RAINBOW_CTL_LISTEN_ADDRESS"},
+			Usage:   "listen address for the internal control api and metrics",
 		},
 
 		&cli.IntFlag{
@@ -220,8 +220,8 @@ to create libp2p identities for the gateway.
 			return err
 		}
 
-		gatewayPort := cctx.Int("gateway-port")
-		apiPort := cctx.Int("ctl-port")
+		gatewayListen := cctx.String("gateway-listen-address")
+		ctlListen := cctx.String("ctl-listen-address")
 
 		handler, err := setupGatewayHandler(cfg, gnd)
 		if err != nil {
@@ -229,7 +229,7 @@ to create libp2p identities for the gateway.
 		}
 
 		gatewaySrv := &http.Server{
-			Addr:    fmt.Sprintf("127.0.0.1:%d", gatewayPort),
+			Addr:    gatewayListen,
 			Handler: handler,
 		}
 
@@ -255,7 +255,7 @@ to create libp2p identities for the gateway.
 		apiMux.HandleFunc("/mgr/gc", GCHandler(gnd))
 
 		apiSrv := &http.Server{
-			Addr:    fmt.Sprintf("127.0.0.1:%d", apiPort),
+			Addr:    ctlListen,
 			Handler: apiMux,
 		}
 
@@ -263,14 +263,10 @@ to create libp2p identities for the gateway.
 		var wg sync.WaitGroup
 		wg.Add(2)
 
+		fmt.Printf("Gateway listening at %s\n", gatewayListen)
 		fmt.Printf("Legacy RPC at /api/v0 (%s): %s\n", EnvKuboRPC, strings.Join(gnd.kuboRPCs, " "))
-		fmt.Printf("Path gateway: http://127.0.0.1:%d\n", gatewayPort)
-		fmt.Printf("  Smoke test (JPG): http://127.0.0.1:%d/ipfs/bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi\n", gatewayPort)
-		fmt.Printf("Subdomain gateway: http://localhost:%d\n", gatewayPort)
-		fmt.Printf("  Smoke test (Subdomain+DNSLink+UnixFS+HAMT): http://localhost:%d/ipns/en.wikipedia-on-ipfs.org/wiki/\n\n\n", gatewayPort)
-
-		fmt.Printf("CTL port: http://127.0.0.1:%d\n", apiPort)
-		fmt.Printf("Metrics: http://127.0.0.1:%d/debug/metrics/prometheus\n\n", apiPort)
+		fmt.Printf("CTL endpoint listening at http://%s\n", ctlListen)
+		fmt.Printf("Metrics: http://%s/debug/metrics/prometheus\n\n", ctlListen)
 
 		go func() {
 			defer wg.Done()
