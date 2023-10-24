@@ -1,6 +1,6 @@
 # rainbow 
 
-> An specialized IPFS HTTP gateway.
+> A specialized IPFS HTTP gateway.
 
 ## About
 
