@@ -310,6 +310,7 @@ share the same seed as long as the indexes are different.
 		}
 		fmt.Printf("PeerID: %s\n\n", pid)
 		registerVersionMetric(version)
+		registerIpfsNodeCollector(gnd)
 
 		tp, shutdown, err := newTracerProvider(cctx.Context)
 		if err != nil {
