@@ -1,0 +1,112 @@
+name: Gateway Conformance
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  gateway-conformance:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Start the Kubo gateway
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.21.x
+
+      - name: Install Kubo gateway from source
+        #uses: ipfs/download-ipfs-distribution-action@v1
+        run: |
+          go install github.com/ipfs/kubo/cmd/ipfs@v0.24.0-rc1
+      - name: Setup kubo config
+        run: |
+          ipfs init --profile=test
+          ipfs config Addresses.Gateway "/ip4/127.0.0.1/tcp/8080"
+          ipfs config Addresses.API "/ip4/127.0.0.1/tcp/5001"
+          ipfs config --json Gateway.ExposeRoutingAPI true
+
+      # 2. Download the gateway-conformance fixtures
+      - name: Download gateway-conformance fixtures
+        uses: ipfs/gateway-conformance/.github/actions/extract-fixtures@v0.4.1
+        with:
+          output: fixtures
+
+      - name: Start Kubo gateway
+        uses: ipfs/start-ipfs-daemon-action@v1
+
+      # 3. Populate the Kubo gateway with the gateway-conformance fixtures
+      - name: Import fixtures
+        run: |
+          # Import car files
+          find ./fixtures -name '*.car' -exec ipfs dag import --pin-roots=false --offline {} \;
+
+          # Import ipns records
+          records=$(find ./fixtures -name '*.ipns-record')
+          for record in $records
+          do
+              key=$(basename -s .ipns-record "$record" | cut -d'_' -f1)
+              ipfs routing put --allow-offline "/ipns/$key" "$record"
+          done
+
+          # Import dnslink records
+          # the IPFS_NS_MAP env will be used by the daemon
+          export IPFS_NS_MAP=$(cat "./fixtures/dnslinks.json" | jq -r '.subdomains | to_entries | map("\(.key).example.com:\(.value)") | join(",")')
+          export IPFS_NS_MAP="$(cat "./fixtures/dnslinks.json" | jq -r '.domains | to_entries | map("\(.key):\(.value)") | join(",")'),${IPFS_NS_MAP}"
+          echo "IPFS_NS_MAP=${IPFS_NS_MAP}" >> $GITHUB_ENV
+
+      # 4. Build rainbow
+      - name: Checkout rainbow
+        uses: actions/checkout@v3
+        with:
+          path: rainbow
+      - name: Build rainbow
+        run: go build
+        working-directory: rainbow
+
+      # 5. Start rainbow
+      - name: Start rainbow
+        env:
+          GATEWAY_CONFORMANCE_TEST: true
+        run: |
+          # get kubo peerID
+          kuboNodeMultiaddr=$(ipfs --api=/ip4/127.0.0.1/tcp/5001 swarm addrs local --id | head -n 1)
+
+          # run gw
+          ./rainbow --routing=http://127.0.0.1:8080 --peering=$kuboNodeMultiaddr &
+        working-directory: rainbow
+
+      # 6. Run the gateway-conformance tests
+      - name: Run gateway-conformance tests
+        uses: ipfs/gateway-conformance/.github/actions/test@v0.4.1
+        with:
+          gateway-url: http://127.0.0.1:8090
+          json: output.json
+          xml: output.xml
+          html: output.html
+          markdown: output.md
+          specs: +trustless-gateway,+path-gateway,+subdomain-gateway,+dnslink-gateway,+redirects-file
+          # use below to skip specific test if needed
+          # args: -skip 'TestFooBr/GET_response_for_something'
+          #
+          # only-if-cached: rainbow does not guarantee local cache, we will adjust upstream test (which was Kubo-specific)
+          # for now disabling these test cases
+          args: -skip 'TestGatewayCache/.*_for_/ipfs/_with_only-if-cached_succeeds_when_in_local_datastore'
+
+      # 7. Upload the results
+      - name: Upload MD summary
+        if: failure() || success()
+        run: cat output.md >> $GITHUB_STEP_SUMMARY
+      - name: Upload HTML report
+        if: failure() || success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: gateway-conformance.html
+          path: output.html
+      - name: Upload JSON report
+        if: failure() || success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: gateway-conformance.json
+          path: output.json
