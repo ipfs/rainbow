@@ -24,6 +24,7 @@ import (
 	"github.com/ipfs/boxo/ipns"
 	"github.com/ipfs/boxo/namesys"
 	"github.com/ipfs/boxo/path/resolver"
+	"github.com/ipfs/boxo/peering"
 	routingv1client "github.com/ipfs/boxo/routing/http/client"
 	httpcontentrouter "github.com/ipfs/boxo/routing/http/contentrouter"
 	"github.com/ipfs/go-cid"
@@ -99,6 +100,7 @@ type Config struct {
 	DHTSharedHost           bool
 
 	DenylistSubs []string
+	Peering      []peer.AddrInfo
 }
 
 func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cachedDNS) (*Node, error) {
@@ -267,6 +269,16 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 	h, err := libp2p.New(opts...)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(cfg.Peering) > 0 {
+		ps := peering.NewPeeringService(h)
+		if err := ps.Start(); err != nil {
+			return nil, err
+		}
+		for _, a := range cfg.Peering {
+			ps.AddPeer(a)
+		}
 	}
 
 	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")

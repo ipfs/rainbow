@@ -170,6 +170,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_DENYLISTS"},
 			Usage:   "Denylist HTTP subscriptions (comma-separated). Must be append-only denylists",
 		},
+		&cli.StringFlag{
+			Name:    "peering",
+			Value:   "",
+			EnvVars: []string{"RAINBOW_PEERING"},
+			Usage:   "Multiaddresses of peers to stay connected to (comma-separated)",
+		},
 	}
 
 	app.Commands = []*cli.Command{
@@ -244,6 +250,15 @@ share the same seed as long as the indexes are different.
 			return err
 		}
 
+		var peeringAddrs []peer.AddrInfo
+		for _, maStr := range getCommaSeparatedList(cctx.String("peering")) {
+			ai, err := peer.AddrInfoFromString(maStr)
+			if err != nil {
+				return err
+			}
+			peeringAddrs = append(peeringAddrs, *ai)
+		}
+
 		cfg := Config{
 			DataDir:                 ddir,
 			GatewayDomains:          getCommaSeparatedList(cctx.String("gateway-domains")),
@@ -258,6 +273,7 @@ share the same seed as long as the indexes are different.
 			KuboRPCURLs:             getEnvs(EnvKuboRPC, DefaultKuboRPC),
 			DHTSharedHost:           cctx.Bool("dht-shared-host"),
 			DenylistSubs:            getCommaSeparatedList(cctx.String("denylists")),
+			Peering:                 peeringAddrs,
 		}
 
 		goLog.Debugf("Rainbow config: %+v", cfg)
