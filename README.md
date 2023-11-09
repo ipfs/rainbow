@@ -1,6 +1,24 @@
-# rainbow 
+<h1 align="center">
+  <br>
+  <a href="https://github.com/ipfs/rainbow/assets/157609/fd1bed0f-2055-468e-93e7-0aea158aa953"><img src="https://github.com/ipfs/rainbow/assets/157609/8bf5b727-a360-4906-b965-826823c37aa3" alt="Rainbo logo" title="Rainbow logo" width="200"></a>
+  <br>
+  Rainbow
+  <br>
+</h1>
 
-> A specialized IPFS HTTP gateway.
+<p align="center" style="font-size: 1.2rem;">A to-be-released production-grade IPFS HTTP Gateway written in Go (using <a href="https://github.com/ipfs/boxo">Boxo</a>).</p>
+
+<p align="center">
+  <a href="https://ipfs.tech"><img src="https://img.shields.io/badge/project-IPFS-blue.svg?style=flat-square" alt="Official Part of IPFS Project"></a>
+  <a href="https://discuss.ipfs.tech"><img alt="Discourse Forum" src="https://img.shields.io/discourse/posts?server=https%3A%2F%2Fdiscuss.ipfs.tech"></a>
+  <a href="https://matrix.to/#/#ipfs-space:ipfs.io"><img alt="Matrix" src="https://img.shields.io/matrix/ipfs-space%3Aipfs.io?server_fqdn=matrix.org"></a>
+  <a href="https://github.com/ipfs/rainbow/actions"><img src="https://img.shields.io/github/actions/workflow/status/ipfs/rainbow/go-test.yml?branch=main" alt="ci"></a>
+  <a href="https://codecov.io/gh/ipfs/rainbow"><img src="https://codecov.io/gh/ipfs/rainbow/branch/main/graph/badge.svg?token=9eG7d8fbCB" alt="coverage"></a>
+  <a href="https://github.com/ipfs/rainbow/releases"><img alt="GitHub release" src="https://img.shields.io/github/v/release/ipfs/rainbow?filter=!*rc*"></a>
+  <a href="https://godoc.org/github.com/ipfs/rainbow"><img src="https://img.shields.io/badge/godoc-reference-5272B4.svg?style=flat-square" alt="godoc reference"></a>  
+</p>
+
+<hr />
 
 ## About
 
