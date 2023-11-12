@@ -407,7 +407,21 @@ func setupDatastore(cfg Config) (datastore.Batching, error) {
 		Options:        badgerOpts,
 	}
 
-	return badger4.NewDatastore(filepath.Join(cfg.DataDir, "badger4"), &opts)
+	ds, err := badger4.NewDatastore(filepath.Join(cfg.DataDir, "badger4"), &opts)
+	if err != nil {
+		return nil, err
+	}
+
+	// Print level information every minute on debug
+	go func() {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+		for {
+			<-ticker.C
+			ds.DiskUsage(context.Background())
+		}
+	}()
+	return ds, nil
 }
 
 type bundledDHT struct {

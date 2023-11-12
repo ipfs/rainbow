@@ -11,7 +11,7 @@ require (
 	github.com/ipfs/boxo v0.15.0
 	github.com/ipfs/go-cid v0.4.1
 	github.com/ipfs/go-datastore v0.6.0
-	github.com/ipfs/go-ds-badger4 v0.0.0-20231006150127-9137bcc6b981
+	github.com/ipfs/go-ds-badger4 v0.0.0-20231112124819-05b485a62f58
 	github.com/ipfs/go-ipfs-delay v0.0.1
 	github.com/ipfs/go-log/v2 v2.5.1
 	github.com/ipfs/go-metrics-interface v0.0.1
