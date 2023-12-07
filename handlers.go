@@ -13,6 +13,7 @@ import (
 	_ "embed"
 	_ "net/http/pprof"
 
+	"github.com/felixge/httpsnoop"
 	"github.com/ipfs/boxo/gateway"
 	"github.com/ipfs/boxo/path"
 	servertiming "github.com/mitchellh/go-server-timing"
@@ -83,9 +84,8 @@ func withConnect(next http.Handler) http.Handler {
 
 func withRequestLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		goLog.Infow(r.Method, "url", r.URL, "host", r.Host)
-		// TODO: if debug is enabled, show more? goLog.Infow("request received", "url", r.URL, "host", r.Host, "method", r.Method, "ua", r.UserAgent(), "referer", r.Referer())
-		next.ServeHTTP(w, r)
+		m := httpsnoop.CaptureMetrics(next, w, r)
+		goLog.Infow(r.Method, "url", r.URL, "host", r.Host, "code", m.Code, "duration", m.Duration, "written", m.Written, "ua", r.UserAgent(), "referer", r.Referer())
 	})
 }
 
