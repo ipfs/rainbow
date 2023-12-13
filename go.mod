@@ -8,7 +8,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/ipfs-shipyard/nopfs v0.0.12-0.20231024163508-120e0c51ee3a
 	github.com/ipfs-shipyard/nopfs/ipfs v0.13.2-0.20231024163508-120e0c51ee3a
-	github.com/ipfs/boxo v0.15.0
+	github.com/ipfs/boxo v0.16.0
 	github.com/ipfs/go-cid v0.4.1
 	github.com/ipfs/go-datastore v0.6.0
 	github.com/ipfs/go-ds-badger4 v0.0.0-20231006150127-9137bcc6b981
