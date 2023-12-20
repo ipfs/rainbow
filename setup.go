@@ -199,11 +199,18 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 			if cfg.DHTSharedHost {
 				dhtHost = h
 			} else {
+				dhtLimiter := rcmgr.NewFixedLimiter(makeResourceManagerConfig(cfg.MaxMemory, cfg.MaxFD, cfg.ConnMgrHi))
+				dhtMgr, err := rcmgr.NewResourceManager(dhtLimiter)
+				if err != nil {
+					return nil, err
+				}
+
 				dhtHost, err = libp2p.New(
 					libp2p.NoListenAddrs,
 					libp2p.BandwidthReporter(bwc),
 					libp2p.DefaultTransports,
 					libp2p.DefaultMuxers,
+					libp2p.ResourceManager(dhtMgr),
 				)
 				if err != nil {
 					return nil, err
