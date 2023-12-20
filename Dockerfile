@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.20-bullseye AS builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.21-bullseye AS builder
 
 LABEL org.opencontainers.image.source=https://github.com/ipfs/rainbow
 LABEL org.opencontainers.image.description="A stand-alone IPFS Gateway"
