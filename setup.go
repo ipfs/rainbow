@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"time"
 
-	flatfs "github.com/ipfs/go-ds-flatfs"
 	nopfs "github.com/ipfs-shipyard/nopfs"
 	nopfsipfs "github.com/ipfs-shipyard/nopfs/ipfs"
 	bsclient "github.com/ipfs/boxo/bitswap/client"
@@ -28,6 +27,7 @@ import (
 	httpcontentrouter "github.com/ipfs/boxo/routing/http/contentrouter"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
+	flatfs "github.com/ipfs/go-ds-flatfs"
 	delay "github.com/ipfs/go-ipfs-delay"
 	metri "github.com/ipfs/go-metrics-interface"
 	mprome "github.com/ipfs/go-metrics-prometheus"
