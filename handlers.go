@@ -259,6 +259,7 @@ func newKuboRPCHandler(endpoints []string) http.Handler {
 	}
 
 	mux.HandleFunc("/api/v0/name/resolve", redirectToKubo)
+	mux.HandleFunc("/api/v0/name/resolve/", redirectToKubo)
 	mux.HandleFunc("/api/v0/resolve", redirectToKubo)
 	mux.HandleFunc("/api/v0/dag/resolve", redirectToKubo)
 	mux.HandleFunc("/api/v0/dns", redirectToKubo)
