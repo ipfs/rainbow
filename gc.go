@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	badger4 "github.com/ipfs/go-ds-badger4"
 )
 
 // GC is a really stupid simple algorithm where we just delete things until
@@ -32,6 +33,13 @@ deleteBlocks:
 			todelete -= int64(size)
 		case <-ctx.Done():
 			return ctx.Err()
+		}
+	}
+
+	if ds, ok := nd.datastore.(*badger4.Datastore); ok {
+		err = ds.CollectGarbage(ctx)
+		if err != nil {
+			return err
 		}
 	}
 

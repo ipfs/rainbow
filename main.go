@@ -139,7 +139,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "inmem-block-cache",
 			Value:   1 << 30,
 			EnvVars: []string{"RAINBOW_INMEM_BLOCK_CACHE"},
-			Usage:   "Size of the in-memory block cache. 0 to disable (disables compression on disk too)",
+			Usage:   "Size of the in-memory block cache (currently only used for badger). 0 to disable (disables compression on disk too)",
 		},
 		&cli.Uint64Flag{
 			Name:    "max-memory",
@@ -175,6 +175,12 @@ Generate an identity seed and launch a gateway:
 			Value:   "",
 			EnvVars: []string{"RAINBOW_PEERING"},
 			Usage:   "Multiaddresses of peers to stay connected to (comma-separated)",
+		},
+		&cli.StringFlag{
+			Name:    "blockstore",
+			Value:   "flatfs",
+			EnvVars: []string{"RAINBOW_BLOCKSTORE"},
+			Usage:   "Type of blockstore to use, such as flatfs or badger. See https://github.com/ipfs/rainbow/blockstore.md for more details",
 		},
 	}
 
@@ -261,6 +267,7 @@ share the same seed as long as the indexes are different.
 
 		cfg := Config{
 			DataDir:                 ddir,
+			BlockstoreType:          cctx.String("blockstore"),
 			GatewayDomains:          getCommaSeparatedList(cctx.String("gateway-domains")),
 			SubdomainGatewayDomains: getCommaSeparatedList(cctx.String("subdomain-gateway-domains")),
 			ConnMgrLow:              cctx.Int("connmgr-low"),
