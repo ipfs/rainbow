@@ -360,7 +360,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 }
 
 func setupDatastore(cfg Config) (datastore.Batching, error) {
-	return flatfs.CreateOrOpen(filepath.Join(cfg.DataDir, "flatfs"), flatfs.NextToLast(2), true)
+	return flatfs.CreateOrOpen(filepath.Join(cfg.DataDir, "flatfs"), flatfs.NextToLast(3), false)
 }
 
 type bundledDHT struct {
