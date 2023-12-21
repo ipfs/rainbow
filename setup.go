@@ -11,8 +11,7 @@ import (
 	"path/filepath"
 	"time"
 
-	badger "github.com/dgraph-io/badger/v4"
-	options "github.com/dgraph-io/badger/v4/options"
+	flatfs "github.com/ipfs/go-ds-flatfs"
 	nopfs "github.com/ipfs-shipyard/nopfs"
 	nopfsipfs "github.com/ipfs-shipyard/nopfs/ipfs"
 	bsclient "github.com/ipfs/boxo/bitswap/client"
@@ -29,7 +28,6 @@ import (
 	httpcontentrouter "github.com/ipfs/boxo/routing/http/contentrouter"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
-	badger4 "github.com/ipfs/go-ds-badger4"
 	delay "github.com/ipfs/go-ipfs-delay"
 	metri "github.com/ipfs/go-metrics-interface"
 	mprome "github.com/ipfs/go-metrics-prometheus"
@@ -362,52 +360,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 }
 
 func setupDatastore(cfg Config) (datastore.Batching, error) {
-	badgerOpts := badger.DefaultOptions("")
-	badgerOpts.CompactL0OnClose = false
-	// ValueThreshold: defaults to 1MB! For us that means everything goes
-	// into the LSM tree and that means more stuff in memory.  We only
-	// put very small things on the LSM tree by default (i.e. a single
-	// CID).
-	badgerOpts.ValueThreshold = 256
-
-	// BlockCacheSize: instead of using blockstore, we cache things
-	// here. This only makes sense if using compression, according to
-	// docs.
-	badgerOpts.BlockCacheSize = cfg.InMemBlockCache // default 1 GiB.
-
-	// Compression: default. Trades reading less from disk for using more
-	// CPU. Given gateways are usually IO bound, I think we can make this
-	// trade.
-	if badgerOpts.BlockCacheSize == 0 {
-		badgerOpts.Compression = options.None
-	} else {
-		badgerOpts.Compression = options.Snappy
-	}
-
-	// If we write something twice, we do it with the same values so
-	// *shrugh*.
-	badgerOpts.DetectConflicts = false
-
-	// MemTableSize: Defaults to 64MiB which seems an ok amount to flush
-	// to disk from time to time.
-	badgerOpts.MemTableSize = 64 << 20
-	// NumMemtables: more means more memory, faster writes, but more to
-	// commit to disk if they get full. Default is 5.
-	badgerOpts.NumMemtables = 5
-
-	// IndexCacheSize: 0 means all in memory (default). All means indexes,
-	// bloom filters etc. Usually not huge amount of memory usage from
-	// this.
-	badgerOpts.IndexCacheSize = 0
-
-	opts := badger4.Options{
-		GcDiscardRatio: 0.3,
-		GcInterval:     20 * time.Minute,
-		GcSleep:        10 * time.Second,
-		Options:        badgerOpts,
-	}
-
-	return badger4.NewDatastore(filepath.Join(cfg.DataDir, "badger4"), &opts)
+	return flatfs.CreateOrOpen(filepath.Join(cfg.DataDir, "flatfs"), flatfs.NextToLast(2), true)
 }
 
 type bundledDHT struct {
