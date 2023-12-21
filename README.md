@@ -91,7 +91,7 @@ See [NoPFS](https://github.com/ipfs-shipyard/nopfs) for an explanation of the de
 
 ## Garbage Collection
 
-Over time, the flatfs datastore can fill up with previously fetched blocks. To free up this used disk space, garbage collection can be run. Garbage collection needs to be manually triggered. This process can also be automated by using a cron job.
+Over time, the datastore can fill up with previously fetched blocks. To free up this used disk space, garbage collection can be run. Garbage collection needs to be manually triggered. This process can also be automated by using a cron job.
 
 By default, the API route to trigger GC is `http://$RAINBOW_CTL_LISTEN_ADDRESS/mgr/gc`. The `BytesToFree` parameter must be passed in order to specify the upper limit of how much disk space should be cleared. Setting this parameter to a very high value will GC the entire datastore.
 
