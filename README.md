@@ -89,6 +89,14 @@ Denylists can be manually placed in the `$RAINBOW_DATADIR/denylists` folder too.
 
 See [NoPFS](https://github.com/ipfs-shipyard/nopfs) for an explanation of the denylist format. Note that denylists should only be appended to while Rainbow is running. Editing differently, or adding new denylist files, should be done with Rainbow stopped.
 
+## Blockstores
+
+Rainbow ships with a number of possible blockstores for the purposes of caching data locally.
+Because Rainbow, as a gateway-only IPFS implementation, is not designed for long-term data storage there are no long
+term guarantees of support for any particular backing data storage.
+
+See [Blockstores](./docs/blockstores.md) for more details.
+
 ## Garbage Collection
 
 Over time, the datastore can fill up with previously fetched blocks. To free up this used disk space, garbage collection can be run. Garbage collection needs to be manually triggered. This process can also be automated by using a cron job.
