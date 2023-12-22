@@ -46,7 +46,6 @@ import (
 	"github.com/libp2p/go-libp2p/core/metrics"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/routing"
-	rcmgr "github.com/libp2p/go-libp2p/p2p/host/resource-manager"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/multiformats/go-multiaddr"
 	"go.opencensus.io/stats/view"
@@ -118,8 +117,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		return nil, err
 	}
 
-	limiter := rcmgr.NewFixedLimiter(makeResourceManagerConfig(cfg.MaxMemory, cfg.MaxFD, cfg.ConnMgrHi))
-	mgr, err := rcmgr.NewResourceManager(limiter)
+	bitswapRcMgr, dhtRcMgr, err := makeResourceMgrs(cfg.MaxMemory, cfg.MaxFD, cfg.ConnMgrHi, !cfg.DHTSharedHost)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +130,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		libp2p.BandwidthReporter(bwc),
 		libp2p.DefaultTransports,
 		libp2p.DefaultMuxers,
-		libp2p.ResourceManager(mgr),
+		libp2p.ResourceManager(bitswapRcMgr),
 	}
 
 	if len(cfg.AnnounceAddrs) > 0 {
@@ -199,18 +197,12 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 			if cfg.DHTSharedHost {
 				dhtHost = h
 			} else {
-				dhtLimiter := rcmgr.NewFixedLimiter(makeResourceManagerConfig(cfg.MaxMemory, cfg.MaxFD, cfg.ConnMgrHi))
-				dhtMgr, err := rcmgr.NewResourceManager(dhtLimiter)
-				if err != nil {
-					return nil, err
-				}
-
 				dhtHost, err = libp2p.New(
 					libp2p.NoListenAddrs,
 					libp2p.BandwidthReporter(bwc),
 					libp2p.DefaultTransports,
 					libp2p.DefaultMuxers,
-					libp2p.ResourceManager(dhtMgr),
+					libp2p.ResourceManager(dhtRcMgr),
 				)
 				if err != nil {
 					return nil, err
