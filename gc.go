@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-
 	badger4 "github.com/ipfs/go-ds-badger4"
 )
 
