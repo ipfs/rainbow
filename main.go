@@ -182,8 +182,18 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_BLOCKSTORE"},
 			Usage:   "Type of blockstore to use, such as flatfs or badger. See https://github.com/ipfs/rainbow/blockstore.md for more details",
 		},
+		&cli.StringFlag{
+			Name: "listen-addrs",
+			Value: strings.Join([]string{"/ip4/0.0.0.0/tcp/4001",
+				"/ip4/0.0.0.0/udp/4001/quic-v1",
+				"/ip4/0.0.0.0/udp/4001/quic-v1/webtransport",
+				"/ip6/::/tcp/4001",
+				"/ip6/::/udp/4001/quic-v1",
+				"/ip6/::/udp/4001/quic-v1/webtransport"}, ","),
+			EnvVars: []string{"RAINBOW_LIBP2P_LISTEN_ADDRS"},
+			Usage:   "Multiaddresses for libp2p to listen on (comma-separated)",
+		},
 	}
-
 	app.Commands = []*cli.Command{
 		{
 			Name:  "gen-seed",
@@ -281,6 +291,7 @@ share the same seed as long as the indexes are different.
 			DHTSharedHost:           cctx.Bool("dht-shared-host"),
 			DenylistSubs:            getCommaSeparatedList(cctx.String("denylists")),
 			Peering:                 peeringAddrs,
+			ListenAddrs:             getCommaSeparatedList(cctx.String("listen-addrs")),
 		}
 
 		goLog.Debugf("Rainbow config: %+v", cfg)
