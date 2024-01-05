@@ -16,6 +16,7 @@ The following emojis are used to highlight certain changes:
 ### Added
 
 - Now supports remote backends (using RAW block or CAR requests) via `--remote-backends` (`RAINBOW_REMOTE_BACKENDS`).
+- Added configurable libp2p listen addresses for the Bitswap host via the `libp2p-listen-addrs` flag and `RAINBOW_LIBP2P_LISTEN_ADDRS` environment variable
 
 ### Changed
 
