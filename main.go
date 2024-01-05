@@ -286,6 +286,17 @@ Generate an identity seed and launch a gateway:
 				}
 			},
 		},
+		&cli.StringSliceFlag{
+			Name: "libp2p-listen-addrs",
+			Value: cli.NewStringSlice("/ip4/0.0.0.0/tcp/4001",
+				"/ip4/0.0.0.0/udp/4001/quic-v1",
+				"/ip4/0.0.0.0/udp/4001/quic-v1/webtransport",
+				"/ip6/::/tcp/4001",
+				"/ip6/::/udp/4001/quic-v1",
+				"/ip6/::/udp/4001/quic-v1/webtransport"),
+			EnvVars: []string{"RAINBOW_LIBP2P_LISTEN_ADDRS"},
+			Usage:   "Multiaddresses for libp2p bitswap client to listen on (comma-separated)",
+		},
 	}
 
 	app.Commands = []*cli.Command{
@@ -429,6 +440,7 @@ share the same seed as long as the indexes are different.
 			RemoteBackendMode:       RemoteBackendMode(cctx.String("remote-backends-mode")),
 			GCInterval:              cctx.Duration("gc-interval"),
 			GCThreshold:             cctx.Float64("gc-threshold"),
+			ListenAddrs:             cctx.StringSlice("libp2p-listen-addrs"),
 		}
 
 		var gnd *Node
