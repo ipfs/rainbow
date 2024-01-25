@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.21-bullseye AS builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.21-bookworm AS builder
 
 LABEL org.opencontainers.image.source=https://github.com/ipfs/rainbow
 LABEL org.opencontainers.image.description="A stand-alone IPFS Gateway"
@@ -27,12 +27,12 @@ RUN --mount=target=. \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o $GOPATH/bin/rainbow
 
 #------------------------------------------------------
-FROM alpine:3.18
-
-# This runs rainbow
+FROM debian:bookworm-slim
 
 # Instal binaries for $TARGETARCH
-RUN apk add --no-cache tini su-exec ca-certificates curl
+RUN apt-get update && \
+  apt-get install --no-install-recommends -y tini ca-certificates curl && \
+  rm -rf /var/lib/apt/lists/*
 
 ENV GOPATH                 /go
 ENV SRC_PATH               $GOPATH/src/github.com/ipfs/rainbow
@@ -43,10 +43,10 @@ COPY --from=builder $GOPATH/bin/rainbow /usr/local/bin/rainbow
 COPY --from=builder $SRC_PATH/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 RUN mkdir -p $RAINBOW_GATEWAY_PATH && \
-    adduser -D -h $RAINBOW_GATEWAY_PATH -u 1000 -G users ipfs && \
+    useradd -d $RAINBOW_GATEWAY_PATH -u 1000 -G users ipfs && \
     chown ipfs:users $RAINBOW_GATEWAY_PATH
 VOLUME $RAINBOW_GATEWAY_PATH
 WORKDIR $RAINBOW_GATEWAY_PATH
-
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/entrypoint.sh"]
+USER ipfs
+ENTRYPOINT ["tini", "--", "/usr/local/bin/entrypoint.sh"]
 
