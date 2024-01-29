@@ -101,7 +101,6 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	}
 
 	headers := map[string][]string{}
-	gateway.AddAccessControlHeaders(headers)
 
 	// Note: in the future we may want to make this more configurable.
 	noDNSLink := false
@@ -152,7 +151,6 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 
 	gwConf := gateway.Config{
 		DeserializedResponses: true,
-		Headers:               headers,
 		PublicGateways:        publicGateways,
 		NoDNSLink:             noDNSLink,
 	}
@@ -178,6 +176,10 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	// Construct the HTTP handler for the gateway.
 	handler := withConnect(topMux)
 	handler = http.Handler(gateway.NewHostnameHandler(gwConf, backend, handler))
+
+	// Add custom headers and liberal CORS.
+	handler = gateway.NewHeaders(headers).ApplyCors().Wrap(handler)
+
 	handler = servertiming.Middleware(handler, nil)
 
 	// Add logging.
