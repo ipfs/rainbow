@@ -58,7 +58,7 @@ jobs:
 
       # 4. Build rainbow
       - name: Checkout rainbow
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: rainbow
       - name: Build rainbow
