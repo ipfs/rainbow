@@ -54,6 +54,7 @@ func TestRPCRedirectsToKubo(t *testing.T) {
 
 	tests := []rpcRedirectTest{
 		{"/api/v0/name/resolve?arg=some-arg", "http://example.com/api/v0/name/resolve?arg=some-arg", http.StatusTemporaryRedirect},
+		{"/api/v0/name/resolve/some-arg", "http://example.com/api/v0/name/resolve/some-arg", http.StatusTemporaryRedirect},
 		{"/api/v0/resolve?arg=some-arg", "http://example.com/api/v0/resolve?arg=some-arg", http.StatusTemporaryRedirect},
 		{"/api/v0/dag/resolve?arg=some-arg", "http://example.com/api/v0/dag/resolve?arg=some-arg", http.StatusTemporaryRedirect},
 		{"/api/v0/dns?arg=some-arg", "http://example.com/api/v0/dns?arg=some-arg", http.StatusTemporaryRedirect},
