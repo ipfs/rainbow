@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	traceapi "go.opentelemetry.io/otel/trace"
+	tracenoop "go.opentelemetry.io/otel/trace/noop"
 )
 
 func newTracerProvider(ctx context.Context) (traceapi.TracerProvider, func(context.Context) error, error) {
@@ -17,7 +18,7 @@ func newTracerProvider(ctx context.Context) (traceapi.TracerProvider, func(conte
 	}
 
 	if len(exporters) == 0 {
-		return traceapi.NewNoopTracerProvider(), func(ctx context.Context) error { return nil }, nil
+		return tracenoop.NewTracerProvider(), func(ctx context.Context) error { return nil }, nil
 	}
 
 	options := []trace.TracerProviderOption{}
