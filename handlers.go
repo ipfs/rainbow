@@ -253,7 +253,10 @@ func newKuboRPCHandler(endpoints []string) http.Handler {
 	redirectToKubo := func(w http.ResponseWriter, r *http.Request) {
 		// Naively choose one of the Kubo RPC clients.
 		endpoint := endpoints[rand.Intn(len(endpoints))]
-		url := endpoint + r.URL.Path + "?" + r.URL.RawQuery
+		url := endpoint + r.URL.Path
+		if r.URL.RawQuery != "" {
+			url += "?" + r.URL.RawQuery
+		}
 		goLog.Debugw("api request redirected to kubo", "url", r.URL, "redirect", url)
 		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 	}
