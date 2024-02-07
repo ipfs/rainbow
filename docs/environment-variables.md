@@ -79,6 +79,9 @@ tracing is disabled.
 
 Warning: Enabling tracing will likely affect performance.
 
+### `RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS`
+
+Comma-separated list of subdomain gateway domains. For example, passing `dweb.link` will serve standard [subdomain gateway](https://specs.ipfs.tech/http-gateways/subdomain-gateway/) requests with the `Host` header set to`*.ipfs.dweb.link` and  `*.ipns.dweb.link`.
 
 ## Testing
 
