@@ -2,6 +2,7 @@ rainbow
 libp2p.key
 blockstore
 datastore
+flatfs
 
 # Binaries for programs and plugins
 *.exe

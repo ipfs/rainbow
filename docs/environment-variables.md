@@ -3,6 +3,8 @@
 `rainbow` ships with some implicit defaults that can be adjusted via env variables below.
 
 - [Configuration](#configuration)
+  - [`RAINBOW_GATEWAY_DOMAINS`](#rainbow_gateway_domains)
+  - [`RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS`](#rainbow_subdomain_gateway_domains)
   - [`KUBO_RPC_URL`](#kubo_rpc_url)
 - [Logging](#logging)
   - [`GOLOG_LOG_LEVEL`](#golog_log_level)
@@ -15,14 +17,28 @@
 
 ## Configuration
 
+### `RAINBOW_GATEWAY_DOMAINS`
+
+Comma-separated list of path gateway hostnames. For example, passing `ipfs.io` will enable handler for standard [path gateway](https://specs.ipfs.tech/http-gateways/path-gateway/) requests with the `Host` header set to `ipfs.io`.
+
+Default: `127.0.0.1`
+
+
+### `RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS`
+
+Comma-separated list of [subdomain gateway](https://specs.ipfs.tech/http-gateways/subdomain-gateway/) domains. For example, passing `dweb.link` will enable handler for standard [subdomain gateway](https://specs.ipfs.tech/http-gateways/subdomain-gateway/) requests with the `Host` header set to `*.ipfs.dweb.link` and  `*.ipns.dweb.link`.
+
+Default: `localhost`
 
 ### `KUBO_RPC_URL`
 
-Default: see `DefaultKuboRPC`
+Default: `127.0.0.1:5001` (see `DefaultKuboRPC`)
 
-Single URL or a comma separated list of RPC endpoints that provide `/api/v0` from Kubo.
+Single URL or a comma separated list of RPC endpoints that provide legacy `/api/v0` from Kubo.
 
 We use this to redirect some legacy `/api/v0` commands that need to be handled on `ipfs.io`.
+
+This is deprecated and will be removed in the future.
 
 ## Logging
 
@@ -78,7 +94,6 @@ Sets the file to which the Bifrost Gateway sends tracing events. By default,
 tracing is disabled.
 
 Warning: Enabling tracing will likely affect performance.
-
 
 ## Testing
 
