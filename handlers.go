@@ -13,6 +13,7 @@ import (
 	_ "embed"
 	_ "net/http/pprof"
 
+	"github.com/CAFxX/httpcompression"
 	"github.com/ipfs/boxo/gateway"
 	"github.com/ipfs/boxo/path"
 	servertiming "github.com/mitchellh/go-server-timing"
@@ -187,6 +188,13 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 
 	// Add tracing.
 	handler = otelhttp.NewHandler(handler, "Gateway")
+
+	// Add compression.
+	compress, err := httpcompression.DefaultAdapter()
+	if err != nil {
+		return nil, err
+	}
+	handler = compress(handler)
 
 	return handler, nil
 }
