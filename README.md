@@ -115,6 +115,9 @@ Automated Docker container releases are available from the [Github container reg
 
     docker pull ghcr.io/ipfs/rainbow:main-latest
 
+## Release
+
+To make a release, create a new PR that updates the [`version.json`](./version.json) file. This PR should not include any other changes besides the version bump. A new release will be automatically made once the PR is merged
 
 ## License
 
