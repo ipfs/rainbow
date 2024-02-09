@@ -26,7 +26,7 @@ require (
 	github.com/libp2p/go-libp2p-routing-helpers v0.7.3
 	github.com/mitchellh/go-server-timing v1.0.1
 	github.com/mr-tron/base58 v1.2.0
-	github.com/multiformats/go-multiaddr v0.12.1
+	github.com/multiformats/go-multiaddr v0.12.2
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/prometheus/client_golang v1.18.0
 	github.com/rs/dnscache v0.0.0-20230804202142-fc85eb664529
