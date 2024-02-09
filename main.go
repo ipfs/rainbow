@@ -105,6 +105,12 @@ Generate an identity seed and launch a gateway:
 			Usage:   "Subdomain gateway domains. Comma-separated list.",
 		},
 		&cli.StringFlag{
+			Name:    "trustless-gateway-domains",
+			Value:   "",
+			EnvVars: []string{"RAINBOW_TRUSTLESS_GATEWAY_DOMAINS"},
+			Usage:   "Trustless gateway domains. Comma-separated list.",
+		},
+		&cli.StringFlag{
 			Name:    "gateway-listen-address",
 			Value:   "127.0.0.1:8090",
 			EnvVars: []string{"RAINBOW_GATEWAY_LISTEN_ADDRESS"},
@@ -270,6 +276,7 @@ share the same seed as long as the indexes are different.
 			BlockstoreType:          cctx.String("blockstore"),
 			GatewayDomains:          getCommaSeparatedList(cctx.String("gateway-domains")),
 			SubdomainGatewayDomains: getCommaSeparatedList(cctx.String("subdomain-gateway-domains")),
+			TrustlessGatewayDomains: getCommaSeparatedList(cctx.String("trustless-gateway-domains")),
 			ConnMgrLow:              cctx.Int("connmgr-low"),
 			ConnMgrHi:               cctx.Int("connmgr-high"),
 			ConnMgrGrace:            cctx.Duration("connmgr-grace"),

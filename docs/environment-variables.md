@@ -5,6 +5,7 @@
 - [Configuration](#configuration)
   - [`RAINBOW_GATEWAY_DOMAINS`](#rainbow_gateway_domains)
   - [`RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS`](#rainbow_subdomain_gateway_domains)
+  - [`RAINBOW_TRUSTLESS_GATEWAY_DOMAINS`](#rainbow_trustless_gateway_domains)
   - [`KUBO_RPC_URL`](#kubo_rpc_url)
 - [Logging](#logging)
   - [`GOLOG_LOG_LEVEL`](#golog_log_level)
@@ -23,12 +24,17 @@ Comma-separated list of path gateway hostnames. For example, passing `ipfs.io` w
 
 Default: `127.0.0.1`
 
-
 ### `RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS`
 
 Comma-separated list of [subdomain gateway](https://specs.ipfs.tech/http-gateways/subdomain-gateway/) domains. For example, passing `dweb.link` will enable handler for standard [subdomain gateway](https://specs.ipfs.tech/http-gateways/subdomain-gateway/) requests with the `Host` header set to `*.ipfs.dweb.link` and  `*.ipns.dweb.link`.
 
 Default: `localhost`
+
+### `RAINBOW_TRUSTLESS_GATEWAY_DOMAINS`
+
+Comma-separated list of [trustless gateway](https://specs.ipfs.tech/http-gateways/trustless-gateway/) domains. These gateways can also be included in [`RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS`](#rainbow_subdomain_gateway_domains), which means they will be trustless subdomain gateways.
+
+Default: none
 
 ### `KUBO_RPC_URL`
 

@@ -96,6 +96,7 @@ type Config struct {
 
 	GatewayDomains          []string
 	SubdomainGatewayDomains []string
+	TrustlessGatewayDomains []string
 	RoutingV1               string
 	KuboRPCURLs             []string
 	DHTSharedHost           bool

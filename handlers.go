@@ -135,6 +135,16 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 		}
 	}
 
+	for _, domain := range cfg.TrustlessGatewayDomains {
+		publicGateways[domain] = &gateway.PublicGateway{
+			Paths:                 []string{"/ipfs", "/ipns", "/version"},
+			NoDNSLink:             noDNSLink,
+			InlineDNSLink:         true,
+			DeserializedResponses: false,
+			UseSubdomains:         contains(cfg.SubdomainGatewayDomains, domain),
+		}
+	}
+
 	// If we're doing tests, ensure the right public gateways are enabled.
 	if os.Getenv("GATEWAY_CONFORMANCE_TEST") == "true" {
 		publicGateways["example.com"] = &gateway.PublicGateway{
@@ -339,4 +349,14 @@ func BlockProfileRateOption(path string, mux *http.ServeMux) *http.ServeMux {
 		runtime.SetBlockProfileRate(rate)
 	})
 	return mux
+}
+
+func contains[T comparable](collection []T, element T) bool {
+	for _, item := range collection {
+		if item == element {
+			return true
+		}
+	}
+
+	return false
 }
