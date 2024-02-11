@@ -96,19 +96,19 @@ Generate an identity seed and launch a gateway:
 			Name:    "gateway-domains",
 			Value:   "",
 			EnvVars: []string{"RAINBOW_GATEWAY_DOMAINS"},
-			Usage:   "Legacy path-gateway domains. Comma-separated list.",
+			Usage:   "Domains with flat path gateway, no Origin isolation. Comma-separated list.",
 		},
 		&cli.StringFlag{
 			Name:    "subdomain-gateway-domains",
 			Value:   "",
 			EnvVars: []string{"RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS"},
-			Usage:   "Subdomain gateway domains. Comma-separated list.",
+			Usage:   "Domains with subdomain-based Origin isolation. Comma-separated list.",
 		},
 		&cli.StringFlag{
 			Name:    "trustless-gateway-domains",
 			Value:   "",
 			EnvVars: []string{"RAINBOW_TRUSTLESS_GATEWAY_DOMAINS"},
-			Usage:   "Trustless gateway domains. Comma-separated list.",
+			Usage:   "Domains limited to trustless, verifiable response types. Comma-separated list.",
 		},
 		&cli.StringFlag{
 			Name:    "gateway-listen-address",
