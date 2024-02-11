@@ -45,9 +45,9 @@ elif [[ $GIT_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echoImageName "$GIT_TAG"
   echoImageName "latest"
 
-elif [ "$GIT_BRANCH" = "main" ]; then
-  echoImageName "main-${BUILD_NUM}-${GIT_SHA1_SHORT}"
-  echoImageName "main-latest"
+elif [ "$GIT_BRANCH" = "main" ] || [ "$GIT_BRANCH" = "staging" ]; then
+  echoImageName "${GIT_BRANCH}-${BUILD_NUM}-${GIT_SHA1_SHORT}"
+  echoImageName "${GIT_BRANCH}-latest"
 
 else
   echo "Nothing to do. No docker tag defined for branch: $GIT_BRANCH, tag: $GIT_TAG"

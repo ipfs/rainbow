@@ -23,17 +23,18 @@
 ## About
 
 Rainbow is an implementation of the [IPFS HTTP Gateway API](https://specs.ipfs.tech/http-gateways),
-based on [boxo](https://github.com/ipfs/boxo) which is the tooling the powers [Kubo](https://github.com/ipfs/kubo).
+based on [boxo](https://github.com/ipfs/boxo) which is the tooling that powers [Kubo](https://github.com/ipfs/kubo) IPFS implementation.
+It uses the same Go code as the [HTTP gateway](https://specs.ipfs.tech/http-gateways/) in Kubo,
+but is fully specialized to just be a gateway:
 
-Rainbow uses the same Go code as the HTTP gateway in Kubo, but is fully specialized to just be a gateway:
-
-  * Rainbow acts as DHT and Bitswap client only. Rainbow is not a server for the network.
+  * Rainbow acts as [Amino DHT](https://blog.ipfs.tech/2023-09-amino-refactoring/)
+    and [Bitswap](https://specs.ipfs.tech/bitswap-protocol/) client only.
   * Rainbow does not pin, or permanently store any content. It is just meant
-    to act as gateway to content present in the network. GC strategy
+    to act as gateway to content present in the network.
   * Rainbow settings are optimized for production deployments and streamlined
     for specific choices (flatfs datastore, writethrough uncached blockstore
     etc.)
-  * Denylist and denylist subscription support is included.
+  * [Denylist](https://specs.ipfs.tech/compact-denylist-format/) and denylist subscription support is included.
   * And more to come...
 
 
@@ -51,11 +52,37 @@ rainbow
 
 Use `rainbow --help` for documentation.
 
+### Docker
+
+Automated Docker container releases are available from the [Github container registry](https://github.com/ipfs/rainbow/pkgs/container/rainbow):
+
+- 🟢 Releases
+  - `latest` always points at the latest stable release
+  - `vN.N.N` point at a specific [release tag](https://github.com/ipfs/rainbow/releases)
+- 🟠 Unreleased developer builds
+  - `main-latest` always points at the `HEAD` of the `main` branch
+  - `main-YYYY-DD-MM-GITSHA` points at a specific commit from the `main` branch
+- ⚠️ Experimental, unstable builds
+  - `staging-latest` always points at the `HEAD` of the `staging` branch
+  - `staging-YYYY-DD-MM-GITSHA` points at a specific commit from the `staging` branch
+  - This tag is used by developers for internal testing, not intended for end users
+
+When using Docker, make sure to pass necessary config via `-e`:
+```console
+$ docker pull ghcr.io/ipfs/rainbow:main-latest
+$ docker run --rm -it --net=host -e RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS=dweb.link ghcr.io/ipfs/rainbow:main-latest
+```
+
+See [`/docs/environment-variables.md`](./docs/environment-variables.md).
+
+
 ## Configuration
+
+### CLI and Environment Variables
 
 Rainbow can be configured via command-line arguments or environment variables.
 
-See `rainbow --help` for information on the available options.
+See `rainbow --help` and [`/docs/environment-variables.md`](./docs/environment-variables.md) for information on the available options.
 
 Rainbow uses a `--datadir` (or `RAINBOW_DATADIR` environment variable) as
 location for persisted data. It defaults to the folder in which `rainbow` is
@@ -109,11 +136,9 @@ Example cURL commmand to run GC:
 
 ## Deployment
 
+Suggested method for self-hosting is to run a [prebuilt Docker image](#docker).
+
 An ansible role to deploy Rainbow is available within the ipfs.ipfs collection in Ansible Galaxy (https://github.com/ipfs-shipyard/ansible). It includes a systemd service unit file.
-
-Automated Docker container releases are available from the [Github container registry](https://github.com/ipfs/rainbow/pkgs/container/rainbow):
-
-    docker pull ghcr.io/ipfs/rainbow:main-latest
 
 ## Release
 
