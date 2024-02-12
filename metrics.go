@@ -99,3 +99,58 @@ func withHTTPMetrics(handler http.Handler, handlerName string) http.Handler {
 
 	return handler
 }
+
+var peersTotalMetric = prometheus.NewDesc(
+	prometheus.BuildFQName("ipfs", "p2p", "peers_total"),
+	"Number of connected peers",
+	[]string{"transport"},
+	nil,
+)
+
+// IpfsNodeCollector collects peer metrics
+type IpfsNodeCollector struct {
+	Node *Node
+}
+
+func (IpfsNodeCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- peersTotalMetric
+}
+
+func (c IpfsNodeCollector) Collect(ch chan<- prometheus.Metric) {
+	for tr, val := range c.PeersTotalValues() {
+		ch <- prometheus.MustNewConstMetric(
+			peersTotalMetric,
+			prometheus.GaugeValue,
+			val,
+			tr,
+		)
+	}
+}
+
+func (c IpfsNodeCollector) PeersTotalValues() map[string]float64 {
+	vals := make(map[string]float64)
+	if c.Node.host == nil {
+		return vals
+	}
+	for _, peerID := range c.Node.host.Network().Peers() {
+		// Each peer may have more than one connection (see for an explanation
+		// https://github.com/libp2p/go-libp2p-swarm/commit/0538806), so we grab
+		// only one, the first (an arbitrary and non-deterministic choice), which
+		// according to ConnsToPeer is the oldest connection in the list
+		// (https://github.com/libp2p/go-libp2p-swarm/blob/v0.2.6/swarm.go#L362-L364).
+		conns := c.Node.host.Network().ConnsToPeer(peerID)
+		if len(conns) == 0 {
+			continue
+		}
+		tr := ""
+		for _, proto := range conns[0].RemoteMultiaddr().Protocols() {
+			tr = tr + "/" + proto.Name
+		}
+		vals[tr] = vals[tr] + 1
+	}
+	return vals
+}
+
+func registerIpfsNodeCollector(nd *Node) {
+	prometheus.MustRegister(&IpfsNodeCollector{Node: nd})
+}
