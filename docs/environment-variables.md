@@ -54,7 +54,7 @@ disabled, and **response types requested via `?format=` and `Accept` HTTP header
 - [`application/vnd.ipfs.ipns-record`](https://www.iana.org/assignments/media-types/application/vnd.ipfs.ipns-record)
 
 **NOTE:** This setting is applied on top of everything else, to ensure
-trustless domain can't be used for phishing or direct hotlinking and hosting of third-party content.
+trustless domains can't be used for phishing or direct hotlinking and hosting of third-party content. Hostnames that are passed to both `RAINBOW_GATEWAY_DOMAINS` and `RAINBOW_TRUSTLESS_GATEWAY_DOMAINS` will work only as trustless gateways. 
 
 Example:  passing `trustless-gateway.link` will ensure only verifiable content types are supported
 when request comes with the `Host` header set to `trustless-gateway.link`.

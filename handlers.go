@@ -138,7 +138,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	for _, domain := range cfg.TrustlessGatewayDomains {
 		publicGateways[domain] = &gateway.PublicGateway{
 			Paths:                 []string{"/ipfs", "/ipns", "/version"},
-			NoDNSLink:             noDNSLink,
+			NoDNSLink:             true,
 			InlineDNSLink:         true,
 			DeserializedResponses: false,
 			UseSubdomains:         contains(cfg.SubdomainGatewayDomains, domain),
