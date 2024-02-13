@@ -121,6 +121,18 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_CTL_LISTEN_ADDRESS"},
 			Usage:   "Listen address for the management api and metrics",
 		},
+		&cli.DurationFlag{
+			Name:    "gc-interval",
+			Value:   time.Minute * 60,
+			EnvVars: []string{"RAINBOW_GC_INTERVAL"},
+			Usage:   "The interval between automatic GC runs. Set 0 to disable.",
+		},
+		&cli.Float64Flag{
+			Name:    "gc-threshold",
+			Value:   0.3,
+			EnvVars: []string{"RAINBOW_GC_THRESHOLD"},
+			Usage:   "Percentage of how much of the disk free space must be available.",
+		},
 		&cli.IntFlag{
 			Name:    "connmgr-low",
 			Value:   100,
@@ -286,6 +298,8 @@ share the same seed as long as the indexes are different.
 			DHTSharedHost:           cctx.Bool("dht-shared-host"),
 			DenylistSubs:            getCommaSeparatedList(cctx.String("denylists")),
 			Peering:                 peeringAddrs,
+			GCInterval:              cctx.Duration("gc-interval"),
+			GCThreshold:             cctx.Float64("gc-threshold"),
 		}
 
 		goLog.Debugf("Rainbow config: %+v", cfg)
@@ -370,6 +384,31 @@ share the same seed as long as the indexes are different.
 			}
 		}()
 
+		var gcTicker *time.Ticker
+		var gcTickerDone chan bool
+
+		if cfg.GCInterval > 0 {
+			gcTicker = time.NewTicker(cfg.GCInterval)
+			gcTickerDone = make(chan bool)
+			wg.Add(1)
+
+			go func() {
+				defer wg.Done()
+
+				for {
+					select {
+					case <-gcTickerDone:
+						return
+					case <-gcTicker.C:
+						err = gnd.periodicGC(cctx.Context, cfg.GCThreshold)
+						if err != nil {
+							goLog.Errorf("error when running periodic gc: %w", err)
+						}
+					}
+				}
+			}()
+		}
+
 		sddaemon.SdNotify(false, sddaemon.SdNotifyReady)
 		signal.Notify(
 			quit,
@@ -382,6 +421,12 @@ share the same seed as long as the indexes are different.
 		goLog.Info("Closing servers...")
 		go gatewaySrv.Close()
 		go apiSrv.Close()
+
+		if gcTicker != nil {
+			gcTicker.Stop()
+			gcTickerDone <- true
+		}
+
 		for _, sub := range gnd.denylistSubs {
 			sub.Stop()
 		}

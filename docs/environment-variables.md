@@ -6,6 +6,8 @@
   - [`RAINBOW_GATEWAY_DOMAINS`](#rainbow_gateway_domains)
   - [`RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS`](#rainbow_subdomain_gateway_domains)
   - [`RAINBOW_TRUSTLESS_GATEWAY_DOMAINS`](#rainbow_trustless_gateway_domains)
+  - [`RAINBOW_GC_INTERVAL`](#rainbow_gc_interval)
+  - [`RAINBOW_GC_THRESHOLD`](#rainbow_gc_threshold)
   - [`KUBO_RPC_URL`](#kubo_rpc_url)
 - [Logging](#logging)
   - [`GOLOG_LOG_LEVEL`](#golog_log_level)
@@ -60,6 +62,22 @@ Example:  passing `trustless-gateway.link` will ensure only verifiable content t
 when request comes with the `Host` header set to `trustless-gateway.link`.
 
 Default: none (`Host` is ignored and gateway at `127.0.0.1` supports both deserialized and verifiable response types)
+
+## `RAINBOW_GC_INTERVAL`
+
+The interval at which the garbage collector will be called. This is given as a string that corresponds to the duration of the interval. Set 0 to disable.
+
+This functionality does not work on Windows.
+
+Default: `60m`
+
+## `RAINBOW_GC_THRESHOLD`
+
+The threshold of how much free space one wants to always have available on disk. This is used with the periodic garbage collector.
+
+When the periodic GC runs, it checks for the total and available space on disk. If the available space is larger than the threshold, the GC is not called. Otherwise, the GC is asked to remove how many bytes necessary such that the threshold of available space on disk is met.
+
+Default: `0.3` (always keep 30% of the disk available)
 
 ### `KUBO_RPC_URL`
 
