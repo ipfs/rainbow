@@ -46,12 +46,12 @@ only websites, but any supported content-addressed Merkle-DAG), in formats
 that are suitable for verification client-side (i.e. CAR files).
 
 Rainbow is optimized to perform the tasks of a gateway and only that, making
-opinionated choices on the configration and setup of internal
+opinionated choices on the configuration and setup of internal
 components. Rainbow aims to serve production environments, where gateways are
 deployed as a public service meant to be accessible by anyone. Rainbow acts as
 a client to the IPFS network and does not serve or provide content to
 it. Rainbow cannot be used to store or pin IPFS content, other than that
-temporailly served over HTTP. Rainbow is just a gateway.
+temporarily served over HTTP. Rainbow is just a gateway.
 
 Persistent configuration and data is stored in $RAINBOW_DATADIR (by default,
 the folder in which rainbow is run).
@@ -73,7 +73,6 @@ Generate an identity seed and launch a gateway:
 `
 
 	app.Flags = []cli.Flag{
-
 		&cli.StringFlag{
 			Name:    "datadir",
 			Value:   "",
@@ -122,7 +121,6 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_CTL_LISTEN_ADDRESS"},
 			Usage:   "Listen address for the management api and metrics",
 		},
-
 		&cli.IntFlag{
 			Name:    "connmgr-low",
 			Value:   100,
