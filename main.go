@@ -339,10 +339,16 @@ share the same seed as long as the indexes are different.
 		var wg sync.WaitGroup
 		wg.Add(2)
 
-		fmt.Printf("Gateway listening at %s\n", gatewayListen)
-		fmt.Printf("Legacy RPC at /api/v0 (%s): %s\n", EnvKuboRPC, strings.Join(gnd.kuboRPCs, " "))
+		fmt.Printf("IPFS Gateway listening at %s\n\n", gatewayListen)
+
+		printIfListConfigured("  RAINBOW_GATEWAY_DOMAINS           = ", cfg.GatewayDomains)
+		printIfListConfigured("  RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS = ", cfg.SubdomainGatewayDomains)
+		printIfListConfigured("  RAINBOW_TRUSTLESS_GATEWAY_DOMAINS = ", cfg.TrustlessGatewayDomains)
+		printIfListConfigured("  Legacy RPC at /api/v0 will redirect to KUBO_RPC_URL = ", cfg.KuboRPCURLs)
+
+		fmt.Printf("\n")
 		fmt.Printf("CTL endpoint listening at http://%s\n", ctlListen)
-		fmt.Printf("Metrics: http://%s/debug/metrics/prometheus\n\n", ctlListen)
+		fmt.Printf("  Metrics: http://%s/debug/metrics/prometheus\n\n", ctlListen)
 
 		go func() {
 			defer wg.Done()
@@ -428,4 +434,10 @@ func getCommaSeparatedList(val string) []string {
 		items[i] = strings.TrimSpace(item)
 	}
 	return items
+}
+
+func printIfListConfigured(message string, list []string) {
+	if len(list) > 0 {
+		fmt.Printf(message+"%v\n", strings.Join(list, ", "))
+	}
 }
