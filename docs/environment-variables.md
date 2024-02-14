@@ -5,6 +5,7 @@
 - [Configuration](#configuration)
   - [`RAINBOW_GATEWAY_DOMAINS`](#rainbow_gateway_domains)
   - [`RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS`](#rainbow_subdomain_gateway_domains)
+  - [`RAINBOW_TRUSTLESS_GATEWAY_DOMAINS`](#rainbow_trustless_gateway_domains)
   - [`KUBO_RPC_URL`](#kubo_rpc_url)
 - [Logging](#logging)
   - [`GOLOG_LOG_LEVEL`](#golog_log_level)
@@ -19,26 +20,56 @@
 
 ### `RAINBOW_GATEWAY_DOMAINS`
 
-Comma-separated list of path gateway hostnames. For example, passing `ipfs.io` will enable handler for standard [path gateway](https://specs.ipfs.tech/http-gateways/path-gateway/) requests with the `Host` header set to `ipfs.io`.
+Comma-separated list of [path gateway](https://specs.ipfs.tech/http-gateways/path-gateway/)
+hostnames that will serve both trustless and deserialized response types.
+
+Example:  passing `ipfs.io` will enable deserialized handler for flat
+[path gateway](https://specs.ipfs.tech/http-gateways/path-gateway/)
+requests with the `Host` header set to `ipfs.io`.
 
 Default: `127.0.0.1`
 
-
 ### `RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS`
 
-Comma-separated list of [subdomain gateway](https://specs.ipfs.tech/http-gateways/subdomain-gateway/) domains. For example, passing `dweb.link` will enable handler for standard [subdomain gateway](https://specs.ipfs.tech/http-gateways/subdomain-gateway/) requests with the `Host` header set to `*.ipfs.dweb.link` and  `*.ipns.dweb.link`.
+Comma-separated list of [subdomain gateway](https://specs.ipfs.tech/http-gateways/subdomain-gateway/)
+domains for website hosting with Origin-isolation per content root.
+
+Example: passing `dweb.link` will enable handler for Origin-isolated
+[subdomain gateway](https://specs.ipfs.tech/http-gateways/subdomain-gateway/)
+requests with the `Host` header with subdomain values matching
+`*.ipfs.dweb.link` or  `*.ipns.dweb.link`.
 
 Default: `localhost`
 
-### `KUBO_RPC_URL`
+### `RAINBOW_TRUSTLESS_GATEWAY_DOMAINS`
 
-Default: `127.0.0.1:5001` (see `DefaultKuboRPC`)
+Specifies trustless-only hostnames.
+
+Comma-separated list of [trustless gateway](https://specs.ipfs.tech/http-gateways/trustless-gateway/)
+domains, where unverified website asset hosting and deserialized responses is
+disabled, and **response types requested via `?format=` and `Accept` HTTP header are limited to
+[verifiable content types](https://docs.ipfs.tech/reference/http/gateway/#trustless-verifiable-retrieval)**:
+- [`application/vnd.ipld.raw`](https://www.iana.org/assignments/media-types/application/vnd.ipld.raw)
+- [`application/vnd.ipld.car`](https://www.iana.org/assignments/media-types/application/vnd.ipld.car)
+- [`application/vnd.ipfs.ipns-record`](https://www.iana.org/assignments/media-types/application/vnd.ipfs.ipns-record)
+
+**NOTE:** This setting is applied on top of everything else, to ensure
+trustless domains can't be used for phishing or direct hotlinking and hosting of third-party content. Hostnames that are passed to both `RAINBOW_GATEWAY_DOMAINS` and `RAINBOW_TRUSTLESS_GATEWAY_DOMAINS` will work only as trustless gateways. 
+
+Example:  passing `trustless-gateway.link` will ensure only verifiable content types are supported
+when request comes with the `Host` header set to `trustless-gateway.link`.
+
+Default: none (`Host` is ignored and gateway at `127.0.0.1` supports both deserialized and verifiable response types)
+
+### `KUBO_RPC_URL`
 
 Single URL or a comma separated list of RPC endpoints that provide legacy `/api/v0` from Kubo.
 
 We use this to redirect some legacy `/api/v0` commands that need to be handled on `ipfs.io`.
 
-This is deprecated and will be removed in the future.
+**NOTE:** This is deprecated and will be removed in the future.
+
+Default: `127.0.0.1:5001` (see `DefaultKuboRPC`)
 
 ## Logging
 

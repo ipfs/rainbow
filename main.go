@@ -46,12 +46,12 @@ only websites, but any supported content-addressed Merkle-DAG), in formats
 that are suitable for verification client-side (i.e. CAR files).
 
 Rainbow is optimized to perform the tasks of a gateway and only that, making
-opinionated choices on the configration and setup of internal
+opinionated choices on the configuration and setup of internal
 components. Rainbow aims to serve production environments, where gateways are
 deployed as a public service meant to be accessible by anyone. Rainbow acts as
 a client to the IPFS network and does not serve or provide content to
 it. Rainbow cannot be used to store or pin IPFS content, other than that
-temporailly served over HTTP. Rainbow is just a gateway.
+temporarily served over HTTP. Rainbow is just a gateway.
 
 Persistent configuration and data is stored in $RAINBOW_DATADIR (by default,
 the folder in which rainbow is run).
@@ -73,7 +73,6 @@ Generate an identity seed and launch a gateway:
 `
 
 	app.Flags = []cli.Flag{
-
 		&cli.StringFlag{
 			Name:    "datadir",
 			Value:   "",
@@ -96,13 +95,19 @@ Generate an identity seed and launch a gateway:
 			Name:    "gateway-domains",
 			Value:   "",
 			EnvVars: []string{"RAINBOW_GATEWAY_DOMAINS"},
-			Usage:   "Legacy path-gateway domains. Comma-separated list.",
+			Usage:   "Domains with flat path gateway, no Origin isolation. Comma-separated list.",
 		},
 		&cli.StringFlag{
 			Name:    "subdomain-gateway-domains",
 			Value:   "",
 			EnvVars: []string{"RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS"},
-			Usage:   "Subdomain gateway domains. Comma-separated list.",
+			Usage:   "Domains with subdomain-based Origin isolation. Comma-separated list.",
+		},
+		&cli.StringFlag{
+			Name:    "trustless-gateway-domains",
+			Value:   "",
+			EnvVars: []string{"RAINBOW_TRUSTLESS_GATEWAY_DOMAINS"},
+			Usage:   "Domains limited to trustless, verifiable response types. Comma-separated list.",
 		},
 		&cli.StringFlag{
 			Name:    "gateway-listen-address",
@@ -116,7 +121,6 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_CTL_LISTEN_ADDRESS"},
 			Usage:   "Listen address for the management api and metrics",
 		},
-
 		&cli.IntFlag{
 			Name:    "connmgr-low",
 			Value:   100,
@@ -270,6 +274,7 @@ share the same seed as long as the indexes are different.
 			BlockstoreType:          cctx.String("blockstore"),
 			GatewayDomains:          getCommaSeparatedList(cctx.String("gateway-domains")),
 			SubdomainGatewayDomains: getCommaSeparatedList(cctx.String("subdomain-gateway-domains")),
+			TrustlessGatewayDomains: getCommaSeparatedList(cctx.String("trustless-gateway-domains")),
 			ConnMgrLow:              cctx.Int("connmgr-low"),
 			ConnMgrHi:               cctx.Int("connmgr-high"),
 			ConnMgrGrace:            cctx.Duration("connmgr-grace"),
@@ -334,10 +339,16 @@ share the same seed as long as the indexes are different.
 		var wg sync.WaitGroup
 		wg.Add(2)
 
-		fmt.Printf("Gateway listening at %s\n", gatewayListen)
-		fmt.Printf("Legacy RPC at /api/v0 (%s): %s\n", EnvKuboRPC, strings.Join(gnd.kuboRPCs, " "))
+		fmt.Printf("IPFS Gateway listening at %s\n\n", gatewayListen)
+
+		printIfListConfigured("  RAINBOW_GATEWAY_DOMAINS           = ", cfg.GatewayDomains)
+		printIfListConfigured("  RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS = ", cfg.SubdomainGatewayDomains)
+		printIfListConfigured("  RAINBOW_TRUSTLESS_GATEWAY_DOMAINS = ", cfg.TrustlessGatewayDomains)
+		printIfListConfigured("  Legacy RPC at /api/v0 will redirect to KUBO_RPC_URL = ", cfg.KuboRPCURLs)
+
+		fmt.Printf("\n")
 		fmt.Printf("CTL endpoint listening at http://%s\n", ctlListen)
-		fmt.Printf("Metrics: http://%s/debug/metrics/prometheus\n\n", ctlListen)
+		fmt.Printf("  Metrics: http://%s/debug/metrics/prometheus\n\n", ctlListen)
 
 		go func() {
 			defer wg.Done()
@@ -423,4 +434,10 @@ func getCommaSeparatedList(val string) []string {
 		items[i] = strings.TrimSpace(item)
 	}
 	return items
+}
+
+func printIfListConfigured(message string, list []string) {
+	if len(list) > 0 {
+		fmt.Printf(message+"%v\n", strings.Join(list, ", "))
+	}
 }
