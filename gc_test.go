@@ -12,7 +12,7 @@ import (
 func TestPeriodicGC(t *testing.T) {
 	t.Parallel()
 
-	_, gnd := mustTestServer(t, Config{})
+	gnd := mustTestNode(t, Config{})
 
 	cids := []cid.Cid{
 		mustAddFile(t, gnd, []byte("a")),
