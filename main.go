@@ -374,6 +374,8 @@ share the same seed as long as the indexes are different.
 			}
 		}()
 
+		_ = gnd.periodicGC(cctx.Context, cfg.GCThreshold)
+
 		go func() {
 			defer wg.Done()
 
