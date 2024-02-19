@@ -202,7 +202,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "ipns-max-cache-ttl",
 			Value:   0,
 			EnvVars: []string{"RAINBOW_IPNS_MAX_CACHE_TTL"},
-			Usage:   "The maximum duration IPNS entries are valid in the cache. Set 0 to disable.",
+			Usage:   "Optional cap on caching duration for IPNS/DNSLink lookups. Set to 0 to respect original TTLs.",
 		},
 	}
 
