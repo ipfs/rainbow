@@ -101,6 +101,7 @@ type Config struct {
 	RoutingV1               string
 	KuboRPCURLs             []string
 	DHTSharedHost           bool
+	IpnsMaxCacheTTL         time.Duration
 
 	DenylistSubs []string
 	Peering      []peer.AddrInfo
@@ -346,7 +347,11 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 	if err != nil {
 		return nil, err
 	}
-	ns, err := namesys.NewNameSystem(vs, namesys.WithDNSResolver(dns))
+	nsOptions := []namesys.Option{namesys.WithDNSResolver(dns)}
+	if cfg.IpnsMaxCacheTTL > 0 {
+		nsOptions = append(nsOptions, namesys.WithMaxCacheTTL(cfg.IpnsMaxCacheTTL))
+	}
+	ns, err := namesys.NewNameSystem(vs, nsOptions...)
 	if err != nil {
 		return nil, err
 	}
