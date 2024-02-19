@@ -14,6 +14,9 @@ func TestPeriodicGC(t *testing.T) {
 
 	gnd := mustTestNode(t, Config{})
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	cids := []cid.Cid{
 		mustAddFile(t, gnd, []byte("a")),
 		mustAddFile(t, gnd, []byte("b")),
@@ -24,7 +27,7 @@ func TestPeriodicGC(t *testing.T) {
 	}
 
 	for i, cid := range cids {
-		has, err := gnd.blockstore.Has(context.Background(), cid)
+		has, err := gnd.blockstore.Has(ctx, cid)
 		assert.NoError(t, err, i)
 		assert.True(t, has, i)
 	}
@@ -35,11 +38,11 @@ func TestPeriodicGC(t *testing.T) {
 	// not if the timer is being correctly set-up.
 	//
 	// Tracked in https://github.com/ipfs/rainbow/issues/89
-	err := gnd.periodicGC(context.Background(), 1)
+	err := gnd.periodicGC(ctx, 1)
 	require.NoError(t, err)
 
 	for i, cid := range cids {
-		has, err := gnd.blockstore.Has(context.Background(), cid)
+		has, err := gnd.blockstore.Has(ctx, cid)
 		assert.NoError(t, err, i)
 		assert.False(t, has, i)
 	}
