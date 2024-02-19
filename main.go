@@ -198,6 +198,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_BLOCKSTORE"},
 			Usage:   "Type of blockstore to use, such as flatfs or badger. See https://github.com/ipfs/rainbow/blockstore.md for more details",
 		},
+		&cli.DurationFlag{
+			Name:    "ipns-max-cache-ttl",
+			Value:   0,
+			EnvVars: []string{"RAINBOW_IPNS_MAX_CACHE_TTL"},
+			Usage:   "The maximum duration IPNS entries are valid in the cache. Set 0 to disable.",
+		},
 	}
 
 	app.Commands = []*cli.Command{
@@ -296,6 +302,7 @@ share the same seed as long as the indexes are different.
 			RoutingV1:               cctx.String("routing"),
 			KuboRPCURLs:             getEnvs(EnvKuboRPC, DefaultKuboRPC),
 			DHTSharedHost:           cctx.Bool("dht-shared-host"),
+			IpnsMaxCacheTTL:         cctx.Duration("ipns-max-cache-ttl"),
 			DenylistSubs:            getCommaSeparatedList(cctx.String("denylists")),
 			Peering:                 peeringAddrs,
 			GCInterval:              cctx.Duration("gc-interval"),

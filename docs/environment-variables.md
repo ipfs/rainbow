@@ -8,6 +8,7 @@
   - [`RAINBOW_TRUSTLESS_GATEWAY_DOMAINS`](#rainbow_trustless_gateway_domains)
   - [`RAINBOW_GC_INTERVAL`](#rainbow_gc_interval)
   - [`RAINBOW_GC_THRESHOLD`](#rainbow_gc_threshold)
+  - [`RAINBOW_IPNS_MAX_CACHE_TTL`](#rainbow_ipns_max_cache_ttl)
   - [`KUBO_RPC_URL`](#kubo_rpc_url)
 - [Logging](#logging)
   - [`GOLOG_LOG_LEVEL`](#golog_log_level)
@@ -67,7 +68,6 @@ Default: none (`Host` is ignored and gateway at `127.0.0.1` supports both deseri
 
 The interval at which the garbage collector will be called. This is given as a string that corresponds to the duration of the interval. Set 0 to disable.
 
-
 Default: `60m`
 
 ## `RAINBOW_GC_THRESHOLD`
@@ -77,6 +77,14 @@ The threshold of how much free space one wants to always have available on disk.
 When the periodic GC runs, it checks for the total and available space on disk. If the available space is larger than the threshold, the GC is not called. Otherwise, the GC is asked to remove how many bytes necessary such that the threshold of available space on disk is met.
 
 Default: `0.3` (always keep 30% of the disk available)
+
+## `RAINBOW_IPNS_MAX_CACHE_TTL`
+
+The maximum duration which entries are valid in the name system cache. They are applied to everything under the `/ipns/` namespace, and allows you to cap the [Time-To-Live (TTL)](https://specs.ipfs.tech/ipns/ipns-record/#ttl-uint64) of [IPNS Records](https://specs.ipfs.tech/ipns/ipns-record/).
+
+When `RAINBOW_IPNS_MAX_CACHE_TTL` is set, it defines the upper bound limit of how long a [IPNS Name](https://specs.ipfs.tech/ipns/ipns-record/#ipns-name) lookup result will be cached and read from cache before checking for updates.
+
+Default: No upper bound, [TTL from IPNS Record](https://specs.ipfs.tech/ipns/ipns-record/#ttl-uint64)
 
 ### `KUBO_RPC_URL`
 
