@@ -80,11 +80,16 @@ Default: `0.3` (always keep 30% of the disk available)
 
 ## `RAINBOW_IPNS_MAX_CACHE_TTL`
 
-The maximum duration which entries are valid in the name system cache. They are applied to everything under the `/ipns/` namespace, and allows you to cap the [Time-To-Live (TTL)](https://specs.ipfs.tech/ipns/ipns-record/#ttl-uint64) of [IPNS Records](https://specs.ipfs.tech/ipns/ipns-record/).
+When set, it defines the upper bound limit (in ms) of how long a `/ipns/{id}`
+lookup result will be cached and read from cache before checking for updates.
 
-When `RAINBOW_IPNS_MAX_CACHE_TTL` is set, it defines the upper bound limit of how long a [IPNS Name](https://specs.ipfs.tech/ipns/ipns-record/#ipns-name) lookup result will be cached and read from cache before checking for updates.
+The limit is applied to everything under the `/ipns/` namespace, and allows to cap both
+the [Time-To-Live (TTL)](https://specs.ipfs.tech/ipns/ipns-record/#ttl-uint64)
+of [IPNS Records](https://specs.ipfs.tech/ipns/ipns-record/)
+and the [TTL of DNS TXT records](https://datatracker.ietf.org/doc/html/rfc2181#section-8)
+with [DNSLink](https://dnslink.dev/).
 
-Default: No upper bound, [TTL from IPNS Record](https://specs.ipfs.tech/ipns/ipns-record/#ttl-uint64)
+Default: No upper bound, [TTL from IPNS Record](https://specs.ipfs.tech/ipns/ipns-record/#ttl-uint64) or [TTL from DNSLink](https://datatracker.ietf.org/doc/html/rfc2181#section-8) used as-is.
 
 ### `KUBO_RPC_URL`
 
