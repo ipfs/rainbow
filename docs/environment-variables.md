@@ -67,7 +67,6 @@ Default: none (`Host` is ignored and gateway at `127.0.0.1` supports both deseri
 
 The interval at which the garbage collector will be called. This is given as a string that corresponds to the duration of the interval. Set 0 to disable.
 
-This functionality does not work on Windows.
 
 Default: `60m`
 
