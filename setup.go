@@ -64,6 +64,7 @@ type Node struct {
 	vs   routing.ValueStore
 	host host.Host
 
+	dataDir    string
 	datastore  datastore.Batching
 	blockstore blockstore.Blockstore
 	bsClient   *bsclient.Client
@@ -103,9 +104,19 @@ type Config struct {
 
 	DenylistSubs []string
 	Peering      []peer.AddrInfo
+
+	GCInterval  time.Duration
+	GCThreshold float64
 }
 
 func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cachedDNS) (*Node, error) {
+	var err error
+
+	cfg.DataDir, err = filepath.Abs(cfg.DataDir)
+	if err != nil {
+		return nil, err
+	}
+
 	ds, err := setupDatastore(cfg)
 	if err != nil {
 		return nil, err
@@ -350,6 +361,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 	return &Node{
 		host:         h,
 		blockstore:   blkst,
+		dataDir:      cfg.DataDir,
 		datastore:    ds,
 		bsClient:     bswap,
 		ns:           ns,

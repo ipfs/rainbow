@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+
 	badger4 "github.com/ipfs/go-ds-badger4"
+	"github.com/shirou/gopsutil/v3/disk"
 )
 
 // GC is a really stupid simple algorithm where we just delete things until
@@ -44,4 +46,28 @@ deleteBlocks:
 	}
 
 	return nil
+}
+
+func (nd *Node) periodicGC(ctx context.Context, threshold float64) error {
+	stat, err := disk.Usage(nd.dataDir)
+	if err != nil {
+		return err
+	}
+
+	// Calculate % of the total space
+	minFreeBytes := uint64((float64(stat.Total) * threshold))
+
+	goLog.Infow("disk data collected", "total_bytes", stat.Total, "available_bytes", stat.Free, "min_free_bytes", minFreeBytes)
+
+	// If there's enough free space, do nothing.
+	if minFreeBytes < stat.Free {
+		return nil
+	}
+
+	bytesToFree := (minFreeBytes - stat.Free)
+	if bytesToFree <= 0 {
+		return nil
+	}
+
+	return nd.GC(ctx, int64(bytesToFree))
 }

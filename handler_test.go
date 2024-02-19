@@ -97,7 +97,7 @@ func TestRPCNotImplemented(t *testing.T) {
 	}
 }
 
-func mustTestServer(t *testing.T, cfg Config) (*httptest.Server, *Node) {
+func mustTestNode(t *testing.T, cfg Config) *Node {
 	cfg.DataDir = t.TempDir()
 	cfg.BlockstoreType = "flatfs"
 
@@ -114,9 +114,12 @@ func mustTestServer(t *testing.T, cfg Config) (*httptest.Server, *Node) {
 	})
 
 	gnd, err := Setup(ctx, cfg, sk, cdns)
-	if err != nil {
-		require.NoError(t, err)
-	}
+	require.NoError(t, err)
+	return gnd
+}
+
+func mustTestServer(t *testing.T, cfg Config) (*httptest.Server, *Node) {
+	gnd := mustTestNode(t, cfg)
 
 	handler, err := setupGatewayHandler(cfg, gnd)
 	if err != nil {
