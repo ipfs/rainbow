@@ -64,13 +64,13 @@ when request comes with the `Host` header set to `trustless-gateway.link`.
 
 Default: none (`Host` is ignored and gateway at `127.0.0.1` supports both deserialized and verifiable response types)
 
-## `RAINBOW_GC_INTERVAL`
+### `RAINBOW_GC_INTERVAL`
 
 The interval at which the garbage collector will be called. This is given as a string that corresponds to the duration of the interval. Set 0 to disable.
 
 Default: `60m`
 
-## `RAINBOW_GC_THRESHOLD`
+### `RAINBOW_GC_THRESHOLD`
 
 The threshold of how much free space one wants to always have available on disk. This is used with the periodic garbage collector.
 
@@ -78,7 +78,7 @@ When the periodic GC runs, it checks for the total and available space on disk. 
 
 Default: `0.3` (always keep 30% of the disk available)
 
-## `RAINBOW_IPNS_MAX_CACHE_TTL`
+### `RAINBOW_IPNS_MAX_CACHE_TTL`
 
 When set, it defines the upper bound limit (in ms) of how long a `/ipns/{id}`
 lookup result will be cached and read from cache before checking for updates.
