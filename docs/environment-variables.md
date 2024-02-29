@@ -125,7 +125,7 @@ Default: `error`
 Example:
 
 ```console
-GOLOG_LOG_LEVEL="error,bifrost-gateway=debug,caboose=debug" bifrost-gateway
+GOLOG_LOG_LEVEL="error,rainbow=debug,caboose=debug" rainbow
 ```
 
 ### `GOLOG_LOG_FMT`
@@ -146,13 +146,11 @@ The logging format defaults to `color` when the output is a terminal, and
 
 ### `GOLOG_FILE`
 
-Sets the file to which the Bifrost Gateway logs. By default, the Bifrost Gateway
-logs to the standard error output.
+Sets the file to which the logs are saved. By default, they are printed to the standard error output.
 
 ### `GOLOG_TRACING_FILE`
 
-Sets the file to which the Bifrost Gateway sends tracing events. By default,
-tracing is disabled.
+Sets the file to which the tracing events are sent. By default, tracing is disabled.
 
 Warning: Enabling tracing will likely affect performance.
 
