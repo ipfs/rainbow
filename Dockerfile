@@ -37,7 +37,6 @@ RUN apt-get update && \
 ENV GOPATH                 /go
 ENV SRC_PATH               $GOPATH/src/github.com/ipfs/rainbow
 ENV RAINBOW_GATEWAY_PATH   /data/rainbow
-ENV KUBO_RPC_URL           https://node0.delegate.ipfs.io,https://node1.delegate.ipfs.io,https://node2.delegate.ipfs.io,https://node3.delegate.ipfs.io
 
 COPY --from=builder $GOPATH/bin/rainbow /usr/local/bin/rainbow
 COPY --from=builder $SRC_PATH/docker/entrypoint.sh /usr/local/bin/entrypoint.sh

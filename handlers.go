@@ -3,19 +3,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"os"
 	"runtime"
 	"strconv"
-	"time"
 
 	_ "embed"
 	_ "net/http/pprof"
 
 	"github.com/felixge/httpsnoop"
 	"github.com/ipfs/boxo/gateway"
-	"github.com/ipfs/boxo/path"
 	servertiming "github.com/mitchellh/go-server-timing"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -24,8 +21,6 @@ import (
 
 //go:embed static/index.html
 var indexHTML []byte
-
-const DefaultKuboRPC = "http://127.0.0.1:5001"
 
 func makeMetricsAndDebuggingHandler() *http.ServeMux {
 	mux := http.NewServeMux()
@@ -108,7 +103,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	// TODO: allow appending hostnames to this list via ENV variable (separate PATH_GATEWAY_HOSTS & SUBDOMAIN_GATEWAY_HOSTS)
 	publicGateways := map[string]*gateway.PublicGateway{
 		"localhost": {
-			Paths:                 []string{"/ipfs", "/ipns", "/version", "/api/v0"},
+			Paths:                 []string{"/ipfs", "/ipns", "/version"},
 			NoDNSLink:             noDNSLink,
 			InlineDNSLink:         false,
 			DeserializedResponses: true,
@@ -117,7 +112,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	}
 	for _, domain := range cfg.GatewayDomains {
 		publicGateways[domain] = &gateway.PublicGateway{
-			Paths:                 []string{"/ipfs", "/ipns", "/version", "/api/v0"},
+			Paths:                 []string{"/ipfs", "/ipns", "/version"},
 			NoDNSLink:             noDNSLink,
 			InlineDNSLink:         true,
 			DeserializedResponses: true,
@@ -127,7 +122,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 
 	for _, domain := range cfg.SubdomainGatewayDomains {
 		publicGateways[domain] = &gateway.PublicGateway{
-			Paths:                 []string{"/ipfs", "/ipns", "/version", "/api/v0"},
+			Paths:                 []string{"/ipfs", "/ipns", "/version"},
 			NoDNSLink:             noDNSLink,
 			InlineDNSLink:         true,
 			DeserializedResponses: true,
@@ -175,10 +170,6 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 		fmt.Fprintf(w, "Client: %s\n", name)
 		fmt.Fprintf(w, "Version: %s\n", version)
 	})
-	// TODO: below is legacy which we want to remove, measuring this separately
-	// allows us to decide when is the time to do it.
-	legacyKuboRPCHandler := withHTTPMetrics(newKuboRPCHandler(nd.kuboRPCs), "legacyKuboRpc")
-	topMux.Handle("/api/v0/", legacyKuboRPCHandler)
 	topMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(indexHTML)
 	})
@@ -199,94 +190,6 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	handler = otelhttp.NewHandler(handler, "Gateway")
 
 	return handler, nil
-}
-
-// Prefixes with /ipfs/ unprefixed paths.
-func prefixPath(p string) string {
-	if len(p) == 0 {
-		return p
-	}
-	if p[0] != '/' {
-		return "/ipfs/" + p
-	}
-	return p // let NewPath handle whatever issues from here.
-}
-
-func newKuboRPCHandler(endpoints []string) http.Handler {
-	mux := http.NewServeMux()
-
-	// Endpoints that can be redirected to the gateway itself as they can be handled
-	// by the path gateway. We use 303 See Other here to ensure that the API requests
-	// are transformed to GET requests to the gateway.
-	// - https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/303
-	redirectToGateway := func(format string) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			path, err := path.NewPath(prefixPath(r.URL.Query().Get("arg")))
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(err.Error()))
-				return
-			}
-			url := path.String()
-			if format != "" {
-				url += "?format=" + format
-			}
-
-			goLog.Debugw("api request redirected to gateway", "url", r.URL, "redirect", url)
-			http.Redirect(w, r, url, http.StatusSeeOther)
-		}
-	}
-
-	mux.HandleFunc("/api/v0/cat", redirectToGateway(""))
-	mux.HandleFunc("/api/v0/dag/export", redirectToGateway("car"))
-	mux.HandleFunc("/api/v0/block/get", redirectToGateway("raw"))
-	mux.HandleFunc("/api/v0/dag/get", func(w http.ResponseWriter, r *http.Request) {
-		path, err := path.NewPath(prefixPath(r.URL.Query().Get("arg")))
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
-			return
-		}
-		codec := r.URL.Query().Get("output-codec")
-		if codec == "" {
-			codec = "dag-json"
-		}
-		url := fmt.Sprintf("%s?format=%s", path.String(), codec)
-		goLog.Debugw("api request redirected to gateway", "url", r.URL, "redirect", url)
-		http.Redirect(w, r, url, http.StatusSeeOther)
-	})
-
-	// Endpoints that have high traffic volume. We will keep redirecting these
-	// for now to Kubo endpoints that are able to handle these requests. We use
-	// 307 Temporary Redirect in order to preserve the original HTTP Method.
-	// - https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/307
-	s := rand.NewSource(time.Now().Unix())
-	rand := rand.New(s)
-	redirectToKubo := func(w http.ResponseWriter, r *http.Request) {
-		// Naively choose one of the Kubo RPC clients.
-		endpoint := endpoints[rand.Intn(len(endpoints))]
-		url := endpoint + r.URL.Path
-		if r.URL.RawQuery != "" {
-			url += "?" + r.URL.RawQuery
-		}
-		goLog.Debugw("api request redirected to kubo", "url", r.URL, "redirect", url)
-		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-	}
-
-	mux.HandleFunc("/api/v0/name/resolve", redirectToKubo)
-	mux.HandleFunc("/api/v0/name/resolve/", redirectToKubo)
-	mux.HandleFunc("/api/v0/resolve", redirectToKubo)
-	mux.HandleFunc("/api/v0/dag/resolve", redirectToKubo)
-	mux.HandleFunc("/api/v0/dns", redirectToKubo)
-
-	// Remaining requests to the API receive a 501, as well as an explanation.
-	mux.HandleFunc("/api/v0/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotImplemented)
-		goLog.Debugw("api request returned 501", "url", r.URL)
-		w.Write([]byte("The /api/v0 Kubo RPC is now discontinued on this server as it is not part of the gateway specification. If you need this API, please self-host a Kubo instance yourself: https://docs.ipfs.tech/install/command-line/"))
-	})
-
-	return mux
 }
 
 // MutexFractionOption allows to set runtime.SetMutexProfileFraction via HTTP

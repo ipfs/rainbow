@@ -25,8 +25,6 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-const EnvKuboRPC = "KUBO_RPC_URL"
-
 var goLog = logging.Logger("rainbow")
 
 func main() {
@@ -300,7 +298,6 @@ share the same seed as long as the indexes are different.
 			MaxFD:                   cctx.Int("max-fd"),
 			InMemBlockCache:         cctx.Int64("inmem-block-cache"),
 			RoutingV1:               cctx.String("routing"),
-			KuboRPCURLs:             getEnvs(EnvKuboRPC, DefaultKuboRPC),
 			DHTSharedHost:           cctx.Bool("dht-shared-host"),
 			IpnsMaxCacheTTL:         cctx.Duration("ipns-max-cache-ttl"),
 			DenylistSubs:            getCommaSeparatedList(cctx.String("denylists")),
@@ -365,7 +362,6 @@ share the same seed as long as the indexes are different.
 		printIfListConfigured("  RAINBOW_GATEWAY_DOMAINS           = ", cfg.GatewayDomains)
 		printIfListConfigured("  RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS = ", cfg.SubdomainGatewayDomains)
 		printIfListConfigured("  RAINBOW_TRUSTLESS_GATEWAY_DOMAINS = ", cfg.TrustlessGatewayDomains)
-		printIfListConfigured("  Legacy RPC at /api/v0 will redirect to KUBO_RPC_URL = ", cfg.KuboRPCURLs)
 
 		fmt.Printf("\n")
 		fmt.Printf("CTL endpoint listening at http://%s\n", ctlListen)
@@ -465,18 +461,6 @@ func writeAllGoroutineStacks(w io.Writer) error {
 	}
 	_, err := w.Write(buf)
 	return err
-}
-
-func getEnvs(key, defaultValue string) []string {
-	value := os.Getenv(key)
-	if value == "" {
-		if defaultValue == "" {
-			return []string{}
-		}
-		value = defaultValue
-	}
-	value = strings.TrimSpace(value)
-	return strings.Split(value, ",")
 }
 
 func getCommaSeparatedList(val string) []string {
