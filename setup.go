@@ -71,8 +71,7 @@ type Node struct {
 	bsrv       blockservice.BlockService
 	resolver   resolver.Resolver
 
-	ns       namesys.NameSystem
-	kuboRPCs []string
+	ns namesys.NameSystem
 
 	bwc *metrics.BandwidthCounter
 
@@ -99,7 +98,6 @@ type Config struct {
 	SubdomainGatewayDomains []string
 	TrustlessGatewayDomains []string
 	RoutingV1               string
-	KuboRPCURLs             []string
 	DHTSharedHost           bool
 	IpnsMaxCacheTTL         time.Duration
 
@@ -374,7 +372,6 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		bsrv:         bsrv,
 		resolver:     r,
 		bwc:          bwc,
-		kuboRPCs:     cfg.KuboRPCURLs,
 		blocker:      blocker,
 		denylistSubs: denylists,
 	}, nil

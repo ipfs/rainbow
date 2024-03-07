@@ -9,7 +9,6 @@
   - [`RAINBOW_GC_INTERVAL`](#rainbow_gc_interval)
   - [`RAINBOW_GC_THRESHOLD`](#rainbow_gc_threshold)
   - [`RAINBOW_IPNS_MAX_CACHE_TTL`](#rainbow_ipns_max_cache_ttl)
-  - [`KUBO_RPC_URL`](#kubo_rpc_url)
 - [Logging](#logging)
   - [`GOLOG_LOG_LEVEL`](#golog_log_level)
   - [`GOLOG_LOG_FMT`](#golog_log_fmt)
@@ -90,16 +89,6 @@ and the [TTL of DNS TXT records](https://datatracker.ietf.org/doc/html/rfc2181#s
 with [DNSLink](https://dnslink.dev/).
 
 Default: No upper bound, [TTL from IPNS Record](https://specs.ipfs.tech/ipns/ipns-record/#ttl-uint64) or [TTL from DNSLink](https://datatracker.ietf.org/doc/html/rfc2181#section-8) used as-is.
-
-### `KUBO_RPC_URL`
-
-Single URL or a comma separated list of RPC endpoints that provide legacy `/api/v0` from Kubo.
-
-We use this to redirect some legacy `/api/v0` commands that need to be handled on `ipfs.io`.
-
-**NOTE:** This is deprecated and will be removed in the future.
-
-Default: `127.0.0.1:5001` (see `DefaultKuboRPC`)
 
 ## Logging
 
