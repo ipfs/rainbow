@@ -170,6 +170,10 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 		fmt.Fprintf(w, "Client: %s\n", name)
 		fmt.Fprintf(w, "Version: %s\n", version)
 	})
+	topMux.HandleFunc("/api/v0/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotImplemented)
+		w.Write([]byte("The /api/v0 Kubo RPC is not part of IPFS Gateway Specs (https://specs.ipfs.tech/http-gateways/). Consider refactoring your app. If you still need this Kubo endpoint, please self-host a Kubo instance yourself: https://docs.ipfs.tech/install/command-line/ with proper auth https://github.com/ipfs/kubo/blob/master/docs/config.md#apiauthorizations"))
+	})
 	topMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write(indexHTML)
 	})
