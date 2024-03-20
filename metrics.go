@@ -40,10 +40,18 @@ var httpMetricsObjectives = map[float64]float64{
 // per specific handler. Allows us to track them separately for /ipns and /ipfs.
 func withHTTPMetrics(handler http.Handler, handlerName string) http.Handler {
 
+	opts := prometheus.HistogramOpts{
+		Namespace:   "ipfs",
+		Subsystem:   "http",
+		Buckets:     []float64{0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60},
+		ConstLabels: prometheus.Labels{"handler": handlerName},
+	}
+
+	// deprecated in favour of the histogram
 	// HTTP metric template names match Kubo:
 	// https://github.com/ipfs/kubo/blob/e550d9e4761ea394357c413c02ade142c0dea88c/core/corehttp/metrics.go#L79-L152
 	// This allows Kubo users to migrate to rainbow and compare global totals.
-	opts := prometheus.SummaryOpts{
+	sumOpts := prometheus.SummaryOpts{
 		Namespace:   "ipfs",
 		Subsystem:   "http",
 		Objectives:  httpMetricsObjectives,
@@ -76,26 +84,47 @@ func withHTTPMetrics(handler http.Handler, handlerName string) http.Handler {
 	)
 	prometheus.MustRegister(reqCnt)
 
-	opts.Name = "request_duration_seconds"
-	opts.Help = "The HTTP request latencies in seconds."
-	reqDur := prometheus.NewSummaryVec(opts, labels)
-	prometheus.MustRegister(reqDur)
+	// Summary is deprecated in favour of the histogram. Will be removed in a future release
+	sumOpts.Name = "request_duration_seconds"
+	sumOpts.Help = "The HTTP request latencies in seconds."
+	reqDurSum := prometheus.NewSummaryVec(sumOpts, labels)
+	prometheus.MustRegister(reqDurSum)
 
-	opts.Name = "request_size_bytes"
+	opts.Name = "request_duration_hist_seconds"
+	opts.Help = "The HTTP request latencies in seconds. "
+	reqDurHist := prometheus.NewHistogramVec(opts, labels)
+	prometheus.MustRegister(reqDurHist)
+
+	// Summary is deprecated in favour of the histogram. Will be removed in a future release
+	sumOpts.Name = "request_size_bytes"
+	sumOpts.Help = "The HTTP request sizes in bytes."
+	reqSzSum := prometheus.NewSummaryVec(sumOpts, labels)
+	prometheus.MustRegister(reqSzSum)
+
+	opts.Name = "request_size_hist_bytes"
 	opts.Help = "The HTTP request sizes in bytes."
-	reqSz := prometheus.NewSummaryVec(opts, labels)
-	prometheus.MustRegister(reqSz)
+	reqSzHist := prometheus.NewHistogramVec(opts, labels)
+	prometheus.MustRegister(reqSzHist)
 
-	opts.Name = "response_size_bytes"
+	// Summary is deprecated in favour of the histogram. Will be removed in a future release
+	sumOpts.Name = "response_size_bytes"
+	sumOpts.Help = "The HTTP response sizes in bytes."
+	resSzSum := prometheus.NewSummaryVec(sumOpts, labels)
+	prometheus.MustRegister(resSzSum)
+
+	opts.Name = "response_size_hist_bytes"
 	opts.Help = "The HTTP response sizes in bytes."
-	resSz := prometheus.NewSummaryVec(opts, labels)
-	prometheus.MustRegister(resSz)
+	resSzHist := prometheus.NewHistogramVec(opts, labels)
+	prometheus.MustRegister(resSzHist)
 
 	handler = promhttp.InstrumentHandlerInFlight(reqWip, handler)
 	handler = promhttp.InstrumentHandlerCounter(reqCnt, handler)
-	handler = promhttp.InstrumentHandlerDuration(reqDur, handler)
-	handler = promhttp.InstrumentHandlerRequestSize(reqSz, handler)
-	handler = promhttp.InstrumentHandlerResponseSize(resSz, handler)
+	handler = promhttp.InstrumentHandlerDuration(reqDurSum, handler)
+	handler = promhttp.InstrumentHandlerDuration(reqDurHist, handler)
+	handler = promhttp.InstrumentHandlerRequestSize(reqSzSum, handler)
+	handler = promhttp.InstrumentHandlerRequestSize(reqSzHist, handler)
+	handler = promhttp.InstrumentHandlerResponseSize(resSzSum, handler)
+	handler = promhttp.InstrumentHandlerResponseSize(resSzHist, handler)
 
 	return handler
 }
