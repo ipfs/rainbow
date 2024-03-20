@@ -194,7 +194,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "blockstore",
 			Value:   "flatfs",
 			EnvVars: []string{"RAINBOW_BLOCKSTORE"},
-			Usage:   "Type of blockstore to use, such as flatfs or badger. See https://github.com/ipfs/rainbow/blockstore.md for more details",
+			Usage:   "Type of blockstore to use, such as flatfs or badger. See https://github.com/ipfs/rainbow/blob/main/docs/blockstores.md for more details",
 		},
 		&cli.DurationFlag{
 			Name:    "ipns-max-cache-ttl",
