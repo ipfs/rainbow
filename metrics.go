@@ -19,38 +19,17 @@ func registerVersionMetric(version string) {
 	m.Set(1)
 }
 
-// httpMetricsObjectives Objectives map defines the quantile objectives for a
-// summary metric in Prometheus. Each key-value pair in the map represents a
-// quantile level and the desired maximum error allowed for that quantile.
-//
-// Adjusting the objectives control the trade-off between
-// accuracy and resource usage for the summary metric.
-//
-// Example: 0.95: 0.005 means that the 95th percentile (P95) should have a
-// maximum error of 0.005, which represents a 0.5% error margin.
-var httpMetricsObjectives = map[float64]float64{
-	0.5:  0.05,
-	0.75: 0.025,
-	0.9:  0.01,
-	0.95: 0.005,
-	0.99: 0.001,
-}
-
 // withHTTPMetrics collects metrics around HTTP request/response count, duration, and size
 // per specific handler. Allows us to track them separately for /ipns and /ipfs.
 func withHTTPMetrics(handler http.Handler, handlerName string) http.Handler {
 
-	// HTTP metric template names match Kubo:
-	// https://github.com/ipfs/kubo/blob/e550d9e4761ea394357c413c02ade142c0dea88c/core/corehttp/metrics.go#L79-L152
-	// This allows Kubo users to migrate to rainbow and compare global totals.
-	opts := prometheus.SummaryOpts{
+	opts := prometheus.HistogramOpts{
 		Namespace:   "ipfs",
 		Subsystem:   "http",
-		Objectives:  httpMetricsObjectives,
+		Buckets:     []float64{0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60},
 		ConstLabels: prometheus.Labels{"handler": handlerName},
 	}
-	// Dynamic labels 'method or 'code' are auto-filled
-	// by https://pkg.go.dev/github.com/prometheus/client_golang/prometheus/promhttp#InstrumentHandlerResponseSize
+
 	labels := []string{"method", "code"}
 
 	reqWip := prometheus.NewGauge(
@@ -77,25 +56,25 @@ func withHTTPMetrics(handler http.Handler, handlerName string) http.Handler {
 	prometheus.MustRegister(reqCnt)
 
 	opts.Name = "request_duration_seconds"
-	opts.Help = "The HTTP request latencies in seconds."
-	reqDur := prometheus.NewSummaryVec(opts, labels)
-	prometheus.MustRegister(reqDur)
+	opts.Help = "The HTTP request latencies in seconds. "
+	reqDurHist := prometheus.NewHistogramVec(opts, labels)
+	prometheus.MustRegister(reqDurHist)
 
 	opts.Name = "request_size_bytes"
 	opts.Help = "The HTTP request sizes in bytes."
-	reqSz := prometheus.NewSummaryVec(opts, labels)
-	prometheus.MustRegister(reqSz)
+	reqSzHist := prometheus.NewHistogramVec(opts, labels)
+	prometheus.MustRegister(reqSzHist)
 
 	opts.Name = "response_size_bytes"
 	opts.Help = "The HTTP response sizes in bytes."
-	resSz := prometheus.NewSummaryVec(opts, labels)
-	prometheus.MustRegister(resSz)
+	resSzHist := prometheus.NewHistogramVec(opts, labels)
+	prometheus.MustRegister(resSzHist)
 
 	handler = promhttp.InstrumentHandlerInFlight(reqWip, handler)
 	handler = promhttp.InstrumentHandlerCounter(reqCnt, handler)
-	handler = promhttp.InstrumentHandlerDuration(reqDur, handler)
-	handler = promhttp.InstrumentHandlerRequestSize(reqSz, handler)
-	handler = promhttp.InstrumentHandlerResponseSize(resSz, handler)
+	handler = promhttp.InstrumentHandlerDuration(reqDurHist, handler)
+	handler = promhttp.InstrumentHandlerRequestSize(reqSzHist, handler)
+	handler = promhttp.InstrumentHandlerResponseSize(resSzHist, handler)
 
 	return handler
 }
