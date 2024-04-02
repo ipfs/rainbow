@@ -134,7 +134,6 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 	}
 
 	opts := []libp2p.Option{
-		libp2p.ListenAddrStrings(cfg.ListenAddrs...),
 		libp2p.NATPortMap(),
 		libp2p.ConnectionManager(cmgr),
 		libp2p.Identity(key),
@@ -142,6 +141,15 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		libp2p.DefaultTransports,
 		libp2p.DefaultMuxers,
 		libp2p.ResourceManager(bitswapRcMgr),
+		libp2p.EnableHolePunching(),
+	}
+
+	if len(cfg.ListenAddrs) == 0 {
+		// Note: because the transports are set above we must also set the listen addresses
+		// We need to set listen addresses in order for hole punching to work
+		opts = append(opts, libp2p.DefaultListenAddrs)
+	} else {
+		opts = append(opts, libp2p.ListenAddrStrings(cfg.ListenAddrs...))
 	}
 
 	if len(cfg.AnnounceAddrs) > 0 {
