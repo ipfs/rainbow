@@ -81,7 +81,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "seed",
 			Value:   "",
 			EnvVars: []string{"RAINBOW_SEED"},
-			Usage:   "Seed to derive peerID from. Generate with gen-seed. Needs --seed-index. Best to use $CREDENTIALS_DIRECTORY/seed or $RAINBOW_DATADIR/seed.",
+			Usage:   "Seed to derive peerID from. Generate with gen-seed. Needs --seed-index. Best to use $CREDENTIALS_DIRECTORY/seed or $RAINBOW_DATADIR/seed",
 		},
 		&cli.IntFlag{
 			Name:    "seed-index",
@@ -89,23 +89,23 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_SEED_INDEX"},
 			Usage:   "Index to derivate the peerID (needs --seed)",
 		},
-		&cli.StringFlag{
+		&cli.StringSliceFlag{
 			Name:    "gateway-domains",
-			Value:   "",
+			Value:   cli.NewStringSlice(),
 			EnvVars: []string{"RAINBOW_GATEWAY_DOMAINS"},
-			Usage:   "Domains with flat path gateway, no Origin isolation. Comma-separated list.",
+			Usage:   "Domains with flat path gateway, no Origin isolation (comma-separated)",
 		},
-		&cli.StringFlag{
+		&cli.StringSliceFlag{
 			Name:    "subdomain-gateway-domains",
-			Value:   "",
+			Value:   cli.NewStringSlice(),
 			EnvVars: []string{"RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS"},
-			Usage:   "Domains with subdomain-based Origin isolation. Comma-separated list.",
+			Usage:   "Domains with subdomain-based Origin isolation (comma-separated)",
 		},
-		&cli.StringFlag{
+		&cli.StringSliceFlag{
 			Name:    "trustless-gateway-domains",
-			Value:   "",
+			Value:   cli.NewStringSlice(),
 			EnvVars: []string{"RAINBOW_TRUSTLESS_GATEWAY_DOMAINS"},
-			Usage:   "Domains limited to trustless, verifiable response types. Comma-separated list.",
+			Usage:   "Domains limited to trustless, verifiable response types (comma-separated)",
 		},
 		&cli.StringFlag{
 			Name:    "gateway-listen-address",
@@ -123,13 +123,13 @@ Generate an identity seed and launch a gateway:
 			Name:    "gc-interval",
 			Value:   time.Minute * 60,
 			EnvVars: []string{"RAINBOW_GC_INTERVAL"},
-			Usage:   "The interval between automatic GC runs. Set 0 to disable.",
+			Usage:   "The interval between automatic GC runs. Set 0 to disable",
 		},
 		&cli.Float64Flag{
 			Name:    "gc-threshold",
 			Value:   0.3,
 			EnvVars: []string{"RAINBOW_GC_THRESHOLD"},
-			Usage:   "Percentage of how much of the disk free space must be available.",
+			Usage:   "Percentage of how much of the disk free space must be available",
 		},
 		&cli.IntFlag{
 			Name:    "connmgr-low",
@@ -178,15 +178,15 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_DHT_SHARED_HOST"},
 			Usage:   "If false, DHT operations are run using an ephemeral peer, separate from the main one",
 		},
-		&cli.StringFlag{
+		&cli.StringSliceFlag{
 			Name:    "denylists",
-			Value:   "",
+			Value:   cli.NewStringSlice(),
 			EnvVars: []string{"RAINBOW_DENYLISTS"},
 			Usage:   "Denylist HTTP subscriptions (comma-separated). Must be append-only denylists",
 		},
-		&cli.StringFlag{
+		&cli.StringSliceFlag{
 			Name:    "peering",
-			Value:   "",
+			Value:   cli.NewStringSlice(),
 			EnvVars: []string{"RAINBOW_PEERING"},
 			Usage:   "Multiaddresses of peers to stay connected to (comma-separated)",
 		},
@@ -200,7 +200,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "ipns-max-cache-ttl",
 			Value:   0,
 			EnvVars: []string{"RAINBOW_IPNS_MAX_CACHE_TTL"},
-			Usage:   "Optional cap on caching duration for IPNS/DNSLink lookups. Set to 0 to respect original TTLs.",
+			Usage:   "Optional cap on caching duration for IPNS/DNSLink lookups. Set to 0 to respect original TTLs",
 		},
 	}
 
@@ -277,7 +277,7 @@ share the same seed as long as the indexes are different.
 		}
 
 		var peeringAddrs []peer.AddrInfo
-		for _, maStr := range getCommaSeparatedList(cctx.String("peering")) {
+		for _, maStr := range cctx.StringSlice("peering") {
 			ai, err := peer.AddrInfoFromString(maStr)
 			if err != nil {
 				return err
@@ -288,9 +288,9 @@ share the same seed as long as the indexes are different.
 		cfg := Config{
 			DataDir:                 ddir,
 			BlockstoreType:          cctx.String("blockstore"),
-			GatewayDomains:          getCommaSeparatedList(cctx.String("gateway-domains")),
-			SubdomainGatewayDomains: getCommaSeparatedList(cctx.String("subdomain-gateway-domains")),
-			TrustlessGatewayDomains: getCommaSeparatedList(cctx.String("trustless-gateway-domains")),
+			GatewayDomains:          cctx.StringSlice("gateway-domains"),
+			SubdomainGatewayDomains: cctx.StringSlice("subdomain-gateway-domains"),
+			TrustlessGatewayDomains: cctx.StringSlice("trustless-gateway-domains"),
 			ConnMgrLow:              cctx.Int("connmgr-low"),
 			ConnMgrHi:               cctx.Int("connmgr-high"),
 			ConnMgrGrace:            cctx.Duration("connmgr-grace"),
@@ -300,7 +300,7 @@ share the same seed as long as the indexes are different.
 			RoutingV1:               cctx.String("routing"),
 			DHTSharedHost:           cctx.Bool("dht-shared-host"),
 			IpnsMaxCacheTTL:         cctx.Duration("ipns-max-cache-ttl"),
-			DenylistSubs:            getCommaSeparatedList(cctx.String("denylists")),
+			DenylistSubs:            cctx.StringSlice("denylists"),
 			Peering:                 peeringAddrs,
 			GCInterval:              cctx.Duration("gc-interval"),
 			GCThreshold:             cctx.Float64("gc-threshold"),
@@ -461,17 +461,6 @@ func writeAllGoroutineStacks(w io.Writer) error {
 	}
 	_, err := w.Write(buf)
 	return err
-}
-
-func getCommaSeparatedList(val string) []string {
-	if val == "" {
-		return nil
-	}
-	items := strings.Split(val, ",")
-	for i, item := range items {
-		items[i] = strings.TrimSpace(item)
-	}
-	return items
 }
 
 func printIfListConfigured(message string, list []string) {
