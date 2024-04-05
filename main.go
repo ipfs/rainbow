@@ -167,10 +167,25 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_MAX_FD"},
 			Usage:   "Maximum number of file descriptors. Defaults to 50% of the process' limit",
 		},
+		&cli.StringSliceFlag{
+			Name:    "routing-v1-endpoints",
+			Value:   cli.NewStringSlice(cidContactEndpoint),
+			EnvVars: []string{"RAINBOW_ROUTING_V1_ENDPOINTS"},
+			Usage:   "Routing V1 endpoints to use for routing (comma-separated)",
+		},
 		&cli.StringFlag{
-			Name:  "routing",
-			Value: "",
-			Usage: "RoutingV1 Endpoint (otherwise Amino DHT and cid.contact is used)",
+			Name:    "dht-routing",
+			Value:   "accelerated",
+			EnvVars: []string{"RAINBOW_DHT_ROUTING"},
+			Usage:   "Use the Amino DHT for routing. Options are 'accelerated', 'standard' and 'off'",
+			Action: func(ctx *cli.Context, s string) error {
+				switch DHTRouting(s) {
+				case DHTAccelerated, DHTStandard, DHTOff:
+					return nil
+				default:
+					return errors.New("invalid value for --dht-routing: use 'accelerated', 'standard' or 'off'")
+				}
+			},
 		},
 		&cli.BoolFlag{
 			Name:    "dht-shared-host",
@@ -297,7 +312,8 @@ share the same seed as long as the indexes are different.
 			MaxMemory:               cctx.Uint64("max-memory"),
 			MaxFD:                   cctx.Int("max-fd"),
 			InMemBlockCache:         cctx.Int64("inmem-block-cache"),
-			RoutingV1:               cctx.String("routing"),
+			RoutingV1Endpoints:      cctx.StringSlice("routing-v1-endpoints"),
+			DHTRouting:              DHTRouting(cctx.String("dht-routing")),
 			DHTSharedHost:           cctx.Bool("dht-shared-host"),
 			IpnsMaxCacheTTL:         cctx.Duration("ipns-max-cache-ttl"),
 			DenylistSubs:            cctx.StringSlice("denylists"),
