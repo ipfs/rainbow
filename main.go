@@ -173,7 +173,7 @@ Generate an identity seed and launch a gateway:
 			Usage: "RoutingV1 Endpoint (otherwise Amino DHT and cid.contact is used)",
 		},
 		&cli.BoolFlag{
-			Name:    "dht-share-host",
+			Name:    "dht-shared-host",
 			Value:   false,
 			EnvVars: []string{"RAINBOW_DHT_SHARED_HOST"},
 			Usage:   "If false, DHT operations are run using an ephemeral peer, separate from the main one",
