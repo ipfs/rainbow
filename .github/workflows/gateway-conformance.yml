@@ -74,7 +74,7 @@ jobs:
           kuboNodeMultiaddr=$(ipfs --api=/ip4/127.0.0.1/tcp/5001 swarm addrs local --id | head -n 1)
 
           # run gw
-          ./rainbow --routing-v1-endpoints=http://127.0.0.1:8080 --dht-routing=off --peering=$kuboNodeMultiaddr &
+          ./rainbow --http-routers=http://127.0.0.1:8080 --dht-routing=off --peering=$kuboNodeMultiaddr &
         working-directory: rainbow
 
       # 6. Run the gateway-conformance tests

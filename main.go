@@ -168,9 +168,9 @@ Generate an identity seed and launch a gateway:
 			Usage:   "Maximum number of file descriptors. Defaults to 50% of the process' limit",
 		},
 		&cli.StringSliceFlag{
-			Name:    "routing-v1-endpoints",
+			Name:    "http-routers",
 			Value:   cli.NewStringSlice(cidContactEndpoint),
-			EnvVars: []string{"RAINBOW_ROUTING_V1_ENDPOINTS"},
+			EnvVars: []string{"RAINBOW_HTTP_ROUTERS"},
 			Usage:   "HTTP servers with /routing/v1 endpoints to use for delegated routing (comma-separated)",
 		},
 		&cli.StringFlag{
@@ -312,7 +312,7 @@ share the same seed as long as the indexes are different.
 			MaxMemory:               cctx.Uint64("max-memory"),
 			MaxFD:                   cctx.Int("max-fd"),
 			InMemBlockCache:         cctx.Int64("inmem-block-cache"),
-			RoutingV1Endpoints:      cctx.StringSlice("routing-v1-endpoints"),
+			RoutingV1Endpoints:      cctx.StringSlice("http-routers"),
 			DHTRouting:              DHTRouting(cctx.String("dht-routing")),
 			DHTSharedHost:           cctx.Bool("dht-shared-host"),
 			IpnsMaxCacheTTL:         cctx.Duration("ipns-max-cache-ttl"),
