@@ -171,7 +171,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "routing-v1-endpoints",
 			Value:   cli.NewStringSlice(cidContactEndpoint),
 			EnvVars: []string{"RAINBOW_ROUTING_V1_ENDPOINTS"},
-			Usage:   "Routing V1 endpoints to use for routing (comma-separated)",
+			Usage:   "HTTP servers with /routing/v1 endpoints to use for delegated routing (comma-separated)",
 		},
 		&cli.StringFlag{
 			Name:    "dht-routing",

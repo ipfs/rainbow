@@ -272,7 +272,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		}
 
 		if len(routingV1Routers) == 0 && dhtRouter == nil {
-			return nil, errors.New("no routers available")
+			return nil, errors.New("no routers configured: enable dht and/or configure /routing/v1 http endpoint")
 		}
 
 		if len(routingV1Routers) == 0 {
