@@ -22,6 +22,8 @@ import (
 func mustTestNode(t *testing.T, cfg Config) *Node {
 	cfg.DataDir = t.TempDir()
 	cfg.BlockstoreType = "flatfs"
+	cfg.DHTRouting = DHTStandard
+	cfg.RoutingV1Endpoints = []string{cidContactEndpoint}
 
 	ctx := context.Background()
 

@@ -58,7 +58,15 @@ func init() {
 	}
 }
 
-const ipniFallbackEndpoint = "https://cid.contact"
+const cidContactEndpoint = "https://cid.contact"
+
+type DHTRouting string
+
+const (
+	DHTAccelerated DHTRouting = "accelerated"
+	DHTStandard    DHTRouting = "standard"
+	DHTOff         DHTRouting = "off"
+)
 
 type Node struct {
 	vs   routing.ValueStore
@@ -97,7 +105,8 @@ type Config struct {
 	GatewayDomains          []string
 	SubdomainGatewayDomains []string
 	TrustlessGatewayDomains []string
-	RoutingV1               string
+	RoutingV1Endpoints      []string
+	DHTRouting              DHTRouting
 	DHTSharedHost           bool
 	IpnsMaxCacheTTL         time.Duration
 
@@ -176,9 +185,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 	)
 	blkst = blockstore.NewIdStore(blkst)
 
-	var pr routing.PeerRouting
-	var vs routing.ValueStore
-	var cr routing.ContentRouting
+	var router routing.Routing
 
 	// Increase per-host connection pool since we are making lots of concurrent requests.
 	httpClient := &http.Client{
@@ -201,17 +208,21 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 	}
 
 	opts = append(opts, libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
-		if cfg.RoutingV1 != "" {
-			routingClient, err := delegatedHTTPContentRouter(cfg.RoutingV1, routingv1client.WithStreamResultsRequired(), routingv1client.WithHTTPClient(httpClient))
+		var routingV1Routers []routing.Routing
+		for _, endpoint := range cfg.RoutingV1Endpoints {
+			rv1Opts := []routingv1client.Option{routingv1client.WithHTTPClient(httpClient)}
+			if endpoint != cidContactEndpoint {
+				rv1Opts = append(rv1Opts, routingv1client.WithStreamResultsRequired())
+			}
+			httpClient, err := delegatedHTTPContentRouter(endpoint, rv1Opts...)
 			if err != nil {
 				return nil, err
 			}
-			pr = routingClient
-			vs = routingClient
-			cr = routingClient
-		} else {
-			// If there are no delegated routing endpoints run an accelerated Amino DHT client and send IPNI requests to cid.contact
+			routingV1Routers = append(routingV1Routers, httpClient)
+		}
 
+		var dhtRouter routing.Routing
+		if cfg.DHTRouting != DHTOff {
 			var dhtHost host.Host
 			if cfg.DHTSharedHost {
 				dhtHost = h
@@ -237,54 +248,61 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 				return nil, err
 			}
 
-			fullRTClient, err := fullrt.NewFullRT(dhtHost, dht.DefaultPrefix,
-				fullrt.DHTOption(
-					dht.Validator(record.NamespacedValidator{
-						"pk":   record.PublicKeyValidator{},
-						"ipns": ipns.Validator{KeyBook: h.Peerstore()},
-					}),
-					dht.Datastore(ds),
-					dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
-					dht.BucketSize(20),
-				))
-			if err != nil {
-				return nil, err
+			if cfg.DHTRouting == DHTAccelerated {
+				fullRTClient, err := fullrt.NewFullRT(dhtHost, dht.DefaultPrefix,
+					fullrt.DHTOption(
+						dht.Validator(record.NamespacedValidator{
+							"pk":   record.PublicKeyValidator{},
+							"ipns": ipns.Validator{KeyBook: h.Peerstore()},
+						}),
+						dht.Datastore(ds),
+						dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
+						dht.BucketSize(20),
+					))
+				if err != nil {
+					return nil, err
+				}
+				dhtRouter = &bundledDHT{
+					standard: standardClient,
+					fullRT:   fullRTClient,
+				}
+			} else {
+				dhtRouter = standardClient
 			}
+		}
 
-			dhtRouter := &bundledDHT{
-				standard: standardClient,
-				fullRT:   fullRTClient,
-			}
+		if len(routingV1Routers) == 0 && dhtRouter == nil {
+			return nil, errors.New("no routers configured: enable dht and/or configure /routing/v1 http endpoint")
+		}
 
-			// we want to also use the default HTTP routers, so wrap the FullRT client
-			// in a parallel router that calls them in parallel
-			httpRouters, err := delegatedHTTPContentRouter(ipniFallbackEndpoint, routingv1client.WithHTTPClient(httpClient))
-			if err != nil {
-				return nil, err
-			}
-			routers := []*routinghelpers.ParallelRouter{
-				{
+		if len(routingV1Routers) == 0 {
+			router = dhtRouter
+		} else {
+			var routers []*routinghelpers.ParallelRouter
+
+			if dhtRouter != nil {
+				routers = append(routers, &routinghelpers.ParallelRouter{
 					Router:                  dhtRouter,
 					ExecuteAfter:            0,
 					DoNotWaitForSearchValue: true,
 					IgnoreError:             false,
-				},
-				{
+				})
+			}
+
+			for _, routingV1Router := range routingV1Routers {
+				routers = append(routers, &routinghelpers.ParallelRouter{
 					Timeout:                 15 * time.Second,
-					Router:                  httpRouters,
+					Router:                  routingV1Router,
 					ExecuteAfter:            0,
 					DoNotWaitForSearchValue: true,
 					IgnoreError:             true,
-				},
+				})
 			}
-			router := routinghelpers.NewComposableParallel(routers)
 
-			pr = router
-			vs = router
-			cr = router
+			router = routinghelpers.NewComposableParallel(routers)
 		}
 
-		return pr, nil
+		return router, nil
 	}))
 	h, err := libp2p.New(opts...)
 	if err != nil {
@@ -302,7 +320,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 	}
 
 	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
-	bn := bsnet.NewFromIpfsHost(h, cr)
+	bn := bsnet.NewFromIpfsHost(h, router)
 	bswap := bsclient.New(bsctx, bn, blkst,
 		// default is 1 minute to search for a random live-want (1
 		// CID).  I think we want to search for random live-wants more
@@ -357,7 +375,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 	if cfg.IpnsMaxCacheTTL > 0 {
 		nsOptions = append(nsOptions, namesys.WithMaxCacheTTL(cfg.IpnsMaxCacheTTL))
 	}
-	ns, err := namesys.NewNameSystem(vs, nsOptions...)
+	ns, err := namesys.NewNameSystem(router, nsOptions...)
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +394,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		datastore:    ds,
 		bsClient:     bswap,
 		ns:           ns,
-		vs:           vs,
+		vs:           router,
 		bsrv:         bsrv,
 		resolver:     r,
 		bwc:          bwc,
