@@ -9,6 +9,7 @@
   - [`RAINBOW_GC_INTERVAL`](#rainbow_gc_interval)
   - [`RAINBOW_GC_THRESHOLD`](#rainbow_gc_threshold)
   - [`RAINBOW_IPNS_MAX_CACHE_TTL`](#rainbow_ipns_max_cache_ttl)
+  - [`RAINBOW_PEERING`](#rainbow_peering)
 - [Logging](#logging)
   - [`GOLOG_LOG_LEVEL`](#golog_log_level)
   - [`GOLOG_LOG_FMT`](#golog_log_fmt)
@@ -89,6 +90,16 @@ and the [TTL of DNS TXT records](https://datatracker.ietf.org/doc/html/rfc2181#s
 with [DNSLink](https://dnslink.dev/).
 
 Default: No upper bound, [TTL from IPNS Record](https://specs.ipfs.tech/ipns/ipns-record/#ttl-uint64) or [TTL from DNSLink](https://datatracker.ietf.org/doc/html/rfc2181#section-8) used as-is.
+
+### `RAINBOW_PEERING`
+
+A comma-separated list of multiaddresses of peers to stay connected to.
+
+If `RAINBOW_SEED` is also present, Rainbow automatically replaces in multi-addresses
+that contain `/p2p/rainbow-seed/N` with the peer ID generated with same seed
+and index `N`.
+
+Default: no peering.
 
 ## Logging
 

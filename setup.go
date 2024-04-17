@@ -15,8 +15,9 @@ import (
 	"github.com/dgraph-io/badger/v4/options"
 	nopfs "github.com/ipfs-shipyard/nopfs"
 	nopfsipfs "github.com/ipfs-shipyard/nopfs/ipfs"
-	bsclient "github.com/ipfs/boxo/bitswap/client"
+	"github.com/ipfs/boxo/bitswap"
 	bsnet "github.com/ipfs/boxo/bitswap/network"
+	bsserver "github.com/ipfs/boxo/bitswap/server"
 	"github.com/ipfs/boxo/blockservice"
 	"github.com/ipfs/boxo/blockstore"
 	bsfetcher "github.com/ipfs/boxo/fetcher/impl/blockservice"
@@ -75,7 +76,7 @@ type Node struct {
 	dataDir    string
 	datastore  datastore.Batching
 	blockstore blockstore.Blockstore
-	bsClient   *bsclient.Client
+	bs         *bitswap.Bitswap
 	bsrv       blockservice.BlockService
 	resolver   resolver.Resolver
 
@@ -112,6 +113,7 @@ type Config struct {
 
 	DenylistSubs []string
 	Peering      []peer.AddrInfo
+	PeeringCache bool
 
 	GCInterval  time.Duration
 	GCThreshold float64
@@ -273,11 +275,10 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 			}
 		}
 
-		if len(routingV1Routers) == 0 && dhtRouter == nil {
-			return nil, errors.New("no routers configured: enable dht and/or configure /routing/v1 http endpoint")
-		}
+		// Default router is no routing at all: can be especially useful during tests.
+		router = &routinghelpers.Null{}
 
-		if len(routingV1Routers) == 0 {
+		if len(routingV1Routers) == 0 && dhtRouter != nil {
 			router = dhtRouter
 		} else {
 			var routers []*routinghelpers.ParallelRouter
@@ -301,7 +302,9 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 				})
 			}
 
-			router = routinghelpers.NewComposableParallel(routers)
+			if len(routers) > 0 {
+				router = routinghelpers.NewComposableParallel(routers)
+			}
 		}
 
 		return router, nil
@@ -321,17 +324,44 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		}
 	}
 
+	var (
+		provideEnabled         bool
+		peerBlockRequestFilter bsserver.PeerBlockRequestFilter
+	)
+	if cfg.PeeringCache && len(cfg.Peering) > 0 {
+		peers := make(map[peer.ID]struct{}, len(cfg.Peering))
+		for _, a := range cfg.Peering {
+			peers[a.ID] = struct{}{}
+		}
+
+		provideEnabled = true
+		peerBlockRequestFilter = func(p peer.ID, c cid.Cid) bool {
+			_, ok := peers[p]
+			return ok
+		}
+	} else {
+		provideEnabled = false
+		peerBlockRequestFilter = func(p peer.ID, c cid.Cid) bool {
+			return false
+		}
+	}
+
 	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
 	bn := bsnet.NewFromIpfsHost(h, router)
-	bswap := bsclient.New(bsctx, bn, blkst,
+	bswap := bitswap.New(bsctx, bn, blkst,
+		// --- Client Options
 		// default is 1 minute to search for a random live-want (1
 		// CID).  I think we want to search for random live-wants more
 		// often although probably it overlaps with general
 		// rebroadcasts.
-		bsclient.RebroadcastDelay(delay.Fixed(10*time.Second)),
+		bitswap.RebroadcastDelay(delay.Fixed(10*time.Second)),
 		// ProviderSearchDelay: default is 1 second.
-		bsclient.ProviderSearchDelay(time.Second),
-		bsclient.WithoutDuplicatedBlockStats(),
+		bitswap.ProviderSearchDelay(time.Second),
+		bitswap.WithoutDuplicatedBlockStats(),
+
+		// ---- Server Options
+		bitswap.WithPeerBlockRequestFilter(peerBlockRequestFilter),
+		bitswap.ProvideEnabled(provideEnabled),
 	)
 	bn.Start(bswap)
 
@@ -394,7 +424,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		blockstore:   blkst,
 		dataDir:      cfg.DataDir,
 		datastore:    ds,
-		bsClient:     bswap,
+		bs:           bswap,
 		ns:           ns,
 		vs:           router,
 		bsrv:         bsrv,

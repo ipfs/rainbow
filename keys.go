@@ -5,6 +5,7 @@ import (
 	crand "crypto/rand"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"io"
 
 	libp2p "github.com/libp2p/go-libp2p/core/crypto"
@@ -42,4 +43,8 @@ func deriveKey(b58secret string, info []byte) (libp2p.PrivKey, error) {
 	}
 	key := ed25519.NewKeyFromSeed(keySeed)
 	return libp2p.UnmarshalEd25519PrivateKey(key)
+}
+
+func deriveKeyInfo(index int) []byte {
+	return []byte(fmt.Sprintf("rainbow-%d", index))
 }
