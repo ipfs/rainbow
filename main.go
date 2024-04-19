@@ -258,6 +258,8 @@ share the same seed as long as the indexes are different.
 	}
 
 	app.Action = func(cctx *cli.Context) error {
+		fmt.Printf("Starting %s %s\n", name, version)
+
 		ddir := cctx.String("datadir")
 		cdns := newCachedDNS(dnsCacheRefreshInterval)
 		defer cdns.Close()
@@ -288,7 +290,7 @@ share the same seed as long as the indexes are different.
 
 		index := cctx.Int("seed-index")
 		if len(seed) > 0 && index >= 0 {
-			fmt.Println("Deriving identity from seed")
+			fmt.Printf("Deriving identity from seed[%d]\n", index)
 			priv, err = deriveKey(seed, deriveKeyInfo(index))
 		} else {
 			fmt.Println("Setting identity from libp2p.key")
@@ -358,7 +360,6 @@ share the same seed as long as the indexes are different.
 			Handler: handler,
 		}
 
-		fmt.Printf("Starting %s %s\n", name, version)
 		pid, err := peer.IDFromPublicKey(priv.GetPublic())
 		if err != nil {
 			return err
