@@ -93,13 +93,30 @@ Default: No upper bound, [TTL from IPNS Record](https://specs.ipfs.tech/ipns/ipn
 
 ### `RAINBOW_PEERING`
 
-A comma-separated list of multiaddresses of peers to stay connected to.
+A comma-separated list of [multiaddresses](https://docs.libp2p.io/concepts/fundamentals/addressing/) of peers to stay connected to.
 
-If `RAINBOW_SEED` is also present, Rainbow automatically replaces in multi-addresses
-that contain `/p2p/rainbow-seed/N` with the peer ID generated with same seed
+
+If `RAINBOW_SEED` is set and `/p2p/rainbow-seed/N` value is found here, Rainbow
+will replace it with a valid `/p2p/` for a peer ID generated from same seed
 and index `N`.
 
-Default: no peering.
+Default: not set (no peering)
+
+
+### `RAINBOW_PEERING_SHARED_CACHE`
+
+Enable sharing of local cache to peers safe-listed with `RAINBOW_PEERING`.
+
+Once enabled, Rainbow will respond to [Bitswap](https://docs.ipfs.tech/concepts/bitswap/)
+queries from these safelisted peers, serving locally cached blocks if requested.
+
+The main use case for this feature is scaling and load balancing acrosss a
+fleet of rainbow, or other bitswap-capable IPFS services. Cache sharing allows
+clustered services to check if any of the other instances has a requested CID.
+This saves resources as data cached on other instance can be fetched internally
+(e.g. LAN) rather than externally (WAN, p2p).
+
+Default: `false` (no cache sharing)
 
 ## Logging
 
