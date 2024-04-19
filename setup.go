@@ -146,6 +146,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		libp2p.NATPortMap(),
 		libp2p.ConnectionManager(cmgr),
 		libp2p.Identity(key),
+		libp2p.UserAgent("rainbow/" + buildVersion()),
 		libp2p.BandwidthReporter(bwc),
 		libp2p.DefaultTransports,
 		libp2p.DefaultMuxers,
