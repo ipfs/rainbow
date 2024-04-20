@@ -233,6 +233,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 					libp2p.BandwidthReporter(bwc),
 					libp2p.DefaultTransports,
 					libp2p.DefaultMuxers,
+					libp2p.UserAgent("rainbow/"+buildVersion()),
 					libp2p.ResourceManager(dhtRcMgr),
 				)
 				if err != nil {
