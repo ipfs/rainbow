@@ -10,6 +10,7 @@
   - [`RAINBOW_GC_THRESHOLD`](#rainbow_gc_threshold)
   - [`RAINBOW_IPNS_MAX_CACHE_TTL`](#rainbow_ipns_max_cache_ttl)
   - [`RAINBOW_PEERING`](#rainbow_peering)
+  - [`RAINBOW_PEERING_SHARED_CACHE`](#rainbow_peering_shared_cache)
 - [Logging](#logging)
   - [`GOLOG_LOG_LEVEL`](#golog_log_level)
   - [`GOLOG_LOG_FMT`](#golog_log_fmt)

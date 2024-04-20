@@ -308,6 +308,8 @@ share the same seed as long as the indexes are different.
 				if err != nil {
 					return err
 				}
+			} else if rainbowSeedRegex.MatchString(maStr) {
+				return fmt.Errorf("unable to peer with %q without defining --seed-index of this instance first", maStr)
 			}
 
 			ai, err := peer.AddrInfoFromString(maStr)
