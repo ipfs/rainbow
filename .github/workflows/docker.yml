@@ -1,17 +1,42 @@
 name: Create and publish a Docker image
 
 on:
+  workflow_dispatch:
   push:
     branches: ['main', 'staging']
     tags: ['v*']
-  workflow_dispatch:
+  workflow_run:
+    workflows: [Releaser]
+    types:
+      - completed
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  prepare_checkout:
+    if: (
+          github.repository == 'ipfs/rainbow'
+          || github.event_name == 'workflow_dispatch'
+        ) && (
+          github.event_name != 'workflow_run'
+          || github.event.workflow_run.conclusion == 'success'
+        )
+    name: Decide what ref to check out
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ github.event_name != 'workflow_run' && github.ref || steps.releaser.outputs.version }}
+    steps:
+      - name: Inspect triggering Releaser workflow run
+        id: releaser
+        if: github.event_name == 'workflow_run'
+        uses: ipdxco/unified-github-workflows/.github/actions/inspect-releaser@v1.0
+        with:
+          artifacts-url: ${{ github.event.workflow_run.artifacts_url }}
   build-and-push-image:
+    needs: [prepare_checkout]
+    if: needs.prepare_checkout.outputs.ref != ''
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -19,6 +44,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare_checkout.outputs.ref }}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
