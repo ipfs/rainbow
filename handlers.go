@@ -85,12 +85,27 @@ func withRequestLogger(next http.Handler) http.Handler {
 }
 
 func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
-	backend, err := gateway.NewBlocksBackend(
-		nd.bsrv,
+	var (
+		backend gateway.IPFSBackend
+		err     error
+	)
+
+	options := []gateway.BackendOption{
 		gateway.WithValueStore(nd.vs),
 		gateway.WithNameSystem(nd.ns),
-		gateway.WithResolver(nd.resolver),
-	)
+		gateway.WithResolver(nd.resolver), // May be nil, but that is fine.
+	}
+
+	if len(cfg.RemoteBackends) > 0 && cfg.RemoteBackendMode == RemoteBackendCAR {
+		var fetcher gateway.CarFetcher
+		fetcher, err = gateway.NewRemoteCarFetcher(cfg.RemoteBackends, nil)
+		if err != nil {
+			return nil, err
+		}
+		backend, err = gateway.NewCarBackend(fetcher, options...)
+	} else {
+		backend, err = gateway.NewBlocksBackend(nd.bsrv, options...)
+	}
 	if err != nil {
 		return nil, err
 	}

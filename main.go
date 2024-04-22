@@ -248,6 +248,32 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_IPNS_MAX_CACHE_TTL"},
 			Usage:   "Optional cap on caching duration for IPNS/DNSLink lookups. Set to 0 to respect original TTLs",
 		},
+		&cli.BoolFlag{
+			Name:    "bitswap",
+			Value:   true,
+			EnvVars: []string{"RAINBOW_BITSWAP"},
+			Usage:   "Enable or disable Bitswap. Disabling Bitswap is incompatible with --peering-shared-cache",
+		},
+		&cli.StringSliceFlag{
+			Name:    "remote-backends",
+			Value:   cli.NewStringSlice(),
+			EnvVars: []string{"RAINBOW_REMOTE_BACKENDS"},
+			Usage:   "Trustless remote gateways to use as backend (comma-separated). You must set --bitswap=false to use this option. You can configure the mode with --remote-backends-mode",
+		},
+		&cli.StringFlag{
+			Name:    "remote-backends-mode",
+			Value:   "block",
+			EnvVars: []string{"RAINBOW_REMOTE_BACKENDS_MODE"},
+			Usage:   "Whether to fetch raw blocks or CARs from the remote backends. Options are 'block' or 'car'",
+			Action: func(ctx *cli.Context, s string) error {
+				switch RemoteBackendMode(s) {
+				case RemoteBackendBlock, RemoteBackendCAR:
+					return nil
+				default:
+					return errors.New("invalid value for --remote-backend-mode: use 'block' or 'car'")
+				}
+			},
+		},
 	}
 
 	app.Commands = []*cli.Command{
@@ -289,57 +315,66 @@ share the same seed as long as the indexes are different.
 
 		var seed string
 		var priv crypto.PrivKey
+		var peeringAddrs []peer.AddrInfo
+		var index int
 		var err error
 
-		credDir := os.Getenv("CREDENTIALS_DIRECTORY")
-		secretsDir := ddir
+		bitswap := cctx.Bool("bitswap")
+		dhtRouting := DHTRouting(cctx.String("dht-routing"))
+		seedPeering := cctx.Bool("seed-peering")
+		noLibp2p := !bitswap && dhtRouting == DHTOff && !seedPeering
 
-		if len(credDir) > 0 {
-			secretsDir = credDir
-		}
+		// Only load secrets if we need Libp2p.
+		if !noLibp2p {
+			credDir := os.Getenv("CREDENTIALS_DIRECTORY")
+			secretsDir := ddir
 
-		// attempt to read seed from disk
-		seedBytes, err := os.ReadFile(filepath.Join(secretsDir, "seed"))
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				// set seed from command line or env-var
-				seed = cctx.String("seed")
-			} else {
-				return fmt.Errorf("error reading seed credentials: %w", err)
+			if len(credDir) > 0 {
+				secretsDir = credDir
 			}
-		} else {
-			seed = strings.TrimSpace(string(seedBytes))
-		}
 
-		index := cctx.Int("seed-index")
-		if len(seed) > 0 && index >= 0 {
-			fmt.Printf("Deriving identity from seed[%d]\n", index)
-			priv, err = deriveKey(seed, deriveKeyInfo(index))
-		} else {
-			fmt.Println("Setting identity from libp2p.key")
-			keyFile := filepath.Join(secretsDir, "libp2p.key")
-			priv, err = loadOrInitPeerKey(keyFile)
-		}
-		if err != nil {
-			return err
-		}
-
-		var peeringAddrs []peer.AddrInfo
-		for _, maStr := range cctx.StringSlice("peering") {
-			if len(seed) > 0 && index >= 0 {
-				maStr, err = replaceRainbowSeedWithPeer(maStr, seed)
-				if err != nil {
-					return err
+			// attempt to read seed from disk
+			seedBytes, err := os.ReadFile(filepath.Join(secretsDir, "seed"))
+			if err != nil {
+				if errors.Is(err, fs.ErrNotExist) {
+					// set seed from command line or env-var
+					seed = cctx.String("seed")
+				} else {
+					return fmt.Errorf("error reading seed credentials: %w", err)
 				}
-			} else if rainbowSeedRegex.MatchString(maStr) {
-				return fmt.Errorf("unable to peer with %q without defining --seed-index of this instance first", maStr)
+			} else {
+				seed = strings.TrimSpace(string(seedBytes))
 			}
 
-			ai, err := peer.AddrInfoFromString(maStr)
+			index = cctx.Int("seed-index")
+			if len(seed) > 0 && index >= 0 {
+				fmt.Println("Deriving identity from seed")
+				priv, err = deriveKey(seed, deriveKeyInfo(index))
+			} else {
+				fmt.Println("Setting identity from libp2p.key")
+				keyFile := filepath.Join(secretsDir, "libp2p.key")
+				priv, err = loadOrInitPeerKey(keyFile)
+			}
 			if err != nil {
 				return err
 			}
-			peeringAddrs = append(peeringAddrs, *ai)
+
+			for _, maStr := range cctx.StringSlice("peering") {
+				if len(seed) > 0 && index >= 0 {
+					maStr, err = replaceRainbowSeedWithPeer(maStr, seed)
+					if err != nil {
+						return err
+					}
+				} else if rainbowSeedRegex.MatchString(maStr) {
+					return fmt.Errorf("unable to peer with %q without defining --seed-index of this instance first", maStr)
+				}
+
+				ai, err := peer.AddrInfoFromString(maStr)
+				if err != nil {
+					return err
+				}
+				peeringAddrs = append(peeringAddrs, *ai)
+			}
 		}
 
 		cfg := Config{
@@ -355,23 +390,32 @@ share the same seed as long as the indexes are different.
 			MaxFD:                   cctx.Int("max-fd"),
 			InMemBlockCache:         cctx.Int64("inmem-block-cache"),
 			RoutingV1Endpoints:      cctx.StringSlice("http-routers"),
-			DHTRouting:              DHTRouting(cctx.String("dht-routing")),
+			DHTRouting:              dhtRouting,
 			DHTSharedHost:           cctx.Bool("dht-shared-host"),
+			Bitswap:                 bitswap,
 			IpnsMaxCacheTTL:         cctx.Duration("ipns-max-cache-ttl"),
 			DenylistSubs:            cctx.StringSlice("denylists"),
 			Peering:                 peeringAddrs,
 			PeeringSharedCache:      cctx.Bool("peering-shared-cache"),
 			Seed:                    seed,
 			SeedIndex:               index,
-			SeedPeering:             cctx.Bool("seed-peering"),
+			SeedPeering:             seedPeering,
 			SeedPeeringMaxIndex:     cctx.Int("seed-peering-max-index"),
+			RemoteBackends:          cctx.StringSlice("remote-backends"),
+			RemoteBackendMode:       RemoteBackendMode(cctx.String("remote-backends-mode")),
 			GCInterval:              cctx.Duration("gc-interval"),
 			GCThreshold:             cctx.Float64("gc-threshold"),
 		}
 
+		var gnd *Node
+
 		goLog.Debugf("Rainbow config: %+v", cfg)
 
-		gnd, err := Setup(cctx.Context, cfg, priv, cdns)
+		if noLibp2p {
+			gnd, err = SetupNoLibp2p(cctx.Context, cfg, cdns)
+		} else {
+			gnd, err = Setup(cctx.Context, cfg, priv, cdns)
+		}
 		if err != nil {
 			return err
 		}
@@ -389,11 +433,14 @@ share the same seed as long as the indexes are different.
 			Handler: handler,
 		}
 
-		pid, err := peer.IDFromPublicKey(priv.GetPublic())
-		if err != nil {
-			return err
+		fmt.Printf("Starting %s %s\n", name, version)
+		if priv != nil {
+			pid, err := peer.IDFromPublicKey(priv.GetPublic())
+			if err != nil {
+				return err
+			}
+			fmt.Printf("PeerID: %s\n\n", pid)
 		}
-		fmt.Printf("PeerID: %s\n\n", pid)
 		registerVersionMetric(version)
 		registerIpfsNodeCollector(gnd)
 

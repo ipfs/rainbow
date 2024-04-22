@@ -84,6 +84,7 @@ func mustPeeredNodes(t *testing.T, configuration [][]int, peeringShareCache bool
 			ListenAddrs:        []string{mas[i].String()},
 			Peering:            []peer.AddrInfo{},
 			PeeringSharedCache: peeringShareCache,
+			Bitswap:            true,
 		}
 
 		for _, j := range configuration[i] {
@@ -177,6 +178,7 @@ func testSeedPeering(t *testing.T, n int, dhtRouting DHTRouting, dhtSharedHost b
 			BlockstoreType:      "flatfs",
 			DHTRouting:          dhtRouting,
 			DHTSharedHost:       dhtSharedHost,
+			Bitswap:             true,
 			Seed:                seed,
 			SeedIndex:           i,
 			SeedPeering:         true,

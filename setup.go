@@ -16,7 +16,7 @@ import (
 	nopfsipfs "github.com/ipfs-shipyard/nopfs/ipfs"
 	"github.com/ipfs/boxo/blockservice"
 	"github.com/ipfs/boxo/blockstore"
-	"github.com/ipfs/boxo/exchange"
+	"github.com/ipfs/boxo/exchange/offline"
 	bsfetcher "github.com/ipfs/boxo/fetcher/impl/blockservice"
 	"github.com/ipfs/boxo/gateway"
 	"github.com/ipfs/boxo/namesys"
@@ -55,23 +55,30 @@ const (
 	DHTOff         DHTRouting = "off"
 )
 
+type RemoteBackendMode string
+
+const (
+	RemoteBackendBlock RemoteBackendMode = "block"
+	RemoteBackendCAR   RemoteBackendMode = "car"
+)
+
 func init() {
 	// Lets us discover our own public address with a single observation
 	identify.ActivationThresh = 1
 }
 
 type Node struct {
-	vs   routing.ValueStore
-	host host.Host
-
-	dataDir      string
-	datastore    datastore.Batching
-	blockstore   blockstore.Blockstore
-	exchange     exchange.Interface
-	bsrv         blockservice.BlockService
-	resolver     resolver.Resolver
 	ns           namesys.NameSystem
+	vs           routing.ValueStore
+	dataDir      string
+	bsrv         blockservice.BlockService
 	denylistSubs []*nopfs.HTTPSubscriber
+
+	// Maybe not be set depending on the configuration:
+	host       host.Host
+	datastore  datastore.Batching
+	blockstore blockstore.Blockstore
+	resolver   resolver.Resolver
 }
 
 type Config struct {
@@ -96,6 +103,7 @@ type Config struct {
 	DHTRouting              DHTRouting
 	DHTSharedHost           bool
 	IpnsMaxCacheTTL         time.Duration
+	Bitswap                 bool
 
 	DenylistSubs []string
 
@@ -107,8 +115,62 @@ type Config struct {
 	SeedPeering         bool
 	SeedPeeringMaxIndex int
 
+	RemoteBackends    []string
+	RemoteBackendMode RemoteBackendMode
+
 	GCInterval  time.Duration
 	GCThreshold float64
+}
+
+func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {
+	var err error
+
+	cfg.DataDir, err = filepath.Abs(cfg.DataDir)
+	if err != nil {
+		return nil, err
+	}
+
+	denylists, blocker, err := setupDenylists(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	// The stars aligned and Libp2p does not need to be turned on at all.
+	if len(cfg.RemoteBackends) == 0 {
+		return nil, errors.New("remote backends must be set when bitswap and dht are disabled")
+	}
+
+	// Setup a Value Store composed of both the remote backends and the delegated
+	// routers, if they exist. This vs is only used for the namesystem.
+	vs, err := setupRoutingNoLibp2p(cfg, dnsCache)
+	if err != nil {
+		return nil, err
+	}
+
+	// Setup the remote blockstore if that's the mode we're using.
+	var bsrv blockservice.BlockService
+	if cfg.RemoteBackendMode == RemoteBackendBlock {
+		blkst, err := gateway.NewRemoteBlockstore(cfg.RemoteBackends, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		bsrv = blockservice.New(blkst, offline.Exchange(blkst))
+		bsrv = nopfsipfs.WrapBlockService(bsrv, blocker)
+	}
+
+	ns, err := setupNamesys(cfg, vs, blocker)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Node{
+		vs:           vs,
+		ns:           ns,
+		dataDir:      cfg.DataDir,
+		denylistSubs: denylists,
+		bsrv:         bsrv,
+	}, nil
 }
 
 func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cachedDNS) (*Node, error) {
@@ -119,9 +181,14 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		return nil, err
 	}
 
-	ds, err := setupDatastore(cfg)
+	denylists, blocker, err := setupDenylists(cfg)
 	if err != nil {
 		return nil, err
+	}
+
+	n := &Node{
+		dataDir:      cfg.DataDir,
+		denylistSubs: denylists,
 	}
 
 	bwc := metrics.NewBandwidthCounter()
@@ -170,20 +237,15 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		}))
 	}
 
-	blkst := blockstore.NewBlockstore(ds,
-		blockstore.NoPrefix(),
-		// Every Has() for every written block is a transaction with a
-		// seek onto LSM. If not in memory it will be a pain.
-		// We opt to write every block Put into the blockstore.
-		// See also comment in blockservice.
-		blockstore.WriteThrough(),
-	)
-	blkst = blockstore.NewIdStore(blkst)
+	ds, err := setupDatastore(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	var (
+		vs routing.ValueStore
 		cr routing.ContentRouting
 		pr routing.PeerRouting
-		vs routing.ValueStore
 	)
 
 	opts = append(opts, libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
@@ -200,55 +262,46 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		return nil, err
 	}
 
-	bswap := setupBitswapExchange(ctx, cfg, h, cr, blkst)
+	var bsrv blockservice.BlockService
+	if cfg.Bitswap {
+		blkst := blockstore.NewBlockstore(ds,
+			blockstore.NoPrefix(),
+			// Every Has() for every written block is a transaction with a
+			// seek onto LSM. If not in memory it will be a pain.
+			// We opt to write every block Put into the blockstore.
+			// See also comment in blockservice.
+			blockstore.WriteThrough(),
+		)
+		blkst = blockstore.NewIdStore(blkst)
+		n.blockstore = blkst
 
-	err = os.Mkdir(filepath.Join(cfg.DataDir, "denylists"), 0755)
-	if err != nil && !errors.Is(err, fs.ErrExist) {
-		return nil, err
-	}
+		bsrv = blockservice.New(blkst, setupBitswapExchange(ctx, cfg, h, cr, blkst),
+			// if we are doing things right, our bitswap wantlists should
+			// not have blocks that we already have (see
+			// https://github.com/ipfs/boxo/blob/e0d4b3e9b91e9904066a10278e366c9a6d9645c7/blockservice/blockservice.go#L272). Thus
+			// we should not be writing many blocks that we already
+			// have. Thus, no point in checking whether we have a block
+			// before writing new blocks.
+			blockservice.WriteThrough(),
+		)
+	} else {
+		if len(cfg.RemoteBackends) == 0 || cfg.RemoteBackendMode != RemoteBackendBlock {
+			return nil, errors.New("remote backends in block mode must be set when disabling bitswap")
+		}
 
-	var denylists []*nopfs.HTTPSubscriber
-	for _, dl := range cfg.DenylistSubs {
-		s, err := nopfs.NewHTTPSubscriber(dl, filepath.Join(cfg.DataDir, "denylists", filepath.Base(dl)), time.Minute)
+		if cfg.PeeringSharedCache {
+			return nil, errors.New("disabling bitswap is incompatible with peering cache")
+		}
+
+		blkst, err := gateway.NewRemoteBlockstore(cfg.RemoteBackends, nil)
 		if err != nil {
 			return nil, err
 		}
-		denylists = append(denylists, s)
+
+		bsrv = blockservice.New(blkst, offline.Exchange(blkst))
 	}
 
-	files, err := nopfs.GetDenylistFilesInDir(filepath.Join(cfg.DataDir, "denylists"))
-	if err != nil {
-		return nil, err
-	}
-	blocker, err := nopfs.NewBlocker(files)
-	if err != nil {
-		return nil, err
-	}
-
-	bsrv := blockservice.New(blkst, bswap,
-		// if we are doing things right, our bitswap wantlists should
-		// not have blocks that we already have (see
-		// https://github.com/ipfs/boxo/blob/e0d4b3e9b91e9904066a10278e366c9a6d9645c7/blockservice/blockservice.go#L272). Thus
-		// we should not be writing many blocks that we already
-		// have. Thus, no point in checking whether we have a block
-		// before writing new blocks.
-		blockservice.WriteThrough(),
-	)
 	bsrv = nopfsipfs.WrapBlockService(bsrv, blocker)
-
-	dns, err := gateway.NewDNSResolver(nil)
-	if err != nil {
-		return nil, err
-	}
-	nsOptions := []namesys.Option{namesys.WithDNSResolver(dns)}
-	if cfg.IpnsMaxCacheTTL > 0 {
-		nsOptions = append(nsOptions, namesys.WithMaxCacheTTL(cfg.IpnsMaxCacheTTL))
-	}
-	ns, err := namesys.NewNameSystem(vs, nsOptions...)
-	if err != nil {
-		return nil, err
-	}
-	ns = nopfsipfs.WrapNameSystem(ns, blocker)
 
 	fetcherCfg := bsfetcher.NewFetcherConfig(bsrv)
 	fetcherCfg.PrototypeChooser = dagpb.AddSupportToChooser(bsfetcher.DefaultPrototypeChooser)
@@ -256,18 +309,20 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 	r := resolver.NewBasicResolver(fetcher)
 	r = nopfsipfs.WrapResolver(r, blocker)
 
-	return &Node{
-		host:         h,
-		blockstore:   blkst,
-		dataDir:      cfg.DataDir,
-		datastore:    ds,
-		exchange:     bswap,
-		ns:           ns,
-		vs:           vs,
-		bsrv:         bsrv,
-		resolver:     r,
-		denylistSubs: denylists,
-	}, nil
+	n.host = h
+	n.datastore = ds
+	n.bsrv = bsrv
+	n.resolver = r
+
+	ns, err := setupNamesys(cfg, vs, blocker)
+	if err != nil {
+		return nil, err
+	}
+
+	n.vs = vs
+	n.ns = ns
+
+	return n, nil
 }
 
 func setupDatastore(cfg Config) (datastore.Batching, error) {
@@ -389,4 +444,48 @@ func setupPeering(cfg Config, h host.Host) error {
 	}
 
 	return nil
+}
+
+func setupDenylists(cfg Config) ([]*nopfs.HTTPSubscriber, *nopfs.Blocker, error) {
+	err := os.Mkdir(filepath.Join(cfg.DataDir, "denylists"), 0755)
+	if err != nil && !errors.Is(err, fs.ErrExist) {
+		return nil, nil, err
+	}
+
+	var denylists []*nopfs.HTTPSubscriber
+	for _, dl := range cfg.DenylistSubs {
+		s, err := nopfs.NewHTTPSubscriber(dl, filepath.Join(cfg.DataDir, "denylists", filepath.Base(dl)), time.Minute)
+		if err != nil {
+			return nil, nil, err
+		}
+		denylists = append(denylists, s)
+	}
+
+	files, err := nopfs.GetDenylistFilesInDir(filepath.Join(cfg.DataDir, "denylists"))
+	if err != nil {
+		return nil, nil, err
+	}
+	blocker, err := nopfs.NewBlocker(files)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return denylists, blocker, nil
+}
+
+func setupNamesys(cfg Config, vs routing.ValueStore, blocker *nopfs.Blocker) (namesys.NameSystem, error) {
+	dns, err := gateway.NewDNSResolver(nil)
+	if err != nil {
+		return nil, err
+	}
+	nsOptions := []namesys.Option{namesys.WithDNSResolver(dns)}
+	if cfg.IpnsMaxCacheTTL > 0 {
+		nsOptions = append(nsOptions, namesys.WithMaxCacheTTL(cfg.IpnsMaxCacheTTL))
+	}
+	ns, err := namesys.NewNameSystem(vs, nsOptions...)
+	if err != nil {
+		return nil, err
+	}
+	ns = nopfsipfs.WrapNameSystem(ns, blocker)
+	return ns, nil
 }
