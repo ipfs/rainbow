@@ -111,7 +111,7 @@ Enable sharing of local cache to peers safe-listed with `RAINBOW_PEERING`.
 Once enabled, Rainbow will respond to [Bitswap](https://docs.ipfs.tech/concepts/bitswap/)
 queries from these safelisted peers, serving locally cached blocks if requested.
 
-The main use case for this feature is scaling and load balancing acrosss a
+The main use case for this feature is scaling and load balancing across a
 fleet of rainbow, or other bitswap-capable IPFS services. Cache sharing allows
 clustered services to check if any of the other instances has a requested CID.
 This saves resources as data cached on other instance can be fetched internally

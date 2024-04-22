@@ -142,7 +142,11 @@ An ansible role to deploy Rainbow is available within the ipfs.ipfs collection i
 
 ## Release
 
-To make a release, create a new PR that updates the [`version.json`](./version.json) file. This PR should not include any other changes besides the version bump. A new release will be automatically made once the PR is merged
+1. Create a PR that:
+   1. Tidies the [`CHANGELOG.md`](CHANGELOG.md) with the changes for the current release
+   2. Updates the  [`version.json`](./version.json) file
+2. Once the release checker creates a draft release, copy-paste the changelog into the draft
+3. Merge the PR, the release will be automatically created once the PR is merged
 
 ## License
 
