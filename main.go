@@ -91,6 +91,29 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_SEED_INDEX"},
 			Usage:   "Index to derivate the peerID (needs --seed)",
 		},
+		&cli.BoolFlag{
+			Name:    "seed-peering",
+			Value:   false,
+			EnvVars: []string{"RAINBOW_SEED_PEERING"},
+			Usage:   "Automatic peering with peers with the same seed (requires --seed and --seed-index). Runs a separate light DHT for peer routing with the main host if --dht-routing or --dht-shared-host are disabled",
+			Action: func(ctx *cli.Context, b bool) error {
+				if !b {
+					return nil
+				}
+
+				if !ctx.IsSet("seed") || !ctx.IsSet("seed-index") {
+					return errors.New("--seed and --seed-index must be explicitly defined when --seed-peering is enabled")
+				}
+
+				return nil
+			},
+		},
+		&cli.IntFlag{
+			Name:    "seed-peering-max-index",
+			Value:   100,
+			EnvVars: []string{"RAINBOW_SEED_PEERING_MAX_INDEX"},
+			Usage:   "Largest index to derive automatic peering peer IDs for",
+		},
 		&cli.StringSliceFlag{
 			Name:    "gateway-domains",
 			Value:   cli.NewStringSlice(),
@@ -338,6 +361,10 @@ share the same seed as long as the indexes are different.
 			DenylistSubs:            cctx.StringSlice("denylists"),
 			Peering:                 peeringAddrs,
 			PeeringCache:            cctx.Bool("peering-shared-cache"),
+			Seed:                    seed,
+			SeedIndex:               index,
+			SeedPeering:             cctx.Bool("seed-peering"),
+			SeedPeeringMaxIndex:     cctx.Int("seed-peering-max-index"),
 			GCInterval:              cctx.Duration("gc-interval"),
 			GCThreshold:             cctx.Float64("gc-threshold"),
 		}
