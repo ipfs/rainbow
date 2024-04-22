@@ -15,8 +15,6 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
-- ✨ Now supports local cache sharing with peers provided via `--peering` (`RAINBOW_PEERING`). You can further read how this works in [`docs/environment-variables.md`](docs/environment-variables.md).
-
 ### Changed
 
 ### Removed
@@ -24,6 +22,12 @@ The following emojis are used to highlight certain changes:
 ### Fixed
 
 ### Security
+
+## [v1.1.0]
+
+### Added
+
+- ✨ Now supports local cache sharing with peers provided via `--peering` (`RAINBOW_PEERING`). You can further read how this works in [`docs/environment-variables.md`](docs/environment-variables.md).
 
 ## [v1.0.0]
 
