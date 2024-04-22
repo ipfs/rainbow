@@ -142,7 +142,7 @@ An ansible role to deploy Rainbow is available within the ipfs.ipfs collection i
 
 ## Release
 
-1. Create a PR that:
+1. Create a PR from branch `release-vX.Y.Z` against `main` that:
    1. Tidies the [`CHANGELOG.md`](CHANGELOG.md) with the changes for the current release
    2. Updates the  [`version.json`](./version.json) file
 2. Once the release checker creates a draft release, copy-paste the changelog into the draft
