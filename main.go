@@ -10,7 +10,9 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -205,6 +207,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_PEERING"},
 			Usage:   "Multiaddresses of peers to stay connected to (comma-separated)",
 		},
+		&cli.BoolFlag{
+			Name:    "peering-shared-cache",
+			Value:   false,
+			EnvVars: []string{"RAINBOW_PEERING_SHARED_CACHE"},
+			Usage:   "Enable sharing of local cache to peers safe-listed with --peering. Rainbow will respond to Bitswap queries from these peers, serving locally cached data as needed.",
+		},
 		&cli.StringFlag{
 			Name:    "blockstore",
 			Value:   "flatfs",
@@ -250,6 +258,8 @@ share the same seed as long as the indexes are different.
 	}
 
 	app.Action = func(cctx *cli.Context) error {
+		fmt.Printf("Starting %s %s\n", name, version)
+
 		ddir := cctx.String("datadir")
 		cdns := newCachedDNS(dnsCacheRefreshInterval)
 		defer cdns.Close()
@@ -280,8 +290,8 @@ share the same seed as long as the indexes are different.
 
 		index := cctx.Int("seed-index")
 		if len(seed) > 0 && index >= 0 {
-			fmt.Println("Deriving identity from seed")
-			priv, err = deriveKey(seed, []byte(fmt.Sprintf("rainbow-%d", index)))
+			fmt.Printf("Deriving identity from seed[%d]\n", index)
+			priv, err = deriveKey(seed, deriveKeyInfo(index))
 		} else {
 			fmt.Println("Setting identity from libp2p.key")
 			keyFile := filepath.Join(secretsDir, "libp2p.key")
@@ -293,6 +303,15 @@ share the same seed as long as the indexes are different.
 
 		var peeringAddrs []peer.AddrInfo
 		for _, maStr := range cctx.StringSlice("peering") {
+			if len(seed) > 0 && index >= 0 {
+				maStr, err = replaceRainbowSeedWithPeer(maStr, seed)
+				if err != nil {
+					return err
+				}
+			} else if rainbowSeedRegex.MatchString(maStr) {
+				return fmt.Errorf("unable to peer with %q without defining --seed-index of this instance first", maStr)
+			}
+
 			ai, err := peer.AddrInfoFromString(maStr)
 			if err != nil {
 				return err
@@ -318,6 +337,7 @@ share the same seed as long as the indexes are different.
 			IpnsMaxCacheTTL:         cctx.Duration("ipns-max-cache-ttl"),
 			DenylistSubs:            cctx.StringSlice("denylists"),
 			Peering:                 peeringAddrs,
+			PeeringCache:            cctx.Bool("peering-shared-cache"),
 			GCInterval:              cctx.Duration("gc-interval"),
 			GCThreshold:             cctx.Float64("gc-threshold"),
 		}
@@ -342,7 +362,6 @@ share the same seed as long as the indexes are different.
 			Handler: handler,
 		}
 
-		fmt.Printf("Starting %s %s\n", name, version)
 		pid, err := peer.IDFromPublicKey(priv.GetPublic())
 		if err != nil {
 			return err
@@ -483,4 +502,30 @@ func printIfListConfigured(message string, list []string) {
 	if len(list) > 0 {
 		fmt.Printf(message+"%v\n", strings.Join(list, ", "))
 	}
+}
+
+var rainbowSeedRegex = regexp.MustCompile(`/p2p/rainbow-seed/(\d+)`)
+
+func replaceRainbowSeedWithPeer(addr string, seed string) (string, error) {
+	match := rainbowSeedRegex.FindStringSubmatch(addr)
+	if len(match) != 2 {
+		return addr, nil
+	}
+
+	index, err := strconv.Atoi(match[1])
+	if err != nil {
+		return "", err
+	}
+
+	priv, err := deriveKey(seed, deriveKeyInfo(index))
+	if err != nil {
+		return "", err
+	}
+
+	pid, err := peer.IDFromPublicKey(priv.GetPublic())
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Replace(addr, match[0], "/p2p/"+pid.String(), 1), nil
 }
