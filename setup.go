@@ -409,7 +409,12 @@ func setupBitswap(ctx context.Context, cfg Config, h host.Host, cr routing.Conte
 		provideEnabled = true
 		peerBlockRequestFilter = func(p peer.ID, c cid.Cid) bool {
 			_, ok := peers[p]
-			return ok
+			if !ok {
+				return false
+			}
+
+			has, err := bstore.Has(ctx, c)
+			return has && err == nil
 		}
 	} else {
 		provideEnabled = false
