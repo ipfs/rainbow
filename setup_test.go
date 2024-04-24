@@ -8,6 +8,7 @@ import (
 	"time"
 
 	blocks "github.com/ipfs/go-block-format"
+	ci "github.com/libp2p/go-libp2p-testing/ci"
 	ic "github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -98,7 +99,6 @@ func mustPeeredNodes(t *testing.T, configuration [][]int, peeringShareCache bool
 		for i, node := range nodes {
 			for _, peer := range cfgs[i].Peering {
 				if node.host.Network().Connectedness(peer.ID) != network.Connected {
-					t.Log(node.host.Network().Connectedness(peer.ID))
 					return false
 				}
 			}
@@ -149,4 +149,77 @@ func TestPeeringCache(t *testing.T) {
 	checkBitswap(1, true)
 	// confirm bitswap providing is disabled by default (no peering)
 	checkBitswap(2, false)
+}
+
+func testSeedPeering(t *testing.T, n int, dhtRouting DHTRouting, dhtSharedHost bool) ([]ic.PrivKey, []peer.ID, []*Node) {
+	cdns := newCachedDNS(dnsCacheRefreshInterval)
+	defer cdns.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	seed, err := newSeed()
+	require.NoError(t, err)
+
+	keys := make([]ic.PrivKey, n)
+	pids := make([]peer.ID, n)
+
+	for i := 0; i < n; i++ {
+		keys[i], pids[i] = mustTestPeerFromSeed(t, seed, i)
+	}
+
+	cfgs := make([]Config, n)
+	nodes := make([]*Node, n)
+
+	for i := 0; i < n; i++ {
+		cfgs[i] = Config{
+			DataDir:             t.TempDir(),
+			BlockstoreType:      "flatfs",
+			DHTRouting:          dhtRouting,
+			DHTSharedHost:       dhtSharedHost,
+			Seed:                seed,
+			SeedIndex:           i,
+			SeedPeering:         true,
+			SeedPeeringMaxIndex: n,
+		}
+
+		nodes[i], err = Setup(ctx, cfgs[i], keys[i], cdns)
+		require.NoError(t, err)
+	}
+
+	require.Eventually(t, func() bool {
+		for i, node := range nodes {
+			for j, pid := range pids {
+				if i == j {
+					continue
+				}
+
+				if node.host.Network().Connectedness(pid) != network.Connected {
+					return false
+				}
+			}
+		}
+
+		return true
+	}, time.Second*120, time.Millisecond*100)
+
+	return keys, pids, nodes
+}
+
+func TestSeedPeering(t *testing.T) {
+	if ci.IsRunning() {
+		t.Skip("don't run seed peering tests in ci")
+	}
+
+	t.Run("DHT disabled", func(t *testing.T) {
+		testSeedPeering(t, 3, DHTOff, false)
+	})
+
+	t.Run("DHT enabled with shared host disabled", func(t *testing.T) {
+		testSeedPeering(t, 3, DHTStandard, false)
+	})
+
+	t.Run("DHT enabled with shared host enabled", func(t *testing.T) {
+		testSeedPeering(t, 3, DHTStandard, true)
+	})
 }

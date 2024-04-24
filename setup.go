@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -22,12 +21,9 @@ import (
 	"github.com/ipfs/boxo/blockstore"
 	bsfetcher "github.com/ipfs/boxo/fetcher/impl/blockservice"
 	"github.com/ipfs/boxo/gateway"
-	"github.com/ipfs/boxo/ipns"
 	"github.com/ipfs/boxo/namesys"
 	"github.com/ipfs/boxo/path/resolver"
 	"github.com/ipfs/boxo/peering"
-	routingv1client "github.com/ipfs/boxo/routing/http/client"
-	httpcontentrouter "github.com/ipfs/boxo/routing/http/contentrouter"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	badger4 "github.com/ipfs/go-ds-badger4"
@@ -38,19 +34,14 @@ import (
 	"github.com/ipfs/go-unixfsnode"
 	dagpb "github.com/ipld/go-codec-dagpb"
 	"github.com/libp2p/go-libp2p"
-	dht "github.com/libp2p/go-libp2p-kad-dht"
-	"github.com/libp2p/go-libp2p-kad-dht/fullrt"
-	record "github.com/libp2p/go-libp2p-record"
-	routinghelpers "github.com/libp2p/go-libp2p-routing-helpers"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/metrics"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/routing"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
+	"github.com/libp2p/go-libp2p/p2p/protocol/identify"
 	"github.com/multiformats/go-multiaddr"
-	"go.opencensus.io/stats/view"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func init() {
@@ -69,23 +60,23 @@ const (
 	DHTOff         DHTRouting = "off"
 )
 
+func init() {
+	// Lets us discover our own public address with a single observation
+	identify.ActivationThresh = 1
+}
+
 type Node struct {
 	vs   routing.ValueStore
 	host host.Host
 
-	dataDir    string
-	datastore  datastore.Batching
-	blockstore blockstore.Blockstore
-	bs         *bitswap.Bitswap
-	bsrv       blockservice.BlockService
-	resolver   resolver.Resolver
-
-	ns namesys.NameSystem
-
-	bwc *metrics.BandwidthCounter
-
+	dataDir      string
+	datastore    datastore.Batching
+	blockstore   blockstore.Blockstore
+	bs           *bitswap.Bitswap
+	bsrv         blockservice.BlockService
+	resolver     resolver.Resolver
+	ns           namesys.NameSystem
 	denylistSubs []*nopfs.HTTPSubscriber
-	blocker      *nopfs.Blocker
 }
 
 type Config struct {
@@ -114,6 +105,11 @@ type Config struct {
 	DenylistSubs []string
 	Peering      []peer.AddrInfo
 	PeeringCache bool
+
+	Seed                string
+	SeedIndex           int
+	SeedPeering         bool
+	SeedPeeringMaxIndex int
 
 	GCInterval  time.Duration
 	GCThreshold float64
@@ -188,182 +184,27 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 	)
 	blkst = blockstore.NewIdStore(blkst)
 
-	var router routing.Routing
-
-	// Increase per-host connection pool since we are making lots of concurrent requests.
-	httpClient := &http.Client{
-		Transport: otelhttp.NewTransport(
-			&routingv1client.ResponseBodyLimitedTransport{
-				RoundTripper: &customTransport{
-					// Roundtripper with increased defaults than http.Transport such that retrieving
-					// multiple lookups concurrently is fast.
-					RoundTripper: &http.Transport{
-						MaxIdleConns:        1000,
-						MaxConnsPerHost:     100,
-						MaxIdleConnsPerHost: 100,
-						IdleConnTimeout:     90 * time.Second,
-						DialContext:         dnsCache.dialWithCachedDNS,
-						ForceAttemptHTTP2:   true,
-					},
-				},
-				LimitBytes: 1 << 20,
-			}),
-	}
+	var (
+		cr routing.ContentRouting
+		pr routing.PeerRouting
+		vs routing.ValueStore
+	)
 
 	opts = append(opts, libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
-		var routingV1Routers []routing.Routing
-		for _, endpoint := range cfg.RoutingV1Endpoints {
-			rv1Opts := []routingv1client.Option{routingv1client.WithHTTPClient(httpClient)}
-			if endpoint != cidContactEndpoint {
-				rv1Opts = append(rv1Opts, routingv1client.WithStreamResultsRequired())
-			}
-			httpClient, err := delegatedHTTPContentRouter(endpoint, rv1Opts...)
-			if err != nil {
-				return nil, err
-			}
-			routingV1Routers = append(routingV1Routers, httpClient)
-		}
-
-		var dhtRouter routing.Routing
-		if cfg.DHTRouting != DHTOff {
-			var dhtHost host.Host
-			if cfg.DHTSharedHost {
-				dhtHost = h
-			} else {
-				dhtHost, err = libp2p.New(
-					libp2p.NoListenAddrs,
-					libp2p.BandwidthReporter(bwc),
-					libp2p.DefaultTransports,
-					libp2p.DefaultMuxers,
-					libp2p.UserAgent("rainbow/"+buildVersion()),
-					libp2p.ResourceManager(dhtRcMgr),
-				)
-				if err != nil {
-					return nil, err
-				}
-			}
-
-			standardClient, err := dht.New(ctx, dhtHost,
-				dht.Datastore(ds),
-				dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
-				dht.Mode(dht.ModeClient),
-			)
-			if err != nil {
-				return nil, err
-			}
-
-			if cfg.DHTRouting == DHTAccelerated {
-				fullRTClient, err := fullrt.NewFullRT(dhtHost, dht.DefaultPrefix,
-					fullrt.DHTOption(
-						dht.Validator(record.NamespacedValidator{
-							"pk":   record.PublicKeyValidator{},
-							"ipns": ipns.Validator{KeyBook: h.Peerstore()},
-						}),
-						dht.Datastore(ds),
-						dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
-						dht.BucketSize(20),
-					))
-				if err != nil {
-					return nil, err
-				}
-				dhtRouter = &bundledDHT{
-					standard: standardClient,
-					fullRT:   fullRTClient,
-				}
-			} else {
-				dhtRouter = standardClient
-			}
-		}
-
-		// Default router is no routing at all: can be especially useful during tests.
-		router = &routinghelpers.Null{}
-
-		if len(routingV1Routers) == 0 && dhtRouter != nil {
-			router = dhtRouter
-		} else {
-			var routers []*routinghelpers.ParallelRouter
-
-			if dhtRouter != nil {
-				routers = append(routers, &routinghelpers.ParallelRouter{
-					Router:                  dhtRouter,
-					ExecuteAfter:            0,
-					DoNotWaitForSearchValue: true,
-					IgnoreError:             false,
-				})
-			}
-
-			for _, routingV1Router := range routingV1Routers {
-				routers = append(routers, &routinghelpers.ParallelRouter{
-					Timeout:                 15 * time.Second,
-					Router:                  routingV1Router,
-					ExecuteAfter:            0,
-					DoNotWaitForSearchValue: true,
-					IgnoreError:             true,
-				})
-			}
-
-			if len(routers) > 0 {
-				router = routinghelpers.NewComposableParallel(routers)
-			}
-		}
-
-		return router, nil
+		cr, pr, vs, err = setupRouting(ctx, cfg, h, ds, dhtRcMgr, bwc, dnsCache)
+		return pr, err
 	}))
 	h, err := libp2p.New(opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(cfg.Peering) > 0 {
-		ps := peering.NewPeeringService(h)
-		if err := ps.Start(); err != nil {
-			return nil, err
-		}
-		for _, a := range cfg.Peering {
-			ps.AddPeer(a)
-		}
+	err = setupPeering(cfg, h)
+	if err != nil {
+		return nil, err
 	}
 
-	var (
-		provideEnabled         bool
-		peerBlockRequestFilter bsserver.PeerBlockRequestFilter
-	)
-	if cfg.PeeringCache && len(cfg.Peering) > 0 {
-		peers := make(map[peer.ID]struct{}, len(cfg.Peering))
-		for _, a := range cfg.Peering {
-			peers[a.ID] = struct{}{}
-		}
-
-		provideEnabled = true
-		peerBlockRequestFilter = func(p peer.ID, c cid.Cid) bool {
-			_, ok := peers[p]
-			return ok
-		}
-	} else {
-		provideEnabled = false
-		peerBlockRequestFilter = func(p peer.ID, c cid.Cid) bool {
-			return false
-		}
-	}
-
-	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
-	bn := bsnet.NewFromIpfsHost(h, router)
-	bswap := bitswap.New(bsctx, bn, blkst,
-		// --- Client Options
-		// default is 1 minute to search for a random live-want (1
-		// CID).  I think we want to search for random live-wants more
-		// often although probably it overlaps with general
-		// rebroadcasts.
-		bitswap.RebroadcastDelay(delay.Fixed(10*time.Second)),
-		// ProviderSearchDelay: default is 1 second.
-		bitswap.ProviderSearchDelay(time.Second),
-		bitswap.WithoutDuplicatedBlockStats(),
-
-		// ---- Server Options
-		bitswap.WithPeerBlockRequestFilter(peerBlockRequestFilter),
-		bitswap.ProvideEnabled(provideEnabled),
-	)
-	bn.Start(bswap)
+	bswap := setupBitswap(ctx, cfg, h, cr, blkst)
 
 	err = os.Mkdir(filepath.Join(cfg.DataDir, "denylists"), 0755)
 	if err != nil && !errors.Is(err, fs.ErrExist) {
@@ -407,7 +248,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 	if cfg.IpnsMaxCacheTTL > 0 {
 		nsOptions = append(nsOptions, namesys.WithMaxCacheTTL(cfg.IpnsMaxCacheTTL))
 	}
-	ns, err := namesys.NewNameSystem(router, nsOptions...)
+	ns, err := namesys.NewNameSystem(vs, nsOptions...)
 	if err != nil {
 		return nil, err
 	}
@@ -426,11 +267,9 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		datastore:    ds,
 		bs:           bswap,
 		ns:           ns,
-		vs:           router,
+		vs:           vs,
 		bsrv:         bsrv,
 		resolver:     r,
-		bwc:          bwc,
-		blocker:      blocker,
 		denylistSubs: denylists,
 	}, nil
 }
@@ -491,75 +330,6 @@ func setupDatastore(cfg Config) (datastore.Batching, error) {
 	}
 }
 
-type bundledDHT struct {
-	standard *dht.IpfsDHT
-	fullRT   *fullrt.FullRT
-}
-
-func (b *bundledDHT) getDHT() routing.Routing {
-	if b.fullRT.Ready() {
-		return b.fullRT
-	}
-	return b.standard
-}
-
-func (b *bundledDHT) Provide(ctx context.Context, c cid.Cid, brdcst bool) error {
-	return b.getDHT().Provide(ctx, c, brdcst)
-}
-
-func (b *bundledDHT) FindProvidersAsync(ctx context.Context, c cid.Cid, i int) <-chan peer.AddrInfo {
-	return b.getDHT().FindProvidersAsync(ctx, c, i)
-}
-
-func (b *bundledDHT) FindPeer(ctx context.Context, id peer.ID) (peer.AddrInfo, error) {
-	return b.getDHT().FindPeer(ctx, id)
-}
-
-func (b *bundledDHT) PutValue(ctx context.Context, k string, v []byte, option ...routing.Option) error {
-	return b.getDHT().PutValue(ctx, k, v, option...)
-}
-
-func (b *bundledDHT) GetValue(ctx context.Context, s string, option ...routing.Option) ([]byte, error) {
-	return b.getDHT().GetValue(ctx, s, option...)
-}
-
-func (b *bundledDHT) SearchValue(ctx context.Context, s string, option ...routing.Option) (<-chan []byte, error) {
-	return b.getDHT().SearchValue(ctx, s, option...)
-}
-
-func (b *bundledDHT) Bootstrap(ctx context.Context) error {
-	return b.standard.Bootstrap(ctx)
-}
-
-var _ routing.Routing = (*bundledDHT)(nil)
-
-func delegatedHTTPContentRouter(endpoint string, rv1Opts ...routingv1client.Option) (routing.Routing, error) {
-	cli, err := routingv1client.New(
-		endpoint,
-		append([]routingv1client.Option{
-			routingv1client.WithUserAgent(buildVersion()),
-		}, rv1Opts...)...,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	cr := httpcontentrouter.NewContentRoutingClient(
-		cli,
-	)
-
-	err = view.Register(routingv1client.OpenCensusViews...)
-	if err != nil {
-		return nil, fmt.Errorf("registering HTTP delegated routing views: %w", err)
-	}
-
-	return &routinghelpers.Compose{
-		ValueStore:     cr,
-		PeerRouting:    cr,
-		ContentRouting: cr,
-	}, nil
-}
-
 func loadOrInitPeerKey(kf string) (crypto.PrivKey, error) {
 	data, err := os.ReadFile(kf)
 	if err != nil {
@@ -584,4 +354,88 @@ func loadOrInitPeerKey(kf string) (crypto.PrivKey, error) {
 		return k, nil
 	}
 	return crypto.UnmarshalPrivateKey(data)
+}
+
+func setupPeering(cfg Config, h host.Host) error {
+	if len(cfg.Peering) == 0 && !cfg.SeedPeering {
+		return nil
+	}
+
+	ps := peering.NewPeeringService(h)
+	if err := ps.Start(); err != nil {
+		return err
+	}
+	for _, a := range cfg.Peering {
+		ps.AddPeer(a)
+	}
+
+	if !cfg.SeedPeering {
+		return nil
+	}
+
+	if cfg.SeedIndex < 0 {
+		return fmt.Errorf("seed index must be equal or greater than 0, it is %d", cfg.SeedIndex)
+	}
+
+	if cfg.SeedPeeringMaxIndex < 0 {
+		return fmt.Errorf("seed peering max index must be a positive number, it is %d", cfg.SeedPeeringMaxIndex)
+	}
+
+	pids, err := derivePeerIDs(cfg.Seed, cfg.SeedIndex, cfg.SeedPeeringMaxIndex)
+	if err != nil {
+		return err
+	}
+
+	for _, pid := range pids {
+		// The peering module will automatically perform lookups to find the
+		// addresses of the given peers.
+		ps.AddPeer(peer.AddrInfo{ID: pid})
+	}
+
+	return nil
+}
+
+func setupBitswap(ctx context.Context, cfg Config, h host.Host, cr routing.ContentRouting, bstore blockstore.Blockstore) *bitswap.Bitswap {
+	var (
+		provideEnabled         bool
+		peerBlockRequestFilter bsserver.PeerBlockRequestFilter
+	)
+	if cfg.PeeringCache && len(cfg.Peering) > 0 {
+		peers := make(map[peer.ID]struct{}, len(cfg.Peering))
+		for _, a := range cfg.Peering {
+			peers[a.ID] = struct{}{}
+		}
+
+		provideEnabled = true
+		peerBlockRequestFilter = func(p peer.ID, c cid.Cid) bool {
+			_, ok := peers[p]
+			return ok
+		}
+	} else {
+		provideEnabled = false
+		peerBlockRequestFilter = func(p peer.ID, c cid.Cid) bool {
+			return false
+		}
+	}
+
+	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
+	bn := bsnet.NewFromIpfsHost(h, cr)
+	bswap := bitswap.New(bsctx, bn, bstore,
+		// --- Client Options
+		// default is 1 minute to search for a random live-want (1
+		// CID).  I think we want to search for random live-wants more
+		// often although probably it overlaps with general
+		// rebroadcasts.
+		bitswap.RebroadcastDelay(delay.Fixed(10*time.Second)),
+		// ProviderSearchDelay: default is 1 second.
+		bitswap.ProviderSearchDelay(time.Second),
+		bitswap.WithoutDuplicatedBlockStats(),
+
+		// ---- Server Options
+		bitswap.WithPeerBlockRequestFilter(peerBlockRequestFilter),
+		bitswap.ProvideEnabled(provideEnabled),
+	)
+	bn.Start(bswap)
+
+	return bswap
 }

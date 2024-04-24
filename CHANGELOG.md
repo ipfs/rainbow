@@ -15,6 +15,8 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+- ✨ Now supports automatic peering with peers that have the same seed via `--seed-peering` (`RAINBOW_SEED_PEERING`). To enable this, you must configure `--seed` (`RAINBOW_SEED`) and `--seed-index` (`RAINBOW_SEED_INDEX`).
+
 ### Changed
 
 ### Removed
