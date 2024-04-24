@@ -10,6 +10,8 @@
   - [`RAINBOW_GC_THRESHOLD`](#rainbow_gc_threshold)
   - [`RAINBOW_IPNS_MAX_CACHE_TTL`](#rainbow_ipns_max_cache_ttl)
   - [`RAINBOW_PEERING`](#rainbow_peering)
+  - [`RAINBOW_SEED`](#rainbow_seed)
+  - [`RAINBOW_SEED_INDEX`](#rainbow_seed_index)
   - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
   - [`RAINBOW_SEED_PEERING_MAX_INDEX`](#rainbow_seed_peering_max_index)
   - [`RAINBOW_PEERING_SHARED_CACHE`](#rainbow_peering_shared_cache)
@@ -106,13 +108,29 @@ A comma-separated list of [multiaddresses](https://docs.libp2p.io/concepts/funda
 
 Default: not set (no peering)
 
+### `RAINBOW_SEED`
+
+Base58 seed to derive PeerID from. Can be generated with `rainbow gen-seed`.
+If set, requires `RAINBOW_SEED_INDEX` to be set as well.
+
+Default: not set
+
+### `RAINBOW_SEED_INDEX`
+
+Index to derivate the PeerID identity from `RAINBOW_SEED`.
+
+Default: not set
+
 ### `RAINBOW_SEED_PEERING`
+
+> [!WARNING]
+> Experimental feature.
 
 Automated version of `RAINBOW_PEERING` which does not require providing multiaddrs.
 
 Instead, it will set up peering with peers that share the same seed (requires `RAINBOW_SEED_INDEX` to be set up).
 
-> [!WARNING]
+> [!NOTE]
 > Runs a separate light DHT for peer routing with the main host if DHT routing is disabled.
 
 Default: `false` (disabled)
@@ -120,21 +138,27 @@ Default: `false` (disabled)
 ### `RAINBOW_SEED_PEERING_MAX_INDEX`
 
 Informs the largest index to derive for `RAINBOW_SEED_PEERING`.
+If you have more instances than the default, increase it here.
 
 Default: 100
 
 ### `RAINBOW_PEERING_SHARED_CACHE`
 
-Enable sharing of local cache to peers safe-listed with `RAINBOW_PEERING`.
+> [!WARNING]
+> Experimental feature.
+
+Enable sharing of local cache to peers safe-listed with `RAINBOW_PEERING`
+or `RAINBOW_SEED_PEERING`.
 
 Once enabled, Rainbow will respond to [Bitswap](https://docs.ipfs.tech/concepts/bitswap/)
 queries from these safelisted peers, serving locally cached blocks if requested.
 
-The main use case for this feature is scaling and load balancing across a
-fleet of rainbow, or other bitswap-capable IPFS services. Cache sharing allows
-clustered services to check if any of the other instances has a requested CID.
-This saves resources as data cached on other instance can be fetched internally
-(e.g. LAN) rather than externally (WAN, p2p).
+> [!TIP]
+> The main use case for this feature is scaling and load balancing across a
+> fleet of rainbow, or other bitswap-capable IPFS services. Cache sharing allows
+> clustered services to check if any of the other instances has a requested CID.
+> This saves resources as data cached on other instance can be fetched internally
+> (e.g. LAN) rather than externally (WAN, p2p).
 
 Default: `false` (no cache sharing)
 
