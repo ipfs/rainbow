@@ -21,6 +21,8 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
+- Rainbow no longer provides announcements of blocks via Bitswap. This is not needed to provide blocks to peers with `RAINBOW_PEERING_SHARED_CACHE`.
+
 ### Security
 
 ## [v1.2.0]
