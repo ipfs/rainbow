@@ -10,6 +10,8 @@
   - [`RAINBOW_GC_THRESHOLD`](#rainbow_gc_threshold)
   - [`RAINBOW_IPNS_MAX_CACHE_TTL`](#rainbow_ipns_max_cache_ttl)
   - [`RAINBOW_PEERING`](#rainbow_peering)
+  - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
+  - [`RAINBOW_SEED_PEERING_MAX_INDEX`](#rainbow_seed_peering_max_index)
   - [`RAINBOW_PEERING_SHARED_CACHE`](#rainbow_peering_shared_cache)
 - [Logging](#logging)
   - [`GOLOG_LOG_LEVEL`](#golog_log_level)
@@ -96,13 +98,30 @@ Default: No upper bound, [TTL from IPNS Record](https://specs.ipfs.tech/ipns/ipn
 
 A comma-separated list of [multiaddresses](https://docs.libp2p.io/concepts/fundamentals/addressing/) of peers to stay connected to.
 
-
-If `RAINBOW_SEED` is set and `/p2p/rainbow-seed/N` value is found here, Rainbow
-will replace it with a valid `/p2p/` for a peer ID generated from same seed
-and index `N`.
+> [!TIP]
+> If `RAINBOW_SEED` is set and `/p2p/rainbow-seed/N` value is found here, Rainbow
+> will replace it with a valid `/p2p/` for a peer ID generated from same seed
+> and index `N`. This is useful when `RAINBOW_SEED_PEERING` can't be used,
+> or when peer routing should be skipped and specific address should be used.
 
 Default: not set (no peering)
 
+### `RAINBOW_SEED_PEERING`
+
+Automated version of `RAINBOW_PEERING` which does not require providing multiaddrs.
+
+Instead, it will set up peering with peers that share the same seed (requires `RAINBOW_SEED_INDEX` to be set up).
+
+> [!WARNING]
+> Runs a separate light DHT for peer routing with the main host if DHT routing is disabled.
+
+Default: `false` (disabled)
+
+### `RAINBOW_SEED_PEERING_MAX_INDEX`
+
+Informs the largest index to derive for `RAINBOW_SEED_PEERING`.
+
+Default: 100
 
 ### `RAINBOW_PEERING_SHARED_CACHE`
 
