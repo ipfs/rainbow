@@ -397,7 +397,6 @@ func setupPeering(cfg Config, h host.Host) error {
 
 func setupBitswap(ctx context.Context, cfg Config, h host.Host, cr routing.ContentRouting, bstore blockstore.Blockstore) *bitswap.Bitswap {
 	var (
-		provideEnabled         bool
 		peerBlockRequestFilter bsserver.PeerBlockRequestFilter
 	)
 	if cfg.PeeringCache && len(cfg.Peering) > 0 {
@@ -406,13 +405,11 @@ func setupBitswap(ctx context.Context, cfg Config, h host.Host, cr routing.Conte
 			peers[a.ID] = struct{}{}
 		}
 
-		provideEnabled = true
 		peerBlockRequestFilter = func(p peer.ID, c cid.Cid) bool {
 			_, ok := peers[p]
 			return ok
 		}
 	} else {
-		provideEnabled = false
 		peerBlockRequestFilter = func(p peer.ID, c cid.Cid) bool {
 			return false
 		}
@@ -433,7 +430,7 @@ func setupBitswap(ctx context.Context, cfg Config, h host.Host, cr routing.Conte
 
 		// ---- Server Options
 		bitswap.WithPeerBlockRequestFilter(peerBlockRequestFilter),
-		bitswap.ProvideEnabled(provideEnabled),
+		bitswap.ProvideEnabled(false),
 	)
 	bn.Start(bswap)
 
