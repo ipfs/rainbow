@@ -431,6 +431,15 @@ func setupBitswap(ctx context.Context, cfg Config, h host.Host, cr routing.Conte
 		// ---- Server Options
 		bitswap.WithPeerBlockRequestFilter(peerBlockRequestFilter),
 		bitswap.ProvideEnabled(false),
+		// Do not keep track of other peer's wantlists, we only want to reply if we
+		// have a block. If we get it later, it's no longer relevant.
+		bitswap.WithNoPeerLedger(),
+		// Do not notify peers once we get blocks they've asked for, reduces processing.
+		// This should already be a no-op considering we're not keeping track of other
+		// peer's wantlists.
+		bitswap.WithNotifyNewBlocks(false),
+		// When we don't have a block, don't reply. This reduces processment.
+		bitswap.SetSendDontHaves(false),
 	)
 	bn.Start(bswap)
 
