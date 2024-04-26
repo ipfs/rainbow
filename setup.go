@@ -21,11 +21,13 @@ import (
 	bsserver "github.com/ipfs/boxo/bitswap/server"
 	"github.com/ipfs/boxo/blockservice"
 	"github.com/ipfs/boxo/blockstore"
+	"github.com/ipfs/boxo/exchange"
 	bsfetcher "github.com/ipfs/boxo/fetcher/impl/blockservice"
 	"github.com/ipfs/boxo/gateway"
 	"github.com/ipfs/boxo/namesys"
 	"github.com/ipfs/boxo/path/resolver"
 	"github.com/ipfs/boxo/peering"
+	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	badger4 "github.com/ipfs/go-ds-badger4"
@@ -231,7 +233,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		return nil, err
 	}
 
-	bsrv := blockservice.New(blkst, bswap,
+	bsrv := blockservice.New(blkst, &noNotifyExchange{bswap},
 		// if we are doing things right, our bitswap wantlists should
 		// not have blocks that we already have (see
 		// https://github.com/ipfs/boxo/blob/e0d4b3e9b91e9904066a10278e366c9a6d9645c7/blockservice/blockservice.go#L272). Thus
@@ -474,3 +476,12 @@ func (*noopPeerLedger) WantlistForPeer(p peer.ID) []wl.Entry {
 func (*noopPeerLedger) ClearPeerWantlist(p peer.ID) {}
 
 func (*noopPeerLedger) PeerDisconnected(p peer.ID) {}
+
+type noNotifyExchange struct {
+	exchange.Interface
+}
+
+func (e *noNotifyExchange) NotifyNewBlocks(ctx context.Context, blocks ...blocks.Block) error {
+	// Rainbow does not notify when we get new blocks in our Blockservice.
+	return nil
+}
