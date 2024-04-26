@@ -21,10 +21,14 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
+### Security
+
+## [v1.2.1]
+
+### Fixed
+
 - Rainbow no longer provides announcements of blocks via Bitswap. This is not needed to provide blocks to peers with `RAINBOW_PEERING_SHARED_CACHE`.
 - Rainbow no longer keeps track of other peer's Bitswap wantlists. It will only reply if they have the block at the moment. This should reduce the processing and memory usage.
-
-### Security
 
 ## [v1.2.0]
 
