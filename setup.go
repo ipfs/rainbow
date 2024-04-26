@@ -15,15 +15,19 @@ import (
 	nopfs "github.com/ipfs-shipyard/nopfs"
 	nopfsipfs "github.com/ipfs-shipyard/nopfs/ipfs"
 	"github.com/ipfs/boxo/bitswap"
+	wl "github.com/ipfs/boxo/bitswap/client/wantlist"
+	bsmspb "github.com/ipfs/boxo/bitswap/message/pb"
 	bsnet "github.com/ipfs/boxo/bitswap/network"
 	bsserver "github.com/ipfs/boxo/bitswap/server"
 	"github.com/ipfs/boxo/blockservice"
 	"github.com/ipfs/boxo/blockstore"
+	"github.com/ipfs/boxo/exchange"
 	bsfetcher "github.com/ipfs/boxo/fetcher/impl/blockservice"
 	"github.com/ipfs/boxo/gateway"
 	"github.com/ipfs/boxo/namesys"
 	"github.com/ipfs/boxo/path/resolver"
 	"github.com/ipfs/boxo/peering"
+	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	badger4 "github.com/ipfs/go-ds-badger4"
@@ -229,7 +233,7 @@ func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cached
 		return nil, err
 	}
 
-	bsrv := blockservice.New(blkst, bswap,
+	bsrv := blockservice.New(blkst, &noNotifyExchange{bswap},
 		// if we are doing things right, our bitswap wantlists should
 		// not have blocks that we already have (see
 		// https://github.com/ipfs/boxo/blob/e0d4b3e9b91e9904066a10278e366c9a6d9645c7/blockservice/blockservice.go#L272). Thus
@@ -431,8 +435,53 @@ func setupBitswap(ctx context.Context, cfg Config, h host.Host, cr routing.Conte
 		// ---- Server Options
 		bitswap.WithPeerBlockRequestFilter(peerBlockRequestFilter),
 		bitswap.ProvideEnabled(false),
+		// Do not keep track of other peer's wantlists, we only want to reply if we
+		// have a block. If we get it later, it's no longer relevant.
+		bitswap.WithPeerLedger(&noopPeerLedger{}),
+		// When we don't have a block, don't reply. This reduces processment.
+		bitswap.SetSendDontHaves(false),
 	)
 	bn.Start(bswap)
 
 	return bswap
+}
+
+type noopPeerLedger struct{}
+
+func (*noopPeerLedger) Wants(p peer.ID, e wl.Entry) {}
+
+func (*noopPeerLedger) CancelWant(p peer.ID, k cid.Cid) bool {
+	return false
+}
+
+func (*noopPeerLedger) CancelWantWithType(p peer.ID, k cid.Cid, typ bsmspb.Message_Wantlist_WantType) {
+}
+
+func (*noopPeerLedger) Peers(k cid.Cid) []bsserver.PeerEntry {
+	return nil
+}
+
+func (*noopPeerLedger) CollectPeerIDs() []peer.ID {
+	return nil
+}
+
+func (*noopPeerLedger) WantlistSizeForPeer(p peer.ID) int {
+	return 0
+}
+
+func (*noopPeerLedger) WantlistForPeer(p peer.ID) []wl.Entry {
+	return nil
+}
+
+func (*noopPeerLedger) ClearPeerWantlist(p peer.ID) {}
+
+func (*noopPeerLedger) PeerDisconnected(p peer.ID) {}
+
+type noNotifyExchange struct {
+	exchange.Interface
+}
+
+func (e *noNotifyExchange) NotifyNewBlocks(ctx context.Context, blocks ...blocks.Block) error {
+	// Rainbow does not notify when we get new blocks in our Blockservice.
+	return nil
 }
