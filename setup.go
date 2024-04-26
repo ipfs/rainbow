@@ -15,6 +15,8 @@ import (
 	nopfs "github.com/ipfs-shipyard/nopfs"
 	nopfsipfs "github.com/ipfs-shipyard/nopfs/ipfs"
 	"github.com/ipfs/boxo/bitswap"
+	wl "github.com/ipfs/boxo/bitswap/client/wantlist"
+	bsmspb "github.com/ipfs/boxo/bitswap/message/pb"
 	bsnet "github.com/ipfs/boxo/bitswap/network"
 	bsserver "github.com/ipfs/boxo/bitswap/server"
 	"github.com/ipfs/boxo/blockservice"
@@ -433,11 +435,7 @@ func setupBitswap(ctx context.Context, cfg Config, h host.Host, cr routing.Conte
 		bitswap.ProvideEnabled(false),
 		// Do not keep track of other peer's wantlists, we only want to reply if we
 		// have a block. If we get it later, it's no longer relevant.
-		bitswap.WithNoPeerLedger(),
-		// Do not notify peers once we get blocks they've asked for, reduces processing.
-		// This should already be a no-op considering we're not keeping track of other
-		// peer's wantlists.
-		bitswap.WithNotifyNewBlocks(false),
+		bitswap.WithPeerLedger(&noopPeerLedger{}),
 		// When we don't have a block, don't reply. This reduces processment.
 		bitswap.SetSendDontHaves(false),
 	)
@@ -445,3 +443,34 @@ func setupBitswap(ctx context.Context, cfg Config, h host.Host, cr routing.Conte
 
 	return bswap
 }
+
+type noopPeerLedger struct{}
+
+func (*noopPeerLedger) Wants(p peer.ID, e wl.Entry) {}
+
+func (*noopPeerLedger) CancelWant(p peer.ID, k cid.Cid) bool {
+	return false
+}
+
+func (*noopPeerLedger) CancelWantWithType(p peer.ID, k cid.Cid, typ bsmspb.Message_Wantlist_WantType) {
+}
+
+func (*noopPeerLedger) Peers(k cid.Cid) []bsserver.PeerEntry {
+	return nil
+}
+
+func (*noopPeerLedger) CollectPeerIDs() []peer.ID {
+	return nil
+}
+
+func (*noopPeerLedger) WantlistSizeForPeer(p peer.ID) int {
+	return 0
+}
+
+func (*noopPeerLedger) WantlistForPeer(p peer.ID) []wl.Entry {
+	return nil
+}
+
+func (*noopPeerLedger) ClearPeerWantlist(p peer.ID) {}
+
+func (*noopPeerLedger) PeerDisconnected(p peer.ID) {}
