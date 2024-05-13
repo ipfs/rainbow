@@ -30,6 +30,7 @@
 - [Testing](#testing)
   - [`GATEWAY_CONFORMANCE_TEST`](#gateway_conformance_test)
   - [`IPFS_NS_MAP`](#ipfs_ns_map)
+- [Tracing](#tracing) 
 
 ## Configuration
 
@@ -289,3 +290,21 @@ $ IPFS_NS_MAP="dnslink-test1.example.com:/ipfs/bafkreicysg23kiwv34eg2d7qweipxwos
 $ curl -is http://127.0.0.1:8081/dnslink-test2.example.com/ | grep Etag
 Etag: "bafkreicysg23kiwv34eg2d7qweipxwosdo2py4ldv42nbauguluen5v6am"
 ```
+
+## Tracing
+
+Tracing across the stack follows, as much as possible, the [Open Telemetry]
+specifications. Configuration environment variables are specified in the
+[OpenTelemetry Environment Variable Specification] where possible. The
+[Boxo Tracing] documentation is the basis for tracing here.
+
+Two major distinctions from the more general tracing enabled in boxo are:
+1. When tracing is enabled it is restricted to flows through HTTP Gateway requests, 
+rather than also included background processes
+2. Requests are only traced when there is a `Traceparent` header passed that is valid
+According to the [Trace Context] specification
+
+[Boxo Tracing]: https://github.com/ipfs/boxo/blob/main/docs/tracing.md
+[Open Telemetry]: https://opentelemetry.io/
+[OpenTelemetry Environment Variable Specification]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/sdk-environment-variables.md
+[Trace Context]: https://www.w3.org/TR/trace-context
