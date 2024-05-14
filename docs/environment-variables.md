@@ -145,7 +145,7 @@ Default: 100
 ### `RAINBOW_PEERING_SHARED_CACHE`
 
 > [!WARNING]
-> Experimental feature.
+> Experimental feature, will result in increased network I/O due to Bitswap server being run in addition to the lean client.
 
 Enable sharing of local cache to peers safe-listed with `RAINBOW_PEERING`
 or `RAINBOW_SEED_PEERING`.
