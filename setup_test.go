@@ -83,7 +83,7 @@ func mustPeeredNodes(t *testing.T, configuration [][]int, peeringShareCache bool
 			RoutingV1Endpoints: []string{},
 			ListenAddrs:        []string{mas[i].String()},
 			Peering:            []peer.AddrInfo{},
-			PeeringCache:       peeringShareCache,
+			PeeringSharedCache: peeringShareCache,
 		}
 
 		for _, j := range configuration[i] {
@@ -118,7 +118,7 @@ func TestPeering(t *testing.T) {
 	}, false)
 }
 
-func TestPeeringCache(t *testing.T) {
+func TestPeeringSharedCache(t *testing.T) {
 	nodes := mustPeeredNodes(t, [][]int{
 		{1}, // 0 peered to 1
 		{0}, // 1 peered to 0

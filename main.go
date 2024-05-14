@@ -234,7 +234,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "peering-shared-cache",
 			Value:   false,
 			EnvVars: []string{"RAINBOW_PEERING_SHARED_CACHE"},
-			Usage:   "Enable sharing of local cache to peers safe-listed with --peering. Rainbow will respond to Bitswap queries from these peers, serving locally cached data as needed.",
+			Usage:   "(EXPERIMENTAL: increased network I/O) Enable sharing of local cache to peers safe-listed with --peering. Rainbow will respond to Bitswap queries from these peers, serving locally cached data as needed.",
 		},
 		&cli.StringFlag{
 			Name:    "blockstore",
@@ -360,7 +360,7 @@ share the same seed as long as the indexes are different.
 			IpnsMaxCacheTTL:         cctx.Duration("ipns-max-cache-ttl"),
 			DenylistSubs:            cctx.StringSlice("denylists"),
 			Peering:                 peeringAddrs,
-			PeeringCache:            cctx.Bool("peering-shared-cache"),
+			PeeringSharedCache:      cctx.Bool("peering-shared-cache"),
 			Seed:                    seed,
 			SeedIndex:               index,
 			SeedPeering:             cctx.Bool("seed-peering"),
