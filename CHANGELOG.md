@@ -21,6 +21,8 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
+- Rainbow no longer initializes Bitswap server by default, restoring behavior from v1.0.0.
+
 ### Security
 
 ## [v1.2.1]
