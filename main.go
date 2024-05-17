@@ -409,7 +409,7 @@ share the same seed as long as the indexes are different.
 
 		var gnd *Node
 
-		goLog.Debugf("Rainbow config: %+v", cfg)
+		goLog.Infof("Rainbow config: %+v", cfg)
 
 		if noLibp2p {
 			gnd, err = SetupNoLibp2p(cctx.Context, cfg, cdns)
