@@ -137,11 +137,11 @@ func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node,
 
 	// The stars aligned and Libp2p does not need to be turned on at all.
 	if len(cfg.RemoteBackends) == 0 {
-		return nil, errors.New("remote backends must be set when bitswap and dht are disabled")
+		return nil, errors.New("URL of RAINBOW_REMOTE_BACKENDS must be set when RAINBOW_BITSWAP and RAINBOW_DHT_ROUTING are disabled")
 	}
 
 	// Setup a Value Store composed of both the remote backends and the delegated
-	// routers, if they exist. This vs is only used for the namesystem.
+	// routers, if they exist. This vs is only used for resolving IPNS Records.
 	vs, err := setupRoutingNoLibp2p(cfg, dnsCache)
 	if err != nil {
 		return nil, err

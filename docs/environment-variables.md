@@ -162,6 +162,33 @@ queries from these safelisted peers, serving locally cached blocks if requested.
 
 Default: `false` (no cache sharing)
 
+### `RAINBOW_DHT_ROUTING`
+
+Control the type of Amino DHT client used for for routing. Options are `accelerated`, `standard` and `off`.
+
+Default: `accelerated`
+
+### `RAINBOW_REMOTE_BACKENDS`
+
+> [!WARNING]
+> Experimental feature. Requires setting `RAINBOW_DHT_ROUTING=off` and  `RAINBOW_BITSWAP=false`.
+
+URL(s) of of remote [trustless gateways](https://docs.ipfs.tech/reference/http/gateway/#trustless-verifiable-retrieval)
+to use as backend instead of libp2p node with Bitswap.
+
+Default: not set
+
+### `RAINBOW_REMOTE_BACKENDS_MODE`
+
+Requires `RAINBOW_REMOTE_BACKENDS` to be set.
+
+Controls how requests to remote backend are made.
+
+- `block`  will use [application/vnd.ipld.raw](https://www.iana.org/assignments/media-types/application/vnd.ipld.raw) to fetch raw blocks one by one
+- `car` will use [application/vnd.ipld.car](https://www.iana.org/assignments/media-types/application/vnd.ipld.car) and [IPIP-402: Partial CAR Support on Trustless Gateways](https://specs.ipfs.tech/ipips/ipip-0402/) for fetching multiple blocks per request
+
+Default: `block`
+
 ## Logging
 
 ### `GOLOG_LOG_LEVEL`

@@ -228,7 +228,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "peering",
 			Value:   cli.NewStringSlice(),
 			EnvVars: []string{"RAINBOW_PEERING"},
-			Usage:   "Multiaddresses of peers to stay connected to (comma-separated)",
+			Usage:   "(EXPERIMENTAL) Multiaddresses of peers to stay connected to and ask for missing blocks over Bitswap (comma-separated)",
 		},
 		&cli.BoolFlag{
 			Name:    "peering-shared-cache",
@@ -258,13 +258,13 @@ Generate an identity seed and launch a gateway:
 			Name:    "remote-backends",
 			Value:   cli.NewStringSlice(),
 			EnvVars: []string{"RAINBOW_REMOTE_BACKENDS"},
-			Usage:   "Trustless gateways to use as backend instead of Bitswap (comma-separated urls)",
+			Usage:   "(EXPERIMENTAL) Trustless gateways to use as backend instead of Bitswap (comma-separated urls)",
 		},
 		&cli.StringFlag{
 			Name:    "remote-backends-mode",
 			Value:   "block",
 			EnvVars: []string{"RAINBOW_REMOTE_BACKENDS_MODE"},
-			Usage:   "Whether to fetch raw blocks or CARs from the remote backends. Options are 'block' or 'car'",
+			Usage:   "(EXPERIMENTAL) Whether to fetch raw blocks or CARs from the remote backends. Options are 'block' or 'car'",
 			Action: func(ctx *cli.Context, s string) error {
 				switch RemoteBackendMode(s) {
 				case RemoteBackendBlock, RemoteBackendCAR:
