@@ -183,7 +183,7 @@ func setupRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Bat
 
 	// If we're using a remote backend, but we also have libp2p enabled (e.g. for
 	// seed peering), we can still leverage the remote backend here.
-	if len(cfg.RemoteBackends) > 0 && cfg.RemoteBackendMode == RemoteBackendBlock {
+	if len(cfg.RemoteBackends) > 0 && cfg.RemoteBackendsIPNS {
 		remoteValueStore, err := gateway.NewRemoteValueStore(cfg.RemoteBackends, nil)
 		if err != nil {
 			return nil, nil, nil, err
@@ -216,7 +216,7 @@ func setupRoutingNoLibp2p(cfg Config, dnsCache *cachedDNS) (routing.ValueStore, 
 		return nil, err
 	}
 
-	if len(cfg.RemoteBackends) > 0 && cfg.RemoteBackendMode == RemoteBackendBlock {
+	if len(cfg.RemoteBackends) > 0 && cfg.RemoteBackendsIPNS {
 		remoteValueStore, err := gateway.NewRemoteValueStore(cfg.RemoteBackends, nil)
 		if err != nil {
 			return nil, err

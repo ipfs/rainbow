@@ -266,6 +266,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_REMOTE_BACKENDS"},
 			Usage:   "(EXPERIMENTAL) Trustless gateways to use as backend instead of Bitswap (comma-separated urls)",
 		},
+		&cli.BoolFlag{
+			Name:    "remote-backends-ipns",
+			Value:   true,
+			EnvVars: []string{"RAINBOW_REMOTE_BACKENDS_IPNS"},
+			Usage:   "(EXPERIMENTAL) Whether to fetch IPNS Records (application/vnd.ipfs.ipns-record) from the remote backends",
+		},
 		&cli.StringFlag{
 			Name:    "remote-backends-mode",
 			Value:   "block",
@@ -408,6 +414,7 @@ share the same seed as long as the indexes are different.
 			SeedPeering:             seedPeering,
 			SeedPeeringMaxIndex:     cctx.Int("seed-peering-max-index"),
 			RemoteBackends:          cctx.StringSlice("remote-backends"),
+			RemoteBackendsIPNS:      cctx.Bool("remote-backends-ipns"),
 			RemoteBackendMode:       RemoteBackendMode(cctx.String("remote-backends-mode")),
 			GCInterval:              cctx.Duration("gc-interval"),
 			GCThreshold:             cctx.Float64("gc-threshold"),

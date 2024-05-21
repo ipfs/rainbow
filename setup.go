@@ -115,8 +115,9 @@ type Config struct {
 	SeedPeering         bool
 	SeedPeeringMaxIndex int
 
-	RemoteBackends    []string
-	RemoteBackendMode RemoteBackendMode
+	RemoteBackends     []string
+	RemoteBackendsIPNS bool
+	RemoteBackendMode  RemoteBackendMode
 
 	GCInterval  time.Duration
 	GCThreshold float64
