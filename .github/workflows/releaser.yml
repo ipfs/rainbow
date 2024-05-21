@@ -15,3 +15,5 @@ concurrency:
 jobs:
   releaser:
     uses: ipdxco/unified-github-workflows/.github/workflows/releaser.yml@v1.0
+    secrets:
+      UCI_GITHUB_TOKEN: ${{ secrets.UCI_GITHUB_TOKEN }}
