@@ -9,6 +9,9 @@ on:
 jobs:
   gateway-conformance:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        libp2p: ["libp2p", "no_libp2p"]
     steps:
       # 1. Start the Kubo gateway
       - name: Setup Go
@@ -65,16 +68,25 @@ jobs:
         run: go build
         working-directory: rainbow
 
-      # 5. Start rainbow
-      - name: Start rainbow
+      # 5.1. Start rainbow (Libp2p)
+      - name: Start rainbow (Libp2p)
+        if: ${{ matrix.libp2p == 'libp2p' }}
         env:
           GATEWAY_CONFORMANCE_TEST: true
         run: |
           # get kubo peerID
           kuboNodeMultiaddr=$(ipfs --api=/ip4/127.0.0.1/tcp/5001 swarm addrs local --id | head -n 1)
 
-          # run gw
           ./rainbow --http-routers=http://127.0.0.1:8080 --dht-routing=off --peering=$kuboNodeMultiaddr &
+        working-directory: rainbow
+
+      # 5.2. Start rainbow (No Libp2p)
+      - name: Start rainbow (No Libp2p)
+        if: ${{ matrix.libp2p == 'no_libp2p' }}
+        env:
+          GATEWAY_CONFORMANCE_TEST: true
+        run: |
+          ./rainbow --http-routers=http://127.0.0.1:8080 --remote-backends=http://127.0.0.1:8080 --libp2p=false &
         working-directory: rainbow
 
       # 6. Run the gateway-conformance tests
@@ -102,11 +114,11 @@ jobs:
         if: failure() || success()
         uses: actions/upload-artifact@v4
         with:
-          name: gateway-conformance.html
+          name: ${{ matrix.libp2p }}_gateway-conformance.html
           path: output.html
       - name: Upload JSON report
         if: failure() || success()
         uses: actions/upload-artifact@v4
         with:
-          name: gateway-conformance.json
+          name: ${{ matrix.libp2p }}_gateway-conformance.json
           path: output.json
