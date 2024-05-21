@@ -185,7 +185,7 @@ func testSeedPeering(t *testing.T, n int, dhtRouting DHTRouting, dhtSharedHost b
 			SeedPeeringMaxIndex: n,
 		}
 
-		nodes[i], err = Setup(ctx, cfgs[i], keys[i], cdns)
+		nodes[i], err = SetupWithLibp2p(ctx, cfgs[i], keys[i], cdns)
 		require.NoError(t, err)
 	}
 

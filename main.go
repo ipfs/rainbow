@@ -156,6 +156,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_GC_THRESHOLD"},
 			Usage:   "Percentage of how much of the disk free space must be available",
 		},
+		&cli.BoolFlag{
+			Name:    "libp2p",
+			Value:   true,
+			EnvVars: []string{"RAINBOW_LIBP2P"},
+			Usage:   "Enable or disable the usage of Libp2p",
+		},
 		&cli.IntFlag{
 			Name:    "libp2p-connmgr-low",
 			Value:   100,
@@ -322,10 +328,10 @@ share the same seed as long as the indexes are different.
 		bitswap := cctx.Bool("bitswap")
 		dhtRouting := DHTRouting(cctx.String("dht-routing"))
 		seedPeering := cctx.Bool("seed-peering")
-		noLibp2p := !bitswap && dhtRouting == DHTOff && !seedPeering
+		libp2p := cctx.Bool("libp2p")
 
 		// Only load secrets if we need Libp2p.
-		if !noLibp2p {
+		if libp2p {
 			credDir := os.Getenv("CREDENTIALS_DIRECTORY")
 			secretsDir := ddir
 
@@ -411,10 +417,10 @@ share the same seed as long as the indexes are different.
 
 		goLog.Infof("Rainbow config: %+v", cfg)
 
-		if noLibp2p {
-			gnd, err = SetupNoLibp2p(cctx.Context, cfg, cdns)
+		if libp2p {
+			gnd, err = SetupWithLibp2p(cctx.Context, cfg, priv, cdns)
 		} else {
-			gnd, err = Setup(cctx.Context, cfg, priv, cdns)
+			gnd, err = SetupNoLibp2p(cctx.Context, cfg, cdns)
 		}
 		if err != nil {
 			return err

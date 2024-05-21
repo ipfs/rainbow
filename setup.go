@@ -173,7 +173,11 @@ func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node,
 	}, nil
 }
 
-func Setup(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cachedDNS) (*Node, error) {
+func SetupWithLibp2p(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cachedDNS) (*Node, error) {
+	if !cfg.Bitswap && cfg.DHTRouting == DHTOff && !cfg.SeedPeering {
+		return nil, errors.New("libp2p is enabled, but not used: bitswap, dht and seed peering are disabled")
+	}
+
 	var err error
 
 	cfg.DataDir, err = filepath.Abs(cfg.DataDir)
