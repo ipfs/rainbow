@@ -30,7 +30,8 @@
 - [Testing](#testing)
   - [`GATEWAY_CONFORMANCE_TEST`](#gateway_conformance_test)
   - [`IPFS_NS_MAP`](#ipfs_ns_map)
-- [Tracing](#tracing) 
+- [Tracing](#tracing)
+  - [`RAINBOW_TRACING_AUTH`](#rainbow_tracing_auth)
 
 ## Configuration
 
@@ -303,6 +304,12 @@ Two major distinctions from the more general tracing enabled in boxo are:
 rather than also included background processes
 2. Requests are only traced when there is a `Traceparent` header passed that is valid
 According to the [Trace Context] specification
+
+### `RAINBOW_TRACING_AUTH`
+
+The ability to pass `Traceparent` or `Tracestate` headers is guarded by an
+`Authorization` header. The value of the `Authorization` header should match
+the value in the `RAINBOW_TRACING_AUTH` environment variable.
 
 [Boxo Tracing]: https://github.com/ipfs/boxo/blob/main/docs/tracing.md
 [Open Telemetry]: https://opentelemetry.io/

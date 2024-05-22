@@ -84,7 +84,7 @@ func withRequestLogger(next http.Handler) http.Handler {
 	})
 }
 
-func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
+func setupGatewayHandler(cfg Config, nd *Node, tracingAuth string) (http.Handler, error) {
 	var (
 		backend gateway.IPFSBackend
 		err     error
@@ -207,6 +207,20 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 
 	// Add tracing.
 	handler = otelhttp.NewHandler(handler, "Gateway")
+
+	// Remove tracing headers if not authorized
+	prevHandler := handler
+	handler = http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.Header.Get("Authorization") != tracingAuth {
+			if request.Header.Get("Traceparent") != "" {
+				request.Header.Del("Traceparent")
+			}
+			if request.Header.Get("Tracestate") != "" {
+				request.Header.Del("Tracestate")
+			}
+		}
+		prevHandler.ServeHTTP(writer, request)
+	})
 
 	return handler, nil
 }

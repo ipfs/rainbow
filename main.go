@@ -297,6 +297,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_LIBP2P_LISTEN_ADDRS"},
 			Usage:   "Multiaddresses for libp2p bitswap client to listen on (comma-separated)",
 		},
+		&cli.StringFlag{
+			Name:    "tracing-auth",
+			Value:   "",
+			EnvVars: []string{"RAINBOW_TRACING_AUTH"},
+			Usage:   "If set the key gates use of the Traceparent header by requiring the key to be passed in the Authorization header",
+		},
 	}
 
 	app.Commands = []*cli.Command{
@@ -459,7 +465,8 @@ share the same seed as long as the indexes are different.
 		gatewayListen := cctx.String("gateway-listen-address")
 		ctlListen := cctx.String("ctl-listen-address")
 
-		handler, err := setupGatewayHandler(cfg, gnd)
+		tracingAuth := cctx.String("tracing-auth")
+		handler, err := setupGatewayHandler(cfg, gnd, tracingAuth)
 		if err != nil {
 			return err
 		}
