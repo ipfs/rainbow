@@ -6,15 +6,22 @@
   - [`RAINBOW_GATEWAY_DOMAINS`](#rainbow_gateway_domains)
   - [`RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS`](#rainbow_subdomain_gateway_domains)
   - [`RAINBOW_TRUSTLESS_GATEWAY_DOMAINS`](#rainbow_trustless_gateway_domains)
+  - [`RAINBOW_DATADIR`](#rainbow_datadir)
   - [`RAINBOW_GC_INTERVAL`](#rainbow_gc_interval)
   - [`RAINBOW_GC_THRESHOLD`](#rainbow_gc_threshold)
   - [`RAINBOW_IPNS_MAX_CACHE_TTL`](#rainbow_ipns_max_cache_ttl)
   - [`RAINBOW_PEERING`](#rainbow_peering)
   - [`RAINBOW_SEED`](#rainbow_seed)
   - [`RAINBOW_SEED_INDEX`](#rainbow_seed_index)
+  - [`RAINBOW_DHT_ROUTING`](#rainbow_dht_routing)
+  - [`RAINBOW_HTTP_ROUTERS`](#rainbow_http_routers)
+- [Experiments](#experiments)
   - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
   - [`RAINBOW_SEED_PEERING_MAX_INDEX`](#rainbow_seed_peering_max_index)
   - [`RAINBOW_PEERING_SHARED_CACHE`](#rainbow_peering_shared_cache)
+  - [`RAINBOW_REMOTE_BACKENDS`](#rainbow_remote_backends)
+  - [`RAINBOW_REMOTE_BACKENDS_MODE`](#rainbow_remote_backends_mode)
+  - [`RAINBOW_REMOTE_BACKENDS_IPNS`](#rainbow_remote_backends_ipns)
 - [Logging](#logging)
   - [`GOLOG_LOG_LEVEL`](#golog_log_level)
   - [`GOLOG_LOG_FMT`](#golog_log_fmt)
@@ -69,6 +76,12 @@ when request comes with the `Host` header set to `trustless-gateway.link`.
 
 Default: none (`Host` is ignored and gateway at `127.0.0.1` supports both deserialized and verifiable response types)
 
+### `RAINBOW_DATADIR`
+
+Directory for persistent data (keys, blocks, denylists)
+
+Default: not set (uses the current directory)
+
 ### `RAINBOW_GC_INTERVAL`
 
 The interval at which the garbage collector will be called. This is given as a string that corresponds to the duration of the interval. Set 0 to disable.
@@ -121,6 +134,20 @@ Index to derivate the PeerID identity from `RAINBOW_SEED`.
 
 Default: not set
 
+### `RAINBOW_DHT_ROUTING`
+
+Control the type of Amino DHT client used for for routing. Options are `accelerated`, `standard` and `off`.
+
+Default: `accelerated`
+
+### `RAINBOW_HTTP_ROUTERS`
+
+HTTP servers with /routing/v1 endpoints to use for delegated routing (comma-separated).
+
+Default: `https://cid.contact`
+
+## Experiments
+
 ### `RAINBOW_SEED_PEERING`
 
 > [!WARNING]
@@ -162,16 +189,10 @@ queries from these safelisted peers, serving locally cached blocks if requested.
 
 Default: `false` (no cache sharing)
 
-### `RAINBOW_DHT_ROUTING`
-
-Control the type of Amino DHT client used for for routing. Options are `accelerated`, `standard` and `off`.
-
-Default: `accelerated`
-
 ### `RAINBOW_REMOTE_BACKENDS`
 
 > [!WARNING]
-> Experimental feature. Requires setting `RAINBOW_DHT_ROUTING=off` and  `RAINBOW_BITSWAP=false`.
+> Experimental feature, forces setting `RAINBOW_LIBP2P=false`.
 
 URL(s) of of remote [trustless gateways](https://docs.ipfs.tech/reference/http/gateway/#trustless-verifiable-retrieval)
 to use as backend instead of libp2p node with Bitswap.
@@ -188,6 +209,13 @@ Controls how requests to remote backend are made.
 - `car` will use [application/vnd.ipld.car](https://www.iana.org/assignments/media-types/application/vnd.ipld.car) and [IPIP-402: Partial CAR Support on Trustless Gateways](https://specs.ipfs.tech/ipips/ipip-0402/) for fetching multiple blocks per request
 
 Default: `block`
+
+### `RAINBOW_REMOTE_BACKENDS_IPNS`
+
+Controls whether to fetch IPNS Records ([`application/vnd.ipfs.ipns-record`](https://www.iana.org/assignments/media-types/application/vnd.ipfs.ipns-record)) from trustless gateway defined in `RAINBOW_REMOTE_BACKENDS`.
+This is done in addition to other routing systems, such as `RAINBOW_DHT_ROUTING` or `RAINBOW_HTTP_ROUTERS` (if also enabled).
+
+Default: `true`
 
 ## Logging
 

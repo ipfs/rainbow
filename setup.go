@@ -138,7 +138,7 @@ func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node,
 
 	// The stars aligned and Libp2p does not need to be turned on at all.
 	if len(cfg.RemoteBackends) == 0 {
-		return nil, errors.New("URL of RAINBOW_REMOTE_BACKENDS must be set when RAINBOW_BITSWAP and RAINBOW_DHT_ROUTING are disabled")
+		return nil, errors.New("RAINBOW_REMOTE_BACKENDS must be set if RAINBOW_LIBP2P is disabled")
 	}
 
 	// Setup a Value Store composed of both the remote backends and the delegated
@@ -175,8 +175,8 @@ func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node,
 }
 
 func SetupWithLibp2p(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCache *cachedDNS) (*Node, error) {
-	if !cfg.Bitswap && cfg.DHTRouting == DHTOff && !cfg.SeedPeering {
-		return nil, errors.New("libp2p is enabled, but not used: bitswap, dht and seed peering are disabled")
+	if !cfg.Bitswap && cfg.DHTRouting == DHTOff {
+		return nil, errors.New("libp2p is enabled, but not used: bitswap and dht are disabled")
 	}
 
 	var err error

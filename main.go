@@ -160,7 +160,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "libp2p",
 			Value:   true,
 			EnvVars: []string{"RAINBOW_LIBP2P"},
-			Usage:   "Enable or disable the usage of Libp2p",
+			Usage:   "Controls if a local libp2p node is used (useful for testing or when remote backend is used instead)",
 		},
 		&cli.IntFlag{
 			Name:    "libp2p-connmgr-low",
@@ -334,7 +334,18 @@ share the same seed as long as the indexes are different.
 		bitswap := cctx.Bool("bitswap")
 		dhtRouting := DHTRouting(cctx.String("dht-routing"))
 		seedPeering := cctx.Bool("seed-peering")
+
 		libp2p := cctx.Bool("libp2p")
+
+		// as a convenience to the end user, and to reduce confusion
+		// libp2p is disabled when remote backends are defined
+		remoteBackends := cctx.StringSlice("remote-backends")
+		if len(remoteBackends) > 0 {
+			fmt.Printf("RAINBOW_REMOTE_BACKENDS set, forcing RAINBOW_LIBP2P=false\n")
+			libp2p = false
+			bitswap = false
+			dhtRouting = DHTOff
+		}
 
 		// Only load secrets if we need Libp2p.
 		if libp2p {
@@ -413,7 +424,7 @@ share the same seed as long as the indexes are different.
 			SeedIndex:               index,
 			SeedPeering:             seedPeering,
 			SeedPeeringMaxIndex:     cctx.Int("seed-peering-max-index"),
-			RemoteBackends:          cctx.StringSlice("remote-backends"),
+			RemoteBackends:          remoteBackends,
 			RemoteBackendsIPNS:      cctx.Bool("remote-backends-ipns"),
 			RemoteBackendMode:       RemoteBackendMode(cctx.String("remote-backends-mode")),
 			GCInterval:              cctx.Duration("gc-interval"),
@@ -484,6 +495,8 @@ share the same seed as long as the indexes are different.
 		printIfListConfigured("  RAINBOW_GATEWAY_DOMAINS           = ", cfg.GatewayDomains)
 		printIfListConfigured("  RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS = ", cfg.SubdomainGatewayDomains)
 		printIfListConfigured("  RAINBOW_TRUSTLESS_GATEWAY_DOMAINS = ", cfg.TrustlessGatewayDomains)
+		printIfListConfigured("  RAINBOW_HTTP_ROUTERS              = ", cfg.RoutingV1Endpoints)
+		printIfListConfigured("  RAINBOW_REMOTE_BACKENDS           = ", cfg.RemoteBackends)
 
 		fmt.Printf("\n")
 		fmt.Printf("CTL endpoint listening at http://%s\n", ctlListen)
