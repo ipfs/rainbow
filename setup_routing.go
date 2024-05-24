@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ipfs/boxo/gateway"
 	"github.com/ipfs/boxo/ipns"
 	routingv1client "github.com/ipfs/boxo/routing/http/client"
 	httpcontentrouter "github.com/ipfs/boxo/routing/http/contentrouter"
@@ -180,6 +181,18 @@ func setupRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Bat
 		vs routing.ValueStore     = router
 	)
 
+	// If we're using a remote backend, but we also have libp2p enabled (e.g. for
+	// seed peering), we can still leverage the remote backend here.
+	if len(cfg.RemoteBackends) > 0 && cfg.RemoteBackendsIPNS {
+		remoteValueStore, err := gateway.NewRemoteValueStore(cfg.RemoteBackends, nil)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		vs = setupCompositeRouting(append(delegatedRouters, &routinghelpers.Compose{
+			ValueStore: remoteValueStore,
+		}), dhtRouter)
+	}
+
 	// If we're using seed peering, we need to run a lighter Amino DHT for the
 	// peering routing. We need to run a separate DHT with the main host if
 	//  the shared host is disabled, or if we're not running any DHT at all.
@@ -195,6 +208,25 @@ func setupRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Bat
 	}
 
 	return cr, pr, vs, nil
+}
+
+func setupRoutingNoLibp2p(cfg Config, dnsCache *cachedDNS) (routing.ValueStore, error) {
+	delegatedRouters, err := setupDelegatedRouting(cfg, dnsCache)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(cfg.RemoteBackends) > 0 && cfg.RemoteBackendsIPNS {
+		remoteValueStore, err := gateway.NewRemoteValueStore(cfg.RemoteBackends, nil)
+		if err != nil {
+			return nil, err
+		}
+		delegatedRouters = append(delegatedRouters, &routinghelpers.Compose{
+			ValueStore: remoteValueStore,
+		})
+	}
+
+	return setupCompositeRouting(delegatedRouters, nil), nil
 }
 
 type bundledDHT struct {

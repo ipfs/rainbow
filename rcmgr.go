@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/dustin/go-humanize"
 	"github.com/pbnjay/memory"
 
@@ -166,7 +164,7 @@ func makeResourceManagerConfig(maxMemory uint64, maxFD int, connMgrHighWater int
 		partialLimits.System.ConnsInbound = rcmgr.LimitVal(maxInboundConns)
 	}
 
-	log.Printf(`
+	goLog.Infof(`
 
 go-libp2p Resource Manager limits based on:
     - --max-memory: %s
@@ -248,7 +246,7 @@ func makeSeparateDHTClientResourceManagerConfig(maxMemory uint64, maxFD int) (li
 	// Anything in scalingLimitConfig that wasn't defined in partialLimits above will be added (e.g., libp2p's default service limits).
 	partialLimits = partialLimits.Build(scalingLimitConfig.Scale(int64(maxMemory), maxFD)).ToPartialLimitConfig()
 
-	log.Printf(`
+	goLog.Infof(`
 
 go-libp2p Separate DHT Resource Manager limits based on:
     - --max-memory: %s

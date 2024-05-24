@@ -156,23 +156,29 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_GC_THRESHOLD"},
 			Usage:   "Percentage of how much of the disk free space must be available",
 		},
-		&cli.IntFlag{
-			Name:    "connmgr-low",
-			Value:   100,
-			EnvVars: []string{"RAINBOW_CONNMGR_LOW"},
-			Usage:   "Minimum number of connections to keep",
+		&cli.BoolFlag{
+			Name:    "libp2p",
+			Value:   true,
+			EnvVars: []string{"RAINBOW_LIBP2P"},
+			Usage:   "Controls if a local libp2p node is used (useful for testing or when remote backend is used instead)",
 		},
 		&cli.IntFlag{
-			Name:    "connmgr-high",
+			Name:    "libp2p-connmgr-low",
+			Value:   100,
+			EnvVars: []string{"RAINBOW_LIBP2P_CONNMGR_LOW"},
+			Usage:   "Number of connections that the connection manager will trim down to during GC",
+		},
+		&cli.IntFlag{
+			Name:    "libp2p-connmgr-high",
 			Value:   3000,
-			EnvVars: []string{"RAINBOW_CONNMGR_HIGH"},
-			Usage:   "Maximum number of connections to keep",
+			EnvVars: []string{"RAINBOW_LIBP2P_CONNMGR_HIGH"},
+			Usage:   "Number of libp2p connections that, when exceeded, will trigger a connection GC operation",
 		},
 		&cli.DurationFlag{
-			Name:    "connmgr-grace",
+			Name:    "libp2p-connmgr-grace",
 			Value:   time.Minute,
-			EnvVars: []string{"RAINBOW_CONNMGR_GRACE_PERIOD"},
-			Usage:   "Minimum connection TTL",
+			EnvVars: []string{"RAINBOW_LIBP2P_CONNMGR_GRACE_PERIOD"},
+			Usage:   "How long new libp2p connections are immune from being closed by the connection manager",
 		},
 		&cli.IntFlag{
 			Name:    "inmem-block-cache",
@@ -181,16 +187,16 @@ Generate an identity seed and launch a gateway:
 			Usage:   "Size of the in-memory block cache (currently only used for badger). 0 to disable (disables compression on disk too)",
 		},
 		&cli.Uint64Flag{
-			Name:    "max-memory",
+			Name:    "libp2p-max-memory",
 			Value:   0,
-			EnvVars: []string{"RAINBOW_MAX_MEMORY"},
-			Usage:   "Max memory to use. Defaults to 85% of the system's available RAM",
+			EnvVars: []string{"RAINBOW_LIBP2P_MAX_MEMORY"},
+			Usage:   "Max memory to use for libp2p node. Defaults to 85% of the system's available RAM",
 		},
 		&cli.Uint64Flag{
-			Name:    "max-fd",
+			Name:    "libp2p-max-fd",
 			Value:   0,
-			EnvVars: []string{"RAINBOW_MAX_FD"},
-			Usage:   "Maximum number of file descriptors. Defaults to 50% of the process' limit",
+			EnvVars: []string{"RAINBOW_LIBP2P_MAX_FD"},
+			Usage:   "Maximum number of file descriptors used by libp2p node. Defaults to 50% of the process' limit",
 		},
 		&cli.StringSliceFlag{
 			Name:    "http-routers",
@@ -228,13 +234,13 @@ Generate an identity seed and launch a gateway:
 			Name:    "peering",
 			Value:   cli.NewStringSlice(),
 			EnvVars: []string{"RAINBOW_PEERING"},
-			Usage:   "Multiaddresses of peers to stay connected to (comma-separated)",
+			Usage:   "(EXPERIMENTAL) Multiaddresses of peers to stay connected to and ask for missing blocks over Bitswap (comma-separated)",
 		},
 		&cli.BoolFlag{
 			Name:    "peering-shared-cache",
 			Value:   false,
 			EnvVars: []string{"RAINBOW_PEERING_SHARED_CACHE"},
-			Usage:   "(EXPERIMENTAL: increased network I/O) Enable sharing of local cache to peers safe-listed with --peering. Rainbow will respond to Bitswap queries from these peers, serving locally cached data as needed.",
+			Usage:   "(EXPERIMENTAL: increased network I/O) Enable sharing of local cache to peers safe-listed with --peering. Rainbow will respond to Bitswap queries from these peers, serving locally cached data as needed (requires --bitswap=true).",
 		},
 		&cli.StringFlag{
 			Name:    "blockstore",
@@ -247,6 +253,38 @@ Generate an identity seed and launch a gateway:
 			Value:   0,
 			EnvVars: []string{"RAINBOW_IPNS_MAX_CACHE_TTL"},
 			Usage:   "Optional cap on caching duration for IPNS/DNSLink lookups. Set to 0 to respect original TTLs",
+		},
+		&cli.BoolFlag{
+			Name:    "bitswap",
+			Value:   true,
+			EnvVars: []string{"RAINBOW_BITSWAP"},
+			Usage:   "Controls if Bitswap is enabled (useful for testing or when remote backend is used instead)",
+		},
+		&cli.StringSliceFlag{
+			Name:    "remote-backends",
+			Value:   cli.NewStringSlice(),
+			EnvVars: []string{"RAINBOW_REMOTE_BACKENDS"},
+			Usage:   "(EXPERIMENTAL) Trustless gateways to use as backend instead of Bitswap (comma-separated urls)",
+		},
+		&cli.BoolFlag{
+			Name:    "remote-backends-ipns",
+			Value:   true,
+			EnvVars: []string{"RAINBOW_REMOTE_BACKENDS_IPNS"},
+			Usage:   "(EXPERIMENTAL) Whether to fetch IPNS Records (application/vnd.ipfs.ipns-record) from the remote backends",
+		},
+		&cli.StringFlag{
+			Name:    "remote-backends-mode",
+			Value:   "block",
+			EnvVars: []string{"RAINBOW_REMOTE_BACKENDS_MODE"},
+			Usage:   "(EXPERIMENTAL) Whether to fetch raw blocks or CARs from the remote backends. Options are 'block' or 'car'",
+			Action: func(ctx *cli.Context, s string) error {
+				switch RemoteBackendMode(s) {
+				case RemoteBackendBlock, RemoteBackendCAR:
+					return nil
+				default:
+					return errors.New("invalid value for --remote-backend-mode: use 'block' or 'car'")
+				}
+			},
 		},
 	}
 
@@ -289,57 +327,77 @@ share the same seed as long as the indexes are different.
 
 		var seed string
 		var priv crypto.PrivKey
+		var peeringAddrs []peer.AddrInfo
+		var index int
 		var err error
 
-		credDir := os.Getenv("CREDENTIALS_DIRECTORY")
-		secretsDir := ddir
+		bitswap := cctx.Bool("bitswap")
+		dhtRouting := DHTRouting(cctx.String("dht-routing"))
+		seedPeering := cctx.Bool("seed-peering")
 
-		if len(credDir) > 0 {
-			secretsDir = credDir
+		libp2p := cctx.Bool("libp2p")
+
+		// as a convenience to the end user, and to reduce confusion
+		// libp2p is disabled when remote backends are defined
+		remoteBackends := cctx.StringSlice("remote-backends")
+		if len(remoteBackends) > 0 {
+			fmt.Printf("RAINBOW_REMOTE_BACKENDS set, forcing RAINBOW_LIBP2P=false\n")
+			libp2p = false
+			bitswap = false
+			dhtRouting = DHTOff
 		}
 
-		// attempt to read seed from disk
-		seedBytes, err := os.ReadFile(filepath.Join(secretsDir, "seed"))
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) {
-				// set seed from command line or env-var
-				seed = cctx.String("seed")
-			} else {
-				return fmt.Errorf("error reading seed credentials: %w", err)
+		// Only load secrets if we need Libp2p.
+		if libp2p {
+			credDir := os.Getenv("CREDENTIALS_DIRECTORY")
+			secretsDir := ddir
+
+			if len(credDir) > 0 {
+				secretsDir = credDir
 			}
-		} else {
-			seed = strings.TrimSpace(string(seedBytes))
-		}
 
-		index := cctx.Int("seed-index")
-		if len(seed) > 0 && index >= 0 {
-			fmt.Printf("Deriving identity from seed[%d]\n", index)
-			priv, err = deriveKey(seed, deriveKeyInfo(index))
-		} else {
-			fmt.Println("Setting identity from libp2p.key")
-			keyFile := filepath.Join(secretsDir, "libp2p.key")
-			priv, err = loadOrInitPeerKey(keyFile)
-		}
-		if err != nil {
-			return err
-		}
-
-		var peeringAddrs []peer.AddrInfo
-		for _, maStr := range cctx.StringSlice("peering") {
-			if len(seed) > 0 && index >= 0 {
-				maStr, err = replaceRainbowSeedWithPeer(maStr, seed)
-				if err != nil {
-					return err
+			// attempt to read seed from disk
+			seedBytes, err := os.ReadFile(filepath.Join(secretsDir, "seed"))
+			if err != nil {
+				if errors.Is(err, fs.ErrNotExist) {
+					// set seed from command line or env-var
+					seed = cctx.String("seed")
+				} else {
+					return fmt.Errorf("error reading seed credentials: %w", err)
 				}
-			} else if rainbowSeedRegex.MatchString(maStr) {
-				return fmt.Errorf("unable to peer with %q without defining --seed-index of this instance first", maStr)
+			} else {
+				seed = strings.TrimSpace(string(seedBytes))
 			}
 
-			ai, err := peer.AddrInfoFromString(maStr)
+			index = cctx.Int("seed-index")
+			if len(seed) > 0 && index >= 0 {
+				fmt.Println("Deriving identity from seed")
+				priv, err = deriveKey(seed, deriveKeyInfo(index))
+			} else {
+				fmt.Println("Setting identity from libp2p.key")
+				keyFile := filepath.Join(secretsDir, "libp2p.key")
+				priv, err = loadOrInitPeerKey(keyFile)
+			}
 			if err != nil {
 				return err
 			}
-			peeringAddrs = append(peeringAddrs, *ai)
+
+			for _, maStr := range cctx.StringSlice("peering") {
+				if len(seed) > 0 && index >= 0 {
+					maStr, err = replaceRainbowSeedWithPeer(maStr, seed)
+					if err != nil {
+						return err
+					}
+				} else if rainbowSeedRegex.MatchString(maStr) {
+					return fmt.Errorf("unable to peer with %q without defining --seed-index of this instance first", maStr)
+				}
+
+				ai, err := peer.AddrInfoFromString(maStr)
+				if err != nil {
+					return err
+				}
+				peeringAddrs = append(peeringAddrs, *ai)
+			}
 		}
 
 		cfg := Config{
@@ -348,30 +406,40 @@ share the same seed as long as the indexes are different.
 			GatewayDomains:          cctx.StringSlice("gateway-domains"),
 			SubdomainGatewayDomains: cctx.StringSlice("subdomain-gateway-domains"),
 			TrustlessGatewayDomains: cctx.StringSlice("trustless-gateway-domains"),
-			ConnMgrLow:              cctx.Int("connmgr-low"),
-			ConnMgrHi:               cctx.Int("connmgr-high"),
-			ConnMgrGrace:            cctx.Duration("connmgr-grace"),
-			MaxMemory:               cctx.Uint64("max-memory"),
-			MaxFD:                   cctx.Int("max-fd"),
+			ConnMgrLow:              cctx.Int("libp2p-connmgr-low"),
+			ConnMgrHi:               cctx.Int("libp2p-connmgr-high"),
+			ConnMgrGrace:            cctx.Duration("libp2p-connmgr-grace"),
+			MaxMemory:               cctx.Uint64("libp2p-max-memory"),
+			MaxFD:                   cctx.Int("libp2p-max-fd"),
 			InMemBlockCache:         cctx.Int64("inmem-block-cache"),
 			RoutingV1Endpoints:      cctx.StringSlice("http-routers"),
-			DHTRouting:              DHTRouting(cctx.String("dht-routing")),
+			DHTRouting:              dhtRouting,
 			DHTSharedHost:           cctx.Bool("dht-shared-host"),
+			Bitswap:                 bitswap,
 			IpnsMaxCacheTTL:         cctx.Duration("ipns-max-cache-ttl"),
 			DenylistSubs:            cctx.StringSlice("denylists"),
 			Peering:                 peeringAddrs,
 			PeeringSharedCache:      cctx.Bool("peering-shared-cache"),
 			Seed:                    seed,
 			SeedIndex:               index,
-			SeedPeering:             cctx.Bool("seed-peering"),
+			SeedPeering:             seedPeering,
 			SeedPeeringMaxIndex:     cctx.Int("seed-peering-max-index"),
+			RemoteBackends:          remoteBackends,
+			RemoteBackendsIPNS:      cctx.Bool("remote-backends-ipns"),
+			RemoteBackendMode:       RemoteBackendMode(cctx.String("remote-backends-mode")),
 			GCInterval:              cctx.Duration("gc-interval"),
 			GCThreshold:             cctx.Float64("gc-threshold"),
 		}
 
-		goLog.Debugf("Rainbow config: %+v", cfg)
+		var gnd *Node
 
-		gnd, err := Setup(cctx.Context, cfg, priv, cdns)
+		goLog.Infof("Rainbow config: %+v", cfg)
+
+		if libp2p {
+			gnd, err = SetupWithLibp2p(cctx.Context, cfg, priv, cdns)
+		} else {
+			gnd, err = SetupNoLibp2p(cctx.Context, cfg, cdns)
+		}
 		if err != nil {
 			return err
 		}
@@ -389,11 +457,14 @@ share the same seed as long as the indexes are different.
 			Handler: handler,
 		}
 
-		pid, err := peer.IDFromPublicKey(priv.GetPublic())
-		if err != nil {
-			return err
+		fmt.Printf("Starting %s %s\n", name, version)
+		if priv != nil {
+			pid, err := peer.IDFromPublicKey(priv.GetPublic())
+			if err != nil {
+				return err
+			}
+			fmt.Printf("PeerID: %s\n\n", pid)
 		}
-		fmt.Printf("PeerID: %s\n\n", pid)
 		registerVersionMetric(version)
 		registerIpfsNodeCollector(gnd)
 
@@ -424,6 +495,8 @@ share the same seed as long as the indexes are different.
 		printIfListConfigured("  RAINBOW_GATEWAY_DOMAINS           = ", cfg.GatewayDomains)
 		printIfListConfigured("  RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS = ", cfg.SubdomainGatewayDomains)
 		printIfListConfigured("  RAINBOW_TRUSTLESS_GATEWAY_DOMAINS = ", cfg.TrustlessGatewayDomains)
+		printIfListConfigured("  RAINBOW_HTTP_ROUTERS              = ", cfg.RoutingV1Endpoints)
+		printIfListConfigured("  RAINBOW_REMOTE_BACKENDS           = ", cfg.RemoteBackends)
 
 		fmt.Printf("\n")
 		fmt.Printf("CTL endpoint listening at http://%s\n", ctlListen)

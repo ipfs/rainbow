@@ -12,7 +12,9 @@ import (
 func TestPeriodicGC(t *testing.T) {
 	t.Parallel()
 
-	gnd := mustTestNode(t, Config{})
+	gnd := mustTestNode(t, Config{
+		Bitswap: true,
+	})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

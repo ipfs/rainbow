@@ -1,31 +1,44 @@
 name: Gateway Conformance
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
   pull_request:
+    paths-ignore:
+      - '**/*.md'
+
+env:
+  GATEWAY_CONFORMANCE_TEST: true  # rainbow preset for conformance testing
+  KUBO_VER: 'v0.28.0'             # kubo daemon used as no-libp2p-remote-* backend
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'push' && github.sha || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  gateway-conformance:
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        backend: ["libp2p-bitswap", "remote-block-gw", "remote-car-gw"]
+
     steps:
       # 1. Start the Kubo gateway
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - name: Install Kubo
+        uses: ipfs/download-ipfs-distribution-action@v1
         with:
-          go-version: 1.21.x
+          name: kubo
+          version: "${{ env.KUBO_VER }}"
 
-      - name: Install Kubo gateway from source
-        #uses: ipfs/download-ipfs-distribution-action@v1
-        run: |
-          go install github.com/ipfs/kubo/cmd/ipfs@v0.24.0-rc1
       - name: Setup kubo config
         run: |
           ipfs init --profile=test
           ipfs config Addresses.Gateway "/ip4/127.0.0.1/tcp/8080"
           ipfs config Addresses.API "/ip4/127.0.0.1/tcp/5001"
           ipfs config --json Gateway.ExposeRoutingAPI true
+          ipfs config Routing.Type "autoclient"
 
       # 2. Download the gateway-conformance fixtures
       - name: Download gateway-conformance fixtures
@@ -33,10 +46,7 @@ jobs:
         with:
           output: fixtures
 
-      - name: Start Kubo gateway
-        uses: ipfs/start-ipfs-daemon-action@v1
-
-      # 3. Populate the Kubo gateway with the gateway-conformance fixtures
+      # 3. Populate the Kubo node with the gateway-conformance fixtures
       - name: Import fixtures
         run: |
           # Import car files
@@ -56,7 +66,15 @@ jobs:
           export IPFS_NS_MAP="$(cat "./fixtures/dnslinks.json" | jq -r '.domains | to_entries | map("\(.key):\(.value)") | join(",")'),${IPFS_NS_MAP}"
           echo "IPFS_NS_MAP=${IPFS_NS_MAP}" >> $GITHUB_ENV
 
+      - name: Start Kubo gateway
+        uses: ipfs/start-ipfs-daemon-action@v1
+
       # 4. Build rainbow
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21.x
+
       - name: Checkout rainbow
         uses: actions/checkout@v4
         with:
@@ -65,16 +83,47 @@ jobs:
         run: go build
         working-directory: rainbow
 
-      # 5. Start rainbow
-      - name: Start rainbow
+      # 5. Start rainbow variant
+      - name: Start rainbow (libp2p and bitswap)
+        if: ${{ matrix.backend == 'libp2p-bitswap' }}
         env:
-          GATEWAY_CONFORMANCE_TEST: true
+          RAINBOW_DHT_ROUTING: off
+          RAINBOW_HTTP_ROUTERS: http://127.0.0.1:8080
         run: |
-          # get kubo peerID
+          # set up peering with kubo to ensure fixtures can be found fast
           kuboNodeMultiaddr=$(ipfs --api=/ip4/127.0.0.1/tcp/5001 swarm addrs local --id | head -n 1)
 
-          # run gw
-          ./rainbow --http-routers=http://127.0.0.1:8080 --dht-routing=off --peering=$kuboNodeMultiaddr &
+          ./rainbow --peering=$kuboNodeMultiaddr &
+        working-directory: rainbow
+
+      # 5. Start rainbow variant
+      - name: Start rainbow (no libp2p, remote block gateway)
+        if: ${{ matrix.backend == 'remote-block-gw' }}
+        env:
+          RAINBOW_REMOTE_BACKENDS: http://127.0.0.1:8080
+          RAINBOW_REMOTE_BACKENDS_MODE: block
+          RAINBOW_REMOTE_BACKENDS_IPNS: true
+          RAINBOW_LIBP2P: false
+          RAINBOW_BITSWAP: false
+          RAINBOW_DHT_ROUTING: off
+          RAINBOW_HTTP_ROUTERS: http://127.0.0.1:8080
+        run: |
+          ./rainbow &
+        working-directory: rainbow
+          #
+      # 5. Start rainbow variant
+      - name: Start rainbow (no libp2p, remote car gateway)
+        if: ${{ matrix.backend == 'remote-car-gw' }}
+        env:
+          RAINBOW_REMOTE_BACKENDS: http://127.0.0.1:8080
+          RAINBOW_REMOTE_BACKENDS_MODE: car
+          RAINBOW_REMOTE_BACKENDS_IPNS: true
+          RAINBOW_LIBP2P: false
+          RAINBOW_BITSWAP: false
+          RAINBOW_DHT_ROUTING: off
+          RAINBOW_HTTP_ROUTERS: http://127.0.0.1:8080
+        run: |
+          ./rainbow &
         working-directory: rainbow
 
       # 6. Run the gateway-conformance tests
@@ -92,7 +141,7 @@ jobs:
           #
           # only-if-cached: rainbow does not guarantee local cache, we will adjust upstream test (which was Kubo-specific)
           # for now disabling these test cases
-          args: -skip 'TestGatewayCache/.*_for_/ipfs/_with_only-if-cached_succeeds_when_in_local_datastore'
+          args: -skip 'TestGatewayCache/.*_with_only-if-cached_succeeds_when_in_local_datastore'
 
       # 7. Upload the results
       - name: Upload MD summary
@@ -102,11 +151,11 @@ jobs:
         if: failure() || success()
         uses: actions/upload-artifact@v4
         with:
-          name: gateway-conformance.html
+          name: ${{ matrix.backend }}_gateway-conformance.html
           path: output.html
       - name: Upload JSON report
         if: failure() || success()
         uses: actions/upload-artifact@v4
         with:
-          name: gateway-conformance.json
+          name: ${{ matrix.backend }}_gateway-conformance.json
           path: output.json

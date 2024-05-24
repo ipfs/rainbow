@@ -63,7 +63,7 @@ func mustTestNodeWithKey(t *testing.T, cfg Config, sk ic.PrivKey) *Node {
 		_ = cdns.Close()
 	})
 
-	nd, err := Setup(ctx, cfg, sk, cdns)
+	nd, err := SetupWithLibp2p(ctx, cfg, sk, cdns)
 	require.NoError(t, err)
 	return nd
 }

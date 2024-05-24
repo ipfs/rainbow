@@ -8,8 +8,13 @@ import (
 )
 
 // GC is a really stupid simple algorithm where we just delete things until
-// weve deleted enough things
+// we've deleted enough things. It is no-op if the current setup does not have
+// a (local) blockstore.
 func (nd *Node) GC(ctx context.Context, todelete int64) error {
+	if nd.blockstore == nil {
+		return nil
+	}
+
 	keys, err := nd.blockstore.AllKeysChan(ctx)
 	if err != nil {
 		return err

@@ -15,6 +15,8 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+- Now supports remote backends (using RAW block or CAR requests) via `--remote-backends` (`RAINBOW_REMOTE_BACKENDS`).
+
 ### Changed
 
 ### Removed

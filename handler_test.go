@@ -12,6 +12,7 @@ func TestTrustless(t *testing.T) {
 	t.Parallel()
 
 	ts, gnd := mustTestServer(t, Config{
+		Bitswap:                 true,
 		TrustlessGatewayDomains: []string{"trustless.com"},
 	})
 
