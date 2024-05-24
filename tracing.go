@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/ipfs/boxo/tracing"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
@@ -12,7 +11,7 @@ import (
 	"strings"
 )
 
-func newTracerProvider(ctx context.Context) (traceapi.TracerProvider, func(context.Context) error, error) {
+func newTracerProvider(ctx context.Context, traceFraction float64) (traceapi.TracerProvider, func(context.Context) error, error) {
 	exporters, err := tracing.NewSpanExporters(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -39,33 +38,56 @@ func newTracerProvider(ctx context.Context) (traceapi.TracerProvider, func(conte
 		return nil, nil, err
 	}
 
-	options = append(options, trace.WithResource(r), trace.WithSampler(RootPrefixSampler{RootPrefix: "Gateway", Next: trace.ParentBased(trace.NeverSample())}))
+	var baseSampler trace.Sampler
+	if traceFraction == 0 {
+		baseSampler = trace.NeverSample()
+	} else {
+		baseSampler = trace.TraceIDRatioBased(traceFraction)
+	}
+
+	// Sample all children whose parents are sampled
+	// Probabilistically sample if the span is a root which is a Gateway request
+	sampler := trace.ParentBased(
+		CascadingSamplerFunc(func(parameters trace.SamplingParameters) bool {
+			return !traceapi.SpanContextFromContext(parameters.ParentContext).IsValid()
+		}, "root sampler",
+			CascadingSamplerFunc(func(parameters trace.SamplingParameters) bool {
+				return strings.HasPrefix(parameters.Name, "Gateway")
+			}, "gateway request sampler",
+				baseSampler)))
+	options = append(options, trace.WithResource(r), trace.WithSampler(sampler))
 
 	tp := trace.NewTracerProvider(options...)
 	return tp, tp.Shutdown, nil
 }
 
-type RootPrefixSampler struct {
-	Next       trace.Sampler
-	RootPrefix string
+type funcSampler struct {
+	next        trace.Sampler
+	fn          func(trace.SamplingParameters) trace.SamplingResult
+	description string
 }
 
-var _ trace.Sampler = (*RootPrefixSampler)(nil)
+func (f funcSampler) ShouldSample(parameters trace.SamplingParameters) trace.SamplingResult {
+	return f.fn(parameters)
+}
 
-func (s RootPrefixSampler) ShouldSample(parameters trace.SamplingParameters) trace.SamplingResult {
-	parentSpan := traceapi.SpanContextFromContext(parameters.ParentContext)
-	if !parentSpan.IsValid() && strings.HasPrefix(parameters.Name, s.RootPrefix) {
-		res := s.Next.ShouldSample(parameters)
-		return trace.SamplingResult{
-			Decision:   res.Decision,
-			Attributes: res.Attributes,
-			Tracestate: res.Tracestate,
-		}
+func (f funcSampler) Description() string {
+	return f.description
+}
+
+// CascadingSamplerFunc will sample with the next tracer if the condition is met, otherwise the sample will be dropped
+func CascadingSamplerFunc(shouldSample func(parameters trace.SamplingParameters) bool, description string, next trace.Sampler) trace.Sampler {
+	return funcSampler{
+		next: next,
+		fn: func(parameters trace.SamplingParameters) trace.SamplingResult {
+			if shouldSample(parameters) {
+				return next.ShouldSample(parameters)
+			}
+			return trace.SamplingResult{
+				Decision:   trace.Drop,
+				Tracestate: traceapi.SpanContextFromContext(parameters.ParentContext).TraceState(),
+			}
+		},
+		description: description,
 	}
-
-	return s.Next.ShouldSample(parameters)
-}
-
-func (s RootPrefixSampler) Description() string {
-	return fmt.Sprintf("root prefix sampler: %s", s.RootPrefix)
 }

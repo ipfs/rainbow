@@ -299,17 +299,23 @@ specifications. Configuration environment variables are specified in the
 [OpenTelemetry Environment Variable Specification] where possible. The
 [Boxo Tracing] documentation is the basis for tracing here.
 
-Two major distinctions from the more general tracing enabled in boxo are:
-1. When tracing is enabled it is restricted to flows through HTTP Gateway requests, 
-rather than also included background processes
-2. Requests are only traced when there is a `Traceparent` header passed that is valid
-According to the [Trace Context] specification
+A major distinctions from the more general tracing enabled in boxo is that when
+tracing is enabled it is restricted to flows through HTTP Gateway requests, rather
+than also included background processes.
+
+Note: requests are also traced when there is a `Traceparent` header passed that is valid
+According to the [Trace Context] specification, even if the sampling fraction is set to 0.
 
 ### `RAINBOW_TRACING_AUTH`
 
 The ability to pass `Traceparent` or `Tracestate` headers is guarded by an
 `Authorization` header. The value of the `Authorization` header should match
 the value in the `RAINBOW_TRACING_AUTH` environment variable.
+
+### `RAINBOW_SAMPLING_FRACTION`
+
+The fraction (between 0 and 1) of requests that should be sampled.
+This is calculated independently of any Traceparent based sampling.
 
 [Boxo Tracing]: https://github.com/ipfs/boxo/blob/main/docs/tracing.md
 [Open Telemetry]: https://opentelemetry.io/
