@@ -11,15 +11,11 @@ The following emojis are used to highlight certain changes:
 * 🛠 - BREAKING CHANGE.  Action is required if you use this functionality.
 * ✨ - Noteworthy change to be aware of.
 
-## [Unreleased]
-
-### Added
-
-### Changed
-
-### Removed
+## [v1.3.1]
 
 ### Fixed
+
+- Added more buckets to the duration histogram metric to allow for tracking operations that take longer than 1 minute.
 
 ### Security
 
