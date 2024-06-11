@@ -19,6 +19,9 @@ func registerVersionMetric(version string) {
 	m.Set(1)
 }
 
+// Duration histograms  use fixed definition here, as we don't want to break existing buckets if we need to add more.
+var defaultDurationHistogramBuckets = []float64{0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10, 30, 60, 120, 240, 480, 960, 1920}
+
 // withHTTPMetrics collects metrics around HTTP request/response count, duration, and size
 // per specific handler. Allows us to track them separately for /ipns and /ipfs.
 func withHTTPMetrics(handler http.Handler, handlerName string) http.Handler {
@@ -26,7 +29,7 @@ func withHTTPMetrics(handler http.Handler, handlerName string) http.Handler {
 	opts := prometheus.HistogramOpts{
 		Namespace:   "ipfs",
 		Subsystem:   "http",
-		Buckets:     []float64{0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60},
+		Buckets:     defaultDurationHistogramBuckets,
 		ConstLabels: prometheus.Labels{"handler": handlerName},
 	}
 
