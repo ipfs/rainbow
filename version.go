@@ -5,9 +5,17 @@ import (
 	"time"
 )
 
-var name = "rainbow"
-var version = buildVersion()
-var userAgent = name + "/" + version
+var (
+	name      = "rainbow"
+	version   string
+	userAgent string
+	gitTag    string
+)
+
+func init() {
+	version = buildVersion()
+	userAgent = name + "/" + version
+}
 
 func buildVersion() string {
 	var revision string
@@ -31,6 +39,12 @@ func buildVersion() string {
 	}
 	if dirty {
 		revision += "-dirty"
+	}
+	if gitTag != "" {
+		if revision != "" {
+			gitTag += "/" + day + "-" + revision
+		}
+		return gitTag
 	}
 	if revision != "" {
 		return day + "-" + revision

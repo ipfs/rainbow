@@ -10,21 +10,26 @@ LABEL org.opencontainers.image.licenses=MIT+APACHE_2.0
 ARG TARGETPLATFORM TARGETOS TARGETARCH
 
 ENV GOPATH      /go
+ENV GOCACHE     /root/.cache/go-build
 ENV SRC_PATH    $GOPATH/src/github.com/ipfs/rainbow
 ENV GO111MODULE on
 ENV GOPROXY     https://proxy.golang.org
 
 COPY go.* $SRC_PATH/
 WORKDIR $SRC_PATH
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 COPY . $SRC_PATH
 RUN git config --global --add safe.directory /go/src/github.com/ipfs/rainbow
 
 RUN --mount=target=. \
     --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o $GOPATH/bin/rainbow
+    --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build \
+      -ldflags "-X main.gitTag=$(git describe --exact-match --tags HEAD 2>/dev/null || true)" \
+      -o $GOPATH/bin/rainbow
 
 #------------------------------------------------------
 FROM debian:bookworm-slim
