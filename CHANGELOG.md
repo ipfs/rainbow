@@ -16,6 +16,7 @@ The following emojis are used to highlight certain changes:
 ### Fixed
 
 - Added more buckets to the duration histogram metric to allow for tracking operations that take longer than 1 minute.
+- Release version included in --version output.
 
 ### Security
 
