@@ -1,22 +1,33 @@
 package main
 
 import (
+	_ "embed"
+	"encoding/json"
+	"fmt"
 	"runtime/debug"
 	"time"
 )
+
+//go:embed version.json
+var versionJSON []byte
 
 var name = "rainbow"
 var version = buildVersion()
 var userAgent = name + "/" + version
 
 func buildVersion() string {
+	// Read version from embedded JSON file.
+	var verMap map[string]string
+	json.Unmarshal(versionJSON, &verMap)
+	release := verMap["version"]
+
 	var revision string
 	var day string
 	var dirty bool
 
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
-		return "dev-build"
+		return release + " dev-build"
 	}
 	for _, kv := range info.Settings {
 		switch kv.Key {
@@ -33,7 +44,7 @@ func buildVersion() string {
 		revision += "-dirty"
 	}
 	if revision != "" {
-		return day + "-" + revision
+		return fmt.Sprintf("%s %s-%s", release, day, revision)
 	}
-	return "dev-build"
+	return release + " dev-build"
 }
