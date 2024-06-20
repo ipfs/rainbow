@@ -51,7 +51,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
         shell: bash
       - name: Build Docker image and publish to Docker Hub
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           platforms: linux/amd64,linux/arm/v7,linux/arm64/v8
           context: .
