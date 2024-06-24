@@ -299,7 +299,7 @@ specifications. Configuration environment variables are specified in the
 [OpenTelemetry Environment Variable Specification] where possible. The
 [Boxo Tracing] documentation is the basis for tracing here.
 
-A major distinctions from the more general tracing enabled in boxo is that when
+A major distinction from the more general tracing enabled in boxo is that when
 tracing is enabled it is restricted to flows through HTTP Gateway requests, rather
 than also included background processes.
 
