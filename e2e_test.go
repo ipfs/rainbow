@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ipfs/rainbow/testcmd"
+	testcmd "github.com/ipni/test/cmd"
 	"github.com/stretchr/testify/require"
 )
 
