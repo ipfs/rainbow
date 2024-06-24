@@ -1,7 +1,8 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.21-bookworm AS builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.22-bookworm AS builder
 
 LABEL org.opencontainers.image.source=https://github.com/ipfs/rainbow
-LABEL org.opencontainers.image.description="A stand-alone IPFS Gateway"
+LABEL org.opencontainers.image.documentation=https://github.com/ipfs/rainbow#docker
+LABEL org.opencontainers.image.description="A standalone IPFS Gateway"
 LABEL org.opencontainers.image.licenses=MIT+APACHE_2.0
 
 

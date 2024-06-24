@@ -11,12 +11,21 @@ The following emojis are used to highlight certain changes:
 * 🛠 - BREAKING CHANGE.  Action is required if you use this functionality.
 * ✨ - Noteworthy change to be aware of.
 
-## [v1.3.1]
+## [Unreleased]
+
+### Added
+
+### Changed
+
+- go-libp2p 0.35
+- boxo 0.21
+
+### Removed
 
 ### Fixed
 
 - Added more buckets to the duration histogram metric to allow for tracking operations that take longer than 1 minute.
-- Release version included in --version output.
+- Release version included in `--version` output.
 
 ### Security
 
