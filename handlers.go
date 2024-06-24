@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/ipfs/boxo/blockstore"
+	leveldb "github.com/ipfs/go-ds-leveldb"
 	"net/http"
 	"os"
 	"runtime"
@@ -208,7 +211,7 @@ func setupGatewayHandler(cfg Config, nd *Node, tracingAuth string) (http.Handler
 	// Add tracing.
 	handler = otelhttp.NewHandler(handler, "Gateway")
 
-	// Remove tracing headers if not authorized
+	// Remove tracing and cache skipping headers if not authorized
 	prevHandler := handler
 	handler = http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if request.Header.Get("Authorization") != tracingAuth {
@@ -218,12 +221,32 @@ func setupGatewayHandler(cfg Config, nd *Node, tracingAuth string) (http.Handler
 			if request.Header.Get("Tracestate") != "" {
 				request.Header.Del("Tracestate")
 			}
+			if request.Header.Get(NoBlockcacheHeader) != "" {
+				request.Header.Del(NoBlockcacheHeader)
+			}
 		}
+
+		// Process cache skipping header
+		if noBlockCache := request.Header.Get(NoBlockcacheHeader); noBlockCache != "" {
+			ds, err := leveldb.NewDatastore("", nil)
+			if err != nil {
+				writer.WriteHeader(http.StatusInternalServerError)
+				_, _ = writer.Write([]byte(err.Error()))
+				return
+			}
+			newCtx := context.WithValue(request.Context(), NoBlockcache{}, blockstore.NewBlockstore(ds))
+			request = request.WithContext(newCtx)
+		}
+
 		prevHandler.ServeHTTP(writer, request)
 	})
 
 	return handler, nil
 }
+
+const NoBlockcacheHeader = "Rainbow-No-Blockcache"
+
+type NoBlockcache struct{}
 
 // MutexFractionOption allows to set runtime.SetMutexProfileFraction via HTTP
 // using POST request with parameter 'fraction'.
