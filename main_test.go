@@ -71,7 +71,7 @@ func mustTestNodeWithKey(t *testing.T, cfg Config, sk ic.PrivKey) *Node {
 func mustTestServer(t *testing.T, cfg Config) (*httptest.Server, *Node) {
 	nd := mustTestNode(t, cfg)
 
-	handler, err := setupGatewayHandler(cfg, nd)
+	handler, err := setupGatewayHandler(cfg, nd, "")
 	if err != nil {
 		require.NoError(t, err)
 	}
