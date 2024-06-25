@@ -124,6 +124,8 @@ type Config struct {
 	GCInterval  time.Duration
 	GCThreshold float64
 
+	TracingAuthToken string
+
 	disableMetrics bool // only meant to be used during testing
 }
 

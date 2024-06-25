@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ipfs/boxo/blockstore"
-	leveldb "github.com/ipfs/go-ds-leveldb"
 	"net/http"
 	"os"
 	"runtime"
 	"strconv"
+
+	"github.com/ipfs/boxo/blockstore"
+	leveldb "github.com/ipfs/go-ds-leveldb"
 
 	_ "embed"
 	_ "net/http/pprof"
@@ -87,7 +88,7 @@ func withRequestLogger(next http.Handler) http.Handler {
 	})
 }
 
-func setupGatewayHandler(cfg Config, nd *Node, tracingAuth string) (http.Handler, error) {
+func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	var (
 		backend gateway.IPFSBackend
 		err     error
@@ -216,12 +217,19 @@ func setupGatewayHandler(cfg Config, nd *Node, tracingAuth string) (http.Handler
 	handler = withRequestLogger(handler)
 
 	// Add tracing.
-	handler = otelhttp.NewHandler(handler, "Gateway")
+	handler = withTracingAndDebug(handler, cfg)
+
+	return handler, nil
+}
+
+func withTracingAndDebug(next http.Handler, cfg Config) http.Handler {
+	next = otelhttp.NewHandler(next, "Gateway")
+	authToken := cfg.TracingAuthToken
 
 	// Remove tracing and cache skipping headers if not authorized
-	prevHandler := handler
-	handler = http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if request.Header.Get("Authorization") != tracingAuth {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		// Disable tracing/debug headers if auth token missing or invalid
+		if authToken == "" || request.Header.Get("Authorization") != authToken {
 			if request.Header.Get("Traceparent") != "" {
 				request.Header.Del("Traceparent")
 			}
@@ -245,10 +253,8 @@ func setupGatewayHandler(cfg Config, nd *Node, tracingAuth string) (http.Handler
 			request = request.WithContext(newCtx)
 		}
 
-		prevHandler.ServeHTTP(writer, request)
+		next.ServeHTTP(writer, request)
 	})
-
-	return handler, nil
 }
 
 const NoBlockcacheHeader = "Rainbow-No-Blockcache"

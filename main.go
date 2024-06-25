@@ -453,6 +453,7 @@ share the same seed as long as the indexes are different.
 			GCInterval:              cctx.Duration("gc-interval"),
 			GCThreshold:             cctx.Float64("gc-threshold"),
 			ListenAddrs:             cctx.StringSlice("libp2p-listen-addrs"),
+			TracingAuthToken:        cctx.String("tracing-auth"),
 		}
 
 		var gnd *Node
@@ -471,8 +472,7 @@ share the same seed as long as the indexes are different.
 		gatewayListen := cctx.String("gateway-listen-address")
 		ctlListen := cctx.String("ctl-listen-address")
 
-		tracingAuth := cctx.String("tracing-auth")
-		handler, err := setupGatewayHandler(cfg, gnd, tracingAuth)
+		handler, err := setupGatewayHandler(cfg, gnd)
 		if err != nil {
 			return err
 		}

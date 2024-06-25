@@ -1,6 +1,6 @@
 ## `Authorization`
 
-Optional request header that guards per-request tracing features.
+Optional request header that guards per-request tracing and debugging features.
 
 See [`RAINBOW_TRACING_AUTH`](./environment-variables.md#rainbow_tracing_auth)
 
@@ -17,3 +17,5 @@ See [`RAINBOW_TRACING_AUTH`](./environment-variables.md#rainbow_tracing_auth)
 If the value is `true` the associated request will skip the local block cache and leverage a separate in-memory block cache for the request.
 
 This header is not respected unless the request has a valid `Authorization` header
+
+See [`RAINBOW_TRACING_AUTH`](./environment-variables.md#rainbow_tracing_auth)

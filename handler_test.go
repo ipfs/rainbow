@@ -25,7 +25,7 @@ func TestTrustless(t *testing.T) {
 		Bitswap:                 true,
 		TrustlessGatewayDomains: []string{"trustless.com"},
 		disableMetrics:          true,
-	}, "")
+	})
 
 	content := "hello world"
 	cid := mustAddFile(t, gnd, []byte(content))
@@ -67,8 +67,9 @@ func TestNoBlockcacheHeader(t *testing.T) {
 	const authToken = "authorized"
 	const authHeader = "Authorization"
 	ts, gnd := mustTestServer(t, Config{
-		Bitswap: true,
-	}, authToken)
+		Bitswap:          true,
+		TracingAuthToken: authToken,
+	})
 
 	content := make([]byte, 1024)
 	_, err := rand.Read(content)
@@ -94,8 +95,10 @@ func TestNoBlockcacheHeader(t *testing.T) {
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		require.NoError(t, err)
 
+		// Both headers present, expect NoBlockcacheHeader to work
 		req.Header.Set(NoBlockcacheHeader, "true")
 		req.Header.Set(authHeader, authToken)
+
 		_, err = http.DefaultClient.Do(req)
 		assert.ErrorIs(t, err, context.DeadlineExceeded)
 	})
@@ -122,8 +125,10 @@ func TestNoBlockcacheHeader(t *testing.T) {
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 		require.NoError(t, err)
 
+		// Both headers present, expect NoBlockcacheHeader to work
 		req.Header.Set(NoBlockcacheHeader, "true")
 		req.Header.Set(authHeader, authToken)
+
 		res, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
 		assert.Equal(t, http.StatusOK, res.StatusCode)
@@ -136,8 +141,10 @@ func TestNoBlockcacheHeader(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		require.NoError(t, err)
 
+		// Both headers present, but NoBlockcacheHeader is not 'true'
 		req.Header.Set(NoBlockcacheHeader, "1")
 		req.Header.Set(authHeader, authToken)
+
 		res, err := http.DefaultClient.Do(req)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, res.StatusCode)
@@ -150,7 +157,9 @@ func TestNoBlockcacheHeader(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		require.NoError(t, err)
 
+		// Authorization missing, expect NoBlockcacheHeader to be ignored
 		req.Header.Set(NoBlockcacheHeader, "true")
+
 		res, err := http.DefaultClient.Do(req)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, res.StatusCode)

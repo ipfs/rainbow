@@ -68,10 +68,10 @@ func mustTestNodeWithKey(t *testing.T, cfg Config, sk ic.PrivKey) *Node {
 	return nd
 }
 
-func mustTestServer(t *testing.T, cfg Config, tracingAuth string) (*httptest.Server, *Node) {
+func mustTestServer(t *testing.T, cfg Config) (*httptest.Server, *Node) {
 	nd := mustTestNode(t, cfg)
 
-	handler, err := setupGatewayHandler(cfg, nd, tracingAuth)
+	handler, err := setupGatewayHandler(cfg, nd)
 	if err != nil {
 		require.NoError(t, err)
 	}
