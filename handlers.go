@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"runtime"
 	"strconv"
+
+	"github.com/ipfs/boxo/blockstore"
+	leveldb "github.com/ipfs/go-ds-leveldb"
 
 	_ "embed"
 	_ "net/http/pprof"
@@ -84,7 +88,7 @@ func withRequestLogger(next http.Handler) http.Handler {
 	})
 }
 
-func setupGatewayHandler(cfg Config, nd *Node, tracingAuth string) (http.Handler, error) {
+func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	var (
 		backend gateway.IPFSBackend
 		err     error
@@ -175,8 +179,9 @@ func setupGatewayHandler(cfg Config, nd *Node, tracingAuth string) (http.Handler
 		NoDNSLink:             noDNSLink,
 	}
 	gwHandler := gateway.NewHandler(gwConf, backend)
-	ipfsHandler := withHTTPMetrics(gwHandler, "ipfs")
-	ipnsHandler := withHTTPMetrics(gwHandler, "ipns")
+
+	ipfsHandler := withHTTPMetrics(gwHandler, "ipfs", cfg.disableMetrics)
+	ipnsHandler := withHTTPMetrics(gwHandler, "ipns", cfg.disableMetrics)
 
 	topMux := http.NewServeMux()
 	topMux.Handle("/ipfs/", ipfsHandler)
@@ -206,24 +211,48 @@ func setupGatewayHandler(cfg Config, nd *Node, tracingAuth string) (http.Handler
 	handler = withRequestLogger(handler)
 
 	// Add tracing.
-	handler = otelhttp.NewHandler(handler, "Gateway")
+	handler = withTracingAndDebug(handler, cfg.TracingAuthToken)
 
-	// Remove tracing headers if not authorized
-	prevHandler := handler
-	handler = http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if request.Header.Get("Authorization") != tracingAuth {
+	return handler, nil
+}
+
+func withTracingAndDebug(next http.Handler, authToken string) http.Handler {
+	next = otelhttp.NewHandler(next, "Gateway")
+
+	// Remove tracing and cache skipping headers if not authorized
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		// Disable tracing/debug headers if auth token missing or invalid
+		if authToken == "" || request.Header.Get("Authorization") != authToken {
 			if request.Header.Get("Traceparent") != "" {
 				request.Header.Del("Traceparent")
 			}
 			if request.Header.Get("Tracestate") != "" {
 				request.Header.Del("Tracestate")
 			}
+			if request.Header.Get(NoBlockcacheHeader) != "" {
+				request.Header.Del(NoBlockcacheHeader)
+			}
 		}
-		prevHandler.ServeHTTP(writer, request)
-	})
 
-	return handler, nil
+		// Process cache skipping header
+		if noBlockCache := request.Header.Get(NoBlockcacheHeader); noBlockCache == "true" {
+			ds, err := leveldb.NewDatastore("", nil)
+			if err != nil {
+				writer.WriteHeader(http.StatusInternalServerError)
+				_, _ = writer.Write([]byte(err.Error()))
+				return
+			}
+			newCtx := context.WithValue(request.Context(), NoBlockcache{}, blockstore.NewBlockstore(ds))
+			request = request.WithContext(newCtx)
+		}
+
+		next.ServeHTTP(writer, request)
+	})
 }
+
+const NoBlockcacheHeader = "Rainbow-No-Blockcache"
+
+type NoBlockcache struct{}
 
 // MutexFractionOption allows to set runtime.SetMutexProfileFraction via HTTP
 // using POST request with parameter 'fraction'.

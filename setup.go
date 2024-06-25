@@ -22,6 +22,8 @@ import (
 	"github.com/ipfs/boxo/namesys"
 	"github.com/ipfs/boxo/path/resolver"
 	"github.com/ipfs/boxo/peering"
+	blocks "github.com/ipfs/go-block-format"
+	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	badger4 "github.com/ipfs/go-ds-badger4"
 	flatfs "github.com/ipfs/go-ds-flatfs"
@@ -121,6 +123,10 @@ type Config struct {
 
 	GCInterval  time.Duration
 	GCThreshold float64
+
+	TracingAuthToken string
+
+	disableMetrics bool // only meant to be used during testing
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {
@@ -277,6 +283,10 @@ func SetupWithLibp2p(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCac
 			// See also comment in blockservice.
 			blockstore.WriteThrough(),
 		)
+		blkst = &switchingBlockstore{
+			baseBlockstore:      blkst,
+			contextSwitchingKey: NoBlockcache{},
+		}
 		blkst = blockstore.NewIdStore(blkst)
 		n.blockstore = blkst
 
@@ -494,3 +504,50 @@ func setupNamesys(cfg Config, vs routing.ValueStore, blocker *nopfs.Blocker) (na
 	ns = nopfsipfs.WrapNameSystem(ns, blocker)
 	return ns, nil
 }
+
+type switchingBlockstore struct {
+	baseBlockstore      blockstore.Blockstore
+	contextSwitchingKey any
+}
+
+func (s *switchingBlockstore) getBlockstore(ctx context.Context) blockstore.Blockstore {
+	alternativeBlockstore, ok := ctx.Value(s.contextSwitchingKey).(blockstore.Blockstore)
+	if ok {
+		return alternativeBlockstore
+	}
+	return s.baseBlockstore
+}
+
+func (s *switchingBlockstore) DeleteBlock(ctx context.Context, c cid.Cid) error {
+	return s.getBlockstore(ctx).DeleteBlock(ctx, c)
+}
+
+func (s *switchingBlockstore) Has(ctx context.Context, c cid.Cid) (bool, error) {
+	return s.getBlockstore(ctx).Has(ctx, c)
+}
+
+func (s *switchingBlockstore) Get(ctx context.Context, c cid.Cid) (blocks.Block, error) {
+	return s.getBlockstore(ctx).Get(ctx, c)
+}
+
+func (s *switchingBlockstore) GetSize(ctx context.Context, c cid.Cid) (int, error) {
+	return s.getBlockstore(ctx).GetSize(ctx, c)
+}
+
+func (s *switchingBlockstore) Put(ctx context.Context, block blocks.Block) error {
+	return s.getBlockstore(ctx).Put(ctx, block)
+}
+
+func (s *switchingBlockstore) PutMany(ctx context.Context, blocks []blocks.Block) error {
+	return s.getBlockstore(ctx).PutMany(ctx, blocks)
+}
+
+func (s *switchingBlockstore) AllKeysChan(ctx context.Context) (<-chan cid.Cid, error) {
+	return s.getBlockstore(ctx).AllKeysChan(ctx)
+}
+
+func (s *switchingBlockstore) HashOnRead(enabled bool) {
+	s.baseBlockstore.HashOnRead(enabled)
+}
+
+var _ blockstore.Blockstore = (*switchingBlockstore)(nil)

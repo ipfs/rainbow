@@ -16,6 +16,7 @@ The following emojis are used to highlight certain changes:
 ### Added
 
 - Tracing per request with auth header (see `RAINBOW_TRACING_AUTH`) or a fraction of requests (see `RAINBOW_SAMPLING_FRACTION`)
+- Debugging with [`Rainbow-No-Blockcache`](./docs/headers.md#rainbow-no-blockcache) that is gated by the `Authorization` header and does not use the local block cache for the request
 
 ### Changed
 
