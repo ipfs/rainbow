@@ -25,7 +25,7 @@ func TestTrustless(t *testing.T) {
 		Bitswap:                 true,
 		TrustlessGatewayDomains: []string{"trustless.com"},
 		disableMetrics:          true,
-	})
+	}, "")
 
 	content := "hello world"
 	cid := mustAddFile(t, gnd, []byte(content))
@@ -64,9 +64,11 @@ func TestTrustless(t *testing.T) {
 }
 
 func TestNoBlockcacheHeader(t *testing.T) {
+	const authToken = "authorized"
+	const authHeader = "Authorization"
 	ts, gnd := mustTestServer(t, Config{
 		Bitswap: true,
-	})
+	}, authToken)
 
 	content := make([]byte, 1024)
 	_, err := rand.Read(content)
@@ -93,6 +95,7 @@ func TestNoBlockcacheHeader(t *testing.T) {
 		require.NoError(t, err)
 
 		req.Header.Set(NoBlockcacheHeader, "true")
+		req.Header.Set(authHeader, authToken)
 		_, err = http.DefaultClient.Do(req)
 		assert.ErrorIs(t, err, context.DeadlineExceeded)
 	})
@@ -120,8 +123,36 @@ func TestNoBlockcacheHeader(t *testing.T) {
 		require.NoError(t, err)
 
 		req.Header.Set(NoBlockcacheHeader, "true")
+		req.Header.Set(authHeader, authToken)
 		res, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+		responseBody, err := io.ReadAll(res.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, content, responseBody)
+	})
+
+	t.Run("Skipping the cache only works when 'true' is passed", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		require.NoError(t, err)
+
+		req.Header.Set(NoBlockcacheHeader, "1")
+		req.Header.Set(authHeader, authToken)
+		res, err := http.DefaultClient.Do(req)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+		responseBody, err := io.ReadAll(res.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, content, responseBody)
+	})
+
+	t.Run("Skipping the cache only works when the authorization field matches", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		require.NoError(t, err)
+
+		req.Header.Set(NoBlockcacheHeader, "true")
+		res, err := http.DefaultClient.Do(req)
+		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, res.StatusCode)
 		responseBody, err := io.ReadAll(res.Body)
 		assert.NoError(t, err)
