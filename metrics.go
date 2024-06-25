@@ -24,7 +24,10 @@ var defaultDurationHistogramBuckets = []float64{0.05, 0.1, 0.25, 0.5, 1, 2, 5, 1
 
 // withHTTPMetrics collects metrics around HTTP request/response count, duration, and size
 // per specific handler. Allows us to track them separately for /ipns and /ipfs.
-func withHTTPMetrics(handler http.Handler, handlerName string) http.Handler {
+func withHTTPMetrics(handler http.Handler, handlerName string, disableMetrics bool) http.Handler {
+	if disableMetrics {
+		return handler
+	}
 
 	opts := prometheus.HistogramOpts{
 		Namespace:   "ipfs",

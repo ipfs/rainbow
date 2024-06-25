@@ -180,14 +180,8 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	}
 	gwHandler := gateway.NewHandler(gwConf, backend)
 
-	var ipfsHandler, ipnsHandler http.Handler
-	if cfg.disableMetrics {
-		ipfsHandler = gwHandler
-		ipnsHandler = gwHandler
-	} else {
-		ipfsHandler = withHTTPMetrics(gwHandler, "ipfs")
-		ipnsHandler = withHTTPMetrics(gwHandler, "ipns")
-	}
+	ipfsHandler := withHTTPMetrics(gwHandler, "ipfs", cfg.disableMetrics)
+	ipnsHandler := withHTTPMetrics(gwHandler, "ipns", cfg.disableMetrics)
 
 	topMux := http.NewServeMux()
 	topMux.Handle("/ipfs/", ipfsHandler)
@@ -217,14 +211,13 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	handler = withRequestLogger(handler)
 
 	// Add tracing.
-	handler = withTracingAndDebug(handler, cfg)
+	handler = withTracingAndDebug(handler, cfg.TracingAuthToken)
 
 	return handler, nil
 }
 
-func withTracingAndDebug(next http.Handler, cfg Config) http.Handler {
+func withTracingAndDebug(next http.Handler, authToken string) http.Handler {
 	next = otelhttp.NewHandler(next, "Gateway")
-	authToken := cfg.TracingAuthToken
 
 	// Remove tracing and cache skipping headers if not authorized
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
