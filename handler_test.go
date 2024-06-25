@@ -24,6 +24,7 @@ func TestTrustless(t *testing.T) {
 	ts, gnd := mustTestServer(t, Config{
 		Bitswap:                 true,
 		TrustlessGatewayDomains: []string{"trustless.com"},
+		disableMetrics:          true,
 	})
 
 	content := "hello world"

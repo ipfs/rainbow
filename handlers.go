@@ -178,8 +178,15 @@ func setupGatewayHandler(cfg Config, nd *Node, tracingAuth string) (http.Handler
 		NoDNSLink:             noDNSLink,
 	}
 	gwHandler := gateway.NewHandler(gwConf, backend)
-	ipfsHandler := withHTTPMetrics(gwHandler, "ipfs")
-	ipnsHandler := withHTTPMetrics(gwHandler, "ipns")
+
+	var ipfsHandler, ipnsHandler http.Handler
+	if cfg.disableMetrics {
+		ipfsHandler = gwHandler
+		ipnsHandler = gwHandler
+	} else {
+		ipfsHandler = withHTTPMetrics(gwHandler, "ipfs")
+		ipnsHandler = withHTTPMetrics(gwHandler, "ipns")
+	}
 
 	topMux := http.NewServeMux()
 	topMux.Handle("/ipfs/", ipfsHandler)

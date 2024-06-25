@@ -123,6 +123,8 @@ type Config struct {
 
 	GCInterval  time.Duration
 	GCThreshold float64
+
+	disableMetrics bool // only meant to be used during testing
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {
