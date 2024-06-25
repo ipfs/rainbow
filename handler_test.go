@@ -69,6 +69,7 @@ func TestNoBlockcacheHeader(t *testing.T) {
 	ts, gnd := mustTestServer(t, Config{
 		Bitswap:          true,
 		TracingAuthToken: authToken,
+		disableMetrics:   true,
 	})
 
 	content := make([]byte, 1024)
@@ -153,7 +154,34 @@ func TestNoBlockcacheHeader(t *testing.T) {
 		assert.Equal(t, content, responseBody)
 	})
 
-	t.Run("Skipping the cache only works when the authorization field matches", func(t *testing.T) {
+	t.Run("Skipping the cache only works when the Authorization header matches", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodGet, url, nil)
+		require.NoError(t, err)
+
+		// Authorization missing, expect NoBlockcacheHeader to be ignored
+		req.Header.Set(NoBlockcacheHeader, "true")
+
+		res, err := http.DefaultClient.Do(req)
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, res.StatusCode)
+		responseBody, err := io.ReadAll(res.Body)
+		assert.NoError(t, err)
+		assert.Equal(t, content, responseBody)
+	})
+
+	t.Run("Skipping the cache only works when RAINBOW_TRACING_AUTH is set", func(t *testing.T) {
+		// Set up separate server without authToken set
+		ts2, gnd := mustTestServer(t, Config{
+			Bitswap:          true,
+			TracingAuthToken: "", // simulate RAINBOW_TRACING_AUTH being not set
+			disableMetrics:   true,
+		})
+		content := make([]byte, 1024)
+		_, err := rand.Read(content)
+		require.NoError(t, err)
+		cid2 := mustAddFile(t, gnd, content)
+		url := ts2.URL + "/ipfs/" + cid2.String()
+
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		require.NoError(t, err)
 
