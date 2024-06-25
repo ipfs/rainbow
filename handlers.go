@@ -234,7 +234,7 @@ func setupGatewayHandler(cfg Config, nd *Node, tracingAuth string) (http.Handler
 		}
 
 		// Process cache skipping header
-		if noBlockCache := request.Header.Get(NoBlockcacheHeader); noBlockCache != "" {
+		if noBlockCache := request.Header.Get(NoBlockcacheHeader); noBlockCache == "true" {
 			ds, err := leveldb.NewDatastore("", nil)
 			if err != nil {
 				writer.WriteHeader(http.StatusInternalServerError)
