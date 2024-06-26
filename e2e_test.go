@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	testcmd "github.com/ipni/test/cmd"
+	testcmd "github.com/ipfs/go-test/cmd"
 	"github.com/stretchr/testify/require"
 )
 
