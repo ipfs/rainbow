@@ -15,6 +15,8 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+- Simple end-to-end test to check that trustless-gateway-domains are set correctly.
+
 ### Changed
 
 ### Removed
