@@ -512,6 +512,13 @@ share the same seed as long as the indexes are different.
 		}
 
 		quit := make(chan os.Signal, 3)
+		signal.Notify(
+			quit,
+			syscall.SIGINT,
+			syscall.SIGTERM,
+			syscall.SIGHUP,
+		)
+
 		var wg sync.WaitGroup
 		wg.Add(2)
 
@@ -575,12 +582,6 @@ share the same seed as long as the indexes are different.
 		}
 
 		sddaemon.SdNotify(false, sddaemon.SdNotifyReady)
-		signal.Notify(
-			quit,
-			syscall.SIGINT,
-			syscall.SIGTERM,
-			syscall.SIGHUP,
-		)
 		<-quit
 		sddaemon.SdNotify(false, sddaemon.SdNotifyStopping)
 		goLog.Info("Closing servers...")
