@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/ipfs/boxo/routing/providerquerymanager"
+
 	"github.com/ipfs/boxo/bitswap"
 	bsclient "github.com/ipfs/boxo/bitswap/client"
 	bsnet "github.com/ipfs/boxo/bitswap/network"
@@ -21,6 +23,12 @@ import (
 
 func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routing.ContentRouting, bstore blockstore.Blockstore) exchange.Interface {
 	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
+	n := &providerQueryNetwork{cr, h}
+	pqm, err := providerquerymanager.New(ctx, n, providerquerymanager.WithMaxInProcessRequests(100))
+	if err != nil {
+		panic(err)
+	}
+	cr = &wrapProv{pqm: pqm}
 	bn := bsnet.NewFromIpfsHost(h, cr)
 
 	// --- Client Options
@@ -30,6 +38,14 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 	rebroadcastDelay := delay.Fixed(10 * time.Second)
 	// bitswap.ProviderSearchDelay: default is 1 second.
 	providerSearchDelay := 1 * time.Second
+
+	// --- Bitswap Client Options
+	clientOpts := []bsclient.Option{
+		bsclient.RebroadcastDelay(rebroadcastDelay),
+		bsclient.ProviderSearchDelay(providerSearchDelay),
+		bsclient.WithoutDuplicatedBlockStats(),
+		bsclient.WithDefaultLookupManagement(false),
+	}
 
 	// If peering and shared cache are both enabled, we initialize both a
 	// Client and a Server with custom request filter and custom options.
@@ -48,31 +64,29 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 			return ok
 		}
 
-		// Initialize client+server
-		bswap := bitswap.New(bsctx, bn, bstore,
-			// --- Client Options
-			bitswap.RebroadcastDelay(rebroadcastDelay),
-			bitswap.ProviderSearchDelay(providerSearchDelay),
-			bitswap.WithoutDuplicatedBlockStats(),
+		// turn bitswap clients option into bitswap options
+		var opts []bitswap.Option
+		for _, o := range clientOpts {
+			opts = append(opts, bitswap.WithClientOption(o))
+		}
 
-			// ---- Server Options
+		// ---- Server Options
+		opts = append(opts,
 			bitswap.WithPeerBlockRequestFilter(peerBlockRequestFilter),
 			bitswap.ProvideEnabled(false),
 			// When we don't have a block, don't reply. This reduces processment.
 			bitswap.SetSendDontHaves(false),
 			bitswap.WithWantHaveReplaceSize(cfg.BitswapWantHaveReplaceSize),
 		)
+
+		// Initialize client+server
+		bswap := bitswap.New(bsctx, bn, bstore, opts...)
 		bn.Start(bswap)
 		return &noNotifyExchange{bswap}
 	}
 
 	// By default, rainbow runs with bitswap client alone
-	bswap := bsclient.New(bsctx, bn, bstore,
-		// --- Client Options
-		bsclient.RebroadcastDelay(rebroadcastDelay),
-		bsclient.ProviderSearchDelay(providerSearchDelay),
-		bsclient.WithoutDuplicatedBlockStats(),
-	)
+	bswap := bsclient.New(bsctx, bn, bstore, clientOpts...)
 	bn.Start(bswap)
 	return bswap
 }
