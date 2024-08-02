@@ -134,6 +134,14 @@ Example cURL commmand to run GC:
 
     curl -v --data '{"BytesToFree": 1099511627776}' http://127.0.0.1:8091/mgr/gc
 
+## Logging
+
+While the logging can be controlled via [environment variable](./docs/environment-variables.md#logging) it is also
+possible to dynamically modify the logging at runtime.
+
+- `http://$RAINBOW_CTL_LISTEN_ADDRESS/mgr/log/level?subsystem=<system name or * for all system>&level=<level>` will set the logging level for a subsystem
+- `http://$RAINBOW_CTL_LISTEN_ADDRESS/mgr/log/ls` will return a comma separated list of available logging subsystems
+
 ## Deployment
 
 Suggested method for self-hosting is to run a [prebuilt Docker image](#docker).

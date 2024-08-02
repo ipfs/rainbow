@@ -8,9 +8,11 @@ import (
 	"os"
 	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/ipfs/boxo/blockstore"
 	leveldb "github.com/ipfs/go-ds-leveldb"
+	"github.com/ipfs/go-log/v2"
 
 	_ "embed"
 	_ "net/http/pprof"
@@ -45,6 +47,29 @@ func makeMetricsAndDebuggingHandler() *http.ServeMux {
 	BlockProfileRateOption("/debug/pprof-block/", mux)
 
 	return mux
+}
+
+func addLogHandlers(mux *http.ServeMux) {
+	mux.HandleFunc("/mgr/log/level", func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		q := r.URL.Query()
+		subsystem := q.Get("subsystem")
+		level := q.Get("level")
+
+		if subsystem == "" || level == "" {
+			http.Error(w, "both subsystem and level must be passed", http.StatusBadRequest)
+			return
+		}
+
+		if err := log.SetLogLevel(subsystem, level); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
+	mux.HandleFunc("/mgr/log/ls", func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(strings.Join(log.GetSubsystems(), ",")))
+	})
 }
 
 func GCHandler(gnd *Node) func(w http.ResponseWriter, r *http.Request) {

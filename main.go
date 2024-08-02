@@ -505,6 +505,7 @@ share the same seed as long as the indexes are different.
 
 		apiMux := makeMetricsAndDebuggingHandler()
 		apiMux.HandleFunc("/mgr/gc", GCHandler(gnd))
+		addLogHandlers(apiMux)
 
 		apiSrv := &http.Server{
 			Addr:    ctlListen,
