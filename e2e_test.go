@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	startTimeout = 5 * time.Second
-	testTimeout  = 15 * time.Second
+	installTimeout = 30 * time.Second
+	startTimeout   = 5 * time.Second
+	testTimeout    = 15 * time.Second
 )
 
 func TestEndToEndTrustlessGatewayDomains(t *testing.T) {
@@ -23,18 +24,23 @@ func TestEndToEndTrustlessGatewayDomains(t *testing.T) {
 		t.Skip("skipping test on", runtime.GOOS)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
-	defer cancel()
-
 	runner := testcmd.NewRunner(t, t.TempDir())
+
+	ctx, cancel := context.WithTimeout(context.Background(), installTimeout)
+	defer cancel()
 
 	// install rainbow
 	runner.Run(ctx, "go", "install", ".")
+	cancel()
 	rainbow := filepath.Join(runner.Dir, "rainbow")
 
 	args := testcmd.Args(rainbow, "--trustless-gateway-domains", "example.org")
 	ready := testcmd.NewStdoutWatcher("IPFS Gateway listening")
 	domain := testcmd.NewStdoutWatcher("RAINBOW_TRUSTLESS_GATEWAY_DOMAINS = example.org")
+
+	ctx, cancel = context.WithTimeout(context.Background(), testTimeout)
+	defer cancel()
+
 	cmdRainbow := runner.Start(ctx, args, ready, domain)
 
 	startCtx, startCancel := context.WithTimeout(context.Background(), startTimeout)
