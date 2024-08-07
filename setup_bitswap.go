@@ -83,7 +83,9 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 
 type noopPeerLedger struct{}
 
-func (*noopPeerLedger) Wants(p peer.ID, e wl.Entry) {}
+func (*noopPeerLedger) Wants(p peer.ID, e wl.Entry) bool {
+	return false
+}
 
 func (*noopPeerLedger) CancelWant(p peer.ID, k cid.Cid) bool {
 	return false

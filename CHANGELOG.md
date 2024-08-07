@@ -15,10 +15,13 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
-- Simple end-to-end test to check that trustless-gateway-domains are set correctly.
-- HTTP API to dynamically list logging subsystems and modify logging levels for subsystems.
+- Simple end-to-end test to check that trustless-gateway-domains are set correctly. [#151](https://github.com/ipfs/rainbow/pull/151) [#157](https://github.com/ipfs/rainbow/pull/157)
+- HTTP API to dynamically list logging subsystems and modify logging levels for subsystems. [#156](https://github.com/ipfs/rainbow/pull/156)
 
 ### Changed
+
+- go-libp2p [0.36.1](https://github.com/libp2p/go-libp2p/releases/tag/v0.36.1)
+- boxo [0.22.0](https://github.com/ipfs/boxo/releases/tag/v0.22.0)
 
 ### Removed
 
