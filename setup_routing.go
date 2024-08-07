@@ -78,6 +78,7 @@ func setupDHTRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.
 		dhtHost = h
 	} else {
 		dhtHost, err = libp2p.New(
+			libp2p.UserAgent("rainbow/"+buildVersion()),
 			libp2p.NoListenAddrs,
 			libp2p.BandwidthReporter(bwc),
 			libp2p.DefaultTransports,
