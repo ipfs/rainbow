@@ -189,7 +189,13 @@ queries from these safelisted peers, serving locally cached blocks if requested.
 > This saves resources as data cached on other instance can be fetched internally
 > (e.g. LAN) rather than externally (WAN, p2p).
 
-Default: `false` (no cache sharing)
+> [!CAUTION]
+> This mode comes with additional overhead, YMMV. A bitswap server
+> applies `WithPeerBlockRequestFilter` and only answers to safelisted peers;
+> however may still increase resource usage, as every requested CID will be
+> also broadcasted to peered nodes.
+
+Default: `false` (no cache sharing, no bitswap server, client-only)
 
 ### `RAINBOW_REMOTE_BACKENDS`
 
