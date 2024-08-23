@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"strings"
+
 	"github.com/ipfs/boxo/tracing"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	traceapi "go.opentelemetry.io/otel/trace"
 	tracenoop "go.opentelemetry.io/otel/trace/noop"
-	"strings"
 )
 
 func newTracerProvider(ctx context.Context, traceFraction float64) (traceapi.TracerProvider, func(context.Context) error, error) {
