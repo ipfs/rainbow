@@ -16,6 +16,7 @@ The following emojis are used to highlight certain changes:
 ### Added
 
 ### Changed
+- Updated Go in go.mod to 1.22
 
 ### Removed
 
