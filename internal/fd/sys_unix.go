@@ -1,5 +1,4 @@
 //go:build linux || darwin
-// +build linux darwin
 
 // Package fd provides filesystem descriptor count for different architectures.
 package fd
