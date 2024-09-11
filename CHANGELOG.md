@@ -17,6 +17,11 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 - Updated Go in go.mod to 1.22
+- Updated dependencies
+  - go-libp2p [0.36.3](https://github.com/libp2p/go-libp2p/releases/tag/v0.36.3)
+  - go-libp2p-kad-dht [0.26.1](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.26.1)
+  - boxo [0.23.0](https://github.com/ipfs/boxo/releases/tag/v0.23.0)
+  - badger [4.3.0](https://github.com/dgraph-io/badger/releases/tag/v4.3.0)
 
 ### Removed
 
