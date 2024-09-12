@@ -16,6 +16,19 @@ The following emojis are used to highlight certain changes:
 ### Added
 
 ### Changed
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [v1.6.0]
+
+### Added
+
+### Changed
+
 - Updated Go in go.mod to 1.22
 - Updated dependencies
   - go-libp2p [0.36.3](https://github.com/libp2p/go-libp2p/releases/tag/v0.36.3)
@@ -23,11 +36,9 @@ The following emojis are used to highlight certain changes:
   - boxo [0.23.0](https://github.com/ipfs/boxo/releases/tag/v0.23.0)
   - badger [4.3.0](https://github.com/dgraph-io/badger/releases/tag/v4.3.0)
 
-### Removed
-
 ### Fixed
 
-### Security
+- a bug whereby `FindPeer` won't return results for peers behind NAT which only have `/p2p-circuit` multiaddrs [go-libp2p-kad-dht#976](https://github.com/libp2p/go-libp2p-kad-dht/pull/976)
 
 ## [v1.5.0]
 
