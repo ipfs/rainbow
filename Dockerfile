@@ -10,10 +10,10 @@ LABEL org.opencontainers.image.licenses=MIT+APACHE_2.0
 
 ARG TARGETPLATFORM TARGETOS TARGETARCH
 
-ENV GOPATH      /go
-ENV SRC_PATH    $GOPATH/src/github.com/ipfs/rainbow
-ENV GO111MODULE on
-ENV GOPROXY     https://proxy.golang.org
+ENV GOPATH="/go"
+ENV SRC_PATH="$GOPATH/src/github.com/ipfs/rainbow"
+ENV GO111MODULE=on
+ENV GOPROXY="https://proxy.golang.org"
 
 COPY go.* $SRC_PATH/
 WORKDIR $SRC_PATH
@@ -35,9 +35,9 @@ RUN apt-get update && \
   apt-get install --no-install-recommends -y tini ca-certificates curl && \
   rm -rf /var/lib/apt/lists/*
 
-ENV GOPATH                 /go
-ENV SRC_PATH               $GOPATH/src/github.com/ipfs/rainbow
-ENV RAINBOW_GATEWAY_PATH   /data/rainbow
+ENV GOPATH="/go"
+ENV SRC_PATH="$GOPATH/src/github.com/ipfs/rainbow"
+ENV RAINBOW_GATEWAY_PATH="/data/rainbow"
 
 COPY --from=builder $GOPATH/bin/rainbow /usr/local/bin/rainbow
 COPY --from=builder $SRC_PATH/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
