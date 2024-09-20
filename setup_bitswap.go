@@ -60,6 +60,7 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 			bitswap.ProvideEnabled(false),
 			// When we don't have a block, don't reply. This reduces processment.
 			bitswap.SetSendDontHaves(false),
+			bitswap.WithReplaceHasWithBlockMaxSize(cfg.BitswapHaveReplaceSize),
 		)
 		bn.Start(bswap)
 		return &noNotifyExchange{bswap}

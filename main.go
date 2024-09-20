@@ -260,6 +260,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_BITSWAP"},
 			Usage:   "Controls if Bitswap is enabled (useful for testing or when remote backend is used instead)",
 		},
+		&cli.IntFlag{
+			Name:    "bitswap-wanthave-replace-size",
+			Value:   1024,
+			EnvVars: []string{"BITSWAP_WANTHAVE_REPLACE_SIZE"},
+			Usage:   "Replace WantHave requests with WantBlock for small blocks up to this size, zero to disable",
+		},
 		&cli.StringSliceFlag{
 			Name:    "remote-backends",
 			Value:   cli.NewStringSlice(),
@@ -439,6 +445,7 @@ share the same seed as long as the indexes are different.
 			DHTRouting:              dhtRouting,
 			DHTSharedHost:           cctx.Bool("dht-shared-host"),
 			Bitswap:                 bitswap,
+			BitswapHaveReplaceSize:  cctx.Int("bitswap-wanthave-replace-size"),
 			IpnsMaxCacheTTL:         cctx.Duration("ipns-max-cache-ttl"),
 			DenylistSubs:            cctx.StringSlice("denylists"),
 			Peering:                 peeringAddrs,
