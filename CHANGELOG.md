@@ -14,6 +14,7 @@ The following emojis are used to highlight certain changes:
 ## [Unreleased]
 
 ### Added
+- Ability to specify the maximum blocksize that bitswap will replace WantHave with WantBlock responses, and to disable replacement when set to zero.
 
 ### Changed
 
