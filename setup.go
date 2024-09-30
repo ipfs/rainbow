@@ -107,6 +107,12 @@ type Config struct {
 	IpnsMaxCacheTTL         time.Duration
 	Bitswap                 bool
 
+	// BitswapWantHaveReplaceSize tells the bitswap server to replace WantHave
+	// with WantBlock responses when the block size less then or equal to this
+	// value. Set to zero to disable replacement and avoid block size lookup
+	// when processing HaveWant requests.
+	BitswapWantHaveReplaceSize int
+
 	DenylistSubs []string
 
 	Peering            []peer.AddrInfo
