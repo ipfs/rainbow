@@ -34,7 +34,7 @@ func TestEndToEndTrustlessGatewayDomains(t *testing.T) {
 	cancel()
 	rainbow := filepath.Join(runner.Dir, "rainbow")
 
-	args := testcmd.Args(rainbow, "--trustless-gateway-domains", "example.org")
+	args := testcmd.Args(rainbow, "--trustless-gateway-domains", "example.org", "--blockstore", "pebble")
 	ready := testcmd.NewStdoutWatcher("IPFS Gateway listening")
 	domain := testcmd.NewStdoutWatcher("RAINBOW_TRUSTLESS_GATEWAY_DOMAINS = example.org")
 
