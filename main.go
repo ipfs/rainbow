@@ -334,7 +334,7 @@ Generate an identity seed and launch a gateway:
 			Usage:   "Count of L0 files necessary to trigger an L0 compaction",
 		},
 		&cli.IntFlag{
-			Name:    "pebble-l0=stop-writes-threshold",
+			Name:    "pebble-l0-stop-writes-threshold",
 			Value:   0,
 			EnvVars: []string{"PEBBLE_L0_STOP_WRITES_THRESHOLD"},
 			Usage:   "Limit on L0 read-amplification, computed as the number of L0 sublevels",
@@ -526,7 +526,7 @@ share the same seed as long as the indexes are different.
 			BytesPerSync:                cctx.Int("pebble-bytes-per-sync"),
 			DisableWAL:                  cctx.Bool("pebble-disable-wal"),
 			L0CompactionThreshold:       cctx.Int("pebble-l0-compaction-threshold"),
-			L0StopWritesThreshold:       cctx.Int("pebble-l0=stop-writes-threshold"),
+			L0StopWritesThreshold:       cctx.Int("pebble-l0-stop-writes-threshold"),
 			LBaseMaxBytes:               cctx.Int64("pebble-lbase-max-bytes"),
 			MemTableSize:                cctx.Uint64("pebble-mem-table-size"),
 			MemTableStopWritesThreshold: cctx.Int("pebble-mem-table-stop-writes-threshold"),
