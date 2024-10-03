@@ -22,7 +22,8 @@ putting file metadata on a fast SSD while keeping the actual data on a slower di
 
 ## Pebble
 
-`rainbow` ships with [Pebble v1.1.2](https://github.com/cockroachdb/pebble).
+`rainbow` ships with [Pebble](https://github.com/cockroachdb/pebble) (version in `go.mod`)
+
 The main reasons to choose Pebble compared to FlatFS are:
 - Much faster with reasonable configuration
 - It comes with the ability to compress data on disk
