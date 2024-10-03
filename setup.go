@@ -136,7 +136,7 @@ type Config struct {
 
 	disableMetrics bool // only meant to be used during testing
 
-	// Pebble config valued
+	// Pebble config values
 	BytesPerSync                int
 	DisableWAL                  bool
 	L0CompactionThreshold       int
