@@ -7,6 +7,7 @@ term guarantees of support for any particular backing blockstore.
 `rainbow` currently ships with the following blockstores:
 
 - [FlatFS](#flatfs)
+- [Pebble](#pebble)
 - [Badger](#badger)
 
 Note: `rainbow` exposes minimal configurability of each blockstore, if in your experimentation you note that tuning some
