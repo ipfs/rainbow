@@ -20,6 +20,16 @@ filesystem (i.e. not just how bytes are stored on disk but file and directory st
 optimizations to be had in selection of the filesystem and disk types. For example, choosing a filesystem that enables
 putting file metadata on a fast SSD while keeping the actual data on a slower disk might ease various lookup types.
 
+## Pebble
+
+`rainbow` ships with [Pebble](https://github.com/cockroachdb/pebble) (version in `go.mod`)
+
+The main reasons to choose Pebble compared to FlatFS are:
+- Much faster with reasonable configuration
+- It comes with the ability to compress data on disk
+- Native bloom filters
+- Highly configurable to tune performance to your needs
+
 ## Badger
 
 `rainbow` ships with [Badger-v4](https://github.com/dgraph-io/badger).

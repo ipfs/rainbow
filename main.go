@@ -184,7 +184,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "inmem-block-cache",
 			Value:   1 << 30,
 			EnvVars: []string{"RAINBOW_INMEM_BLOCK_CACHE"},
-			Usage:   "Size of the in-memory block cache (currently only used for badger). 0 to disable (disables compression on disk too)",
+			Usage:   "Size of the in-memory block cache (currently only used for pebble and badger). 0 to disable (disables compression on disk too)",
 		},
 		&cli.Uint64Flag{
 			Name:    "libp2p-max-memory",
@@ -246,7 +246,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "blockstore",
 			Value:   "flatfs",
 			EnvVars: []string{"RAINBOW_BLOCKSTORE"},
-			Usage:   "Type of blockstore to use, such as flatfs or badger. See https://github.com/ipfs/rainbow/blob/main/docs/blockstores.md for more details",
+			Usage:   "Type of blockstore to use, such as flatfs or pebble. See https://github.com/ipfs/rainbow/blob/main/docs/blockstores.md for more details",
 		},
 		&cli.DurationFlag{
 			Name:    "ipns-max-cache-ttl",
@@ -314,6 +314,66 @@ Generate an identity seed and launch a gateway:
 			Value:   0,
 			EnvVars: []string{"RAINBOW_SAMPLING_FRACTION"},
 			Usage:   "Rate at which to sample gateway requests. Does not include traceheaders which will always sample",
+		},
+		&cli.IntFlag{
+			Name:    "pebble-bytes-per-sync",
+			Value:   0,
+			EnvVars: []string{"PEBBLE_BYTES_PER_SYNC"},
+			Usage:   "Sync sstables periodically in order to smooth out writes to disk",
+		},
+		&cli.BoolFlag{
+			Name:    "pebble-disable-wal",
+			Value:   false,
+			EnvVars: []string{"PEBBLE_DISABLE_WAL"},
+			Usage:   "Disable the write-ahead log (WAL) at expense of prohibiting crash recoveryfg",
+		},
+		&cli.IntFlag{
+			Name:    "pebble-l0-compaction-threshold",
+			Value:   0,
+			EnvVars: []string{"PEBBLE_L0_COMPACTION_THRESHOLD"},
+			Usage:   "Count of L0 files necessary to trigger an L0 compaction",
+		},
+		&cli.IntFlag{
+			Name:    "pebble-l0-stop-writes-threshold",
+			Value:   0,
+			EnvVars: []string{"PEBBLE_L0_STOP_WRITES_THRESHOLD"},
+			Usage:   "Limit on L0 read-amplification, computed as the number of L0 sublevels",
+		},
+		&cli.Int64Flag{
+			Name:    "pebble-lbase-max-bytes",
+			Value:   0,
+			EnvVars: []string{"PEBBLE_LBASE_MAX_BYTES"},
+			Usage:   "Maximum number of bytes for LBase. The base level is the level which L0 is compacted into",
+		},
+		&cli.Uint64Flag{
+			Name:    "pebble-mem-table-size",
+			Value:   0,
+			EnvVars: []string{"PEBBLE_MEM_TABLE_SIZE"},
+			Usage:   "Size of a MemTable in steady state. The actual MemTable size starts at min(256KB, MemTableSize) and doubles for each subsequent MemTable up to MemTableSize",
+		},
+		&cli.IntFlag{
+			Name:    "pebble-mem-table-stop-writes-threshold",
+			Value:   0,
+			EnvVars: []string{"PEBBLE_MEM_TABLE_STOP_WRITES_THRESHOLD"},
+			Usage:   "Limit on the number of queued of MemTables",
+		},
+		&cli.IntFlag{
+			Name:    "pebble-wal-bytes-per-sync",
+			Value:   0,
+			EnvVars: []string{"PEBBLE_WAL_BYTES_PER_SYNC"},
+			Usage:   "Sets the number of bytes to write to a WAL before calling Sync on it in the background",
+		},
+		&cli.IntFlag{
+			Name:    "pebble-max-concurrent-compactions",
+			Value:   0,
+			EnvVars: []string{"PEBBLE_MAX_CONCURRENT_COMPACTIONS"},
+			Usage:   "Maximum number of concurrent compactions",
+		},
+		&cli.DurationFlag{
+			Name:    "pebble-wal-min-sync-interval",
+			Value:   0,
+			EnvVars: []string{"PEBBLE_WAL_MIN_SYNC_INTERVAL"},
+			Usage:   "Sets the minimum duration between syncs of the WAL",
 		},
 	}
 
@@ -461,8 +521,19 @@ share the same seed as long as the indexes are different.
 			GCThreshold:                cctx.Float64("gc-threshold"),
 			ListenAddrs:                cctx.StringSlice("libp2p-listen-addrs"),
 			TracingAuthToken:           cctx.String("tracing-auth"),
-		}
 
+			// Pebble config
+			BytesPerSync:                cctx.Int("pebble-bytes-per-sync"),
+			DisableWAL:                  cctx.Bool("pebble-disable-wal"),
+			L0CompactionThreshold:       cctx.Int("pebble-l0-compaction-threshold"),
+			L0StopWritesThreshold:       cctx.Int("pebble-l0-stop-writes-threshold"),
+			LBaseMaxBytes:               cctx.Int64("pebble-lbase-max-bytes"),
+			MemTableSize:                cctx.Uint64("pebble-mem-table-size"),
+			MemTableStopWritesThreshold: cctx.Int("pebble-mem-table-stop-writes-threshold"),
+			WALBytesPerSync:             cctx.Int("pebble-wal-Bytes-per-sync"),
+			MaxConcurrentCompactions:    cctx.Int("pebble-max-concurrent-compactions"),
+			WALMinSyncInterval:          time.Second * time.Duration(cctx.Int("pebble-wal-min-sync-interval-sec")),
+		}
 		var gnd *Node
 
 		goLog.Infof("Rainbow config: %+v", cfg)

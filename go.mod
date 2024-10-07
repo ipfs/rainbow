@@ -3,6 +3,7 @@ module github.com/ipfs/rainbow
 go 1.22
 
 require (
+	github.com/cockroachdb/pebble v1.1.2
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dgraph-io/badger/v4 v4.3.0
 	github.com/dustin/go-humanize v1.0.1
@@ -16,6 +17,7 @@ require (
 	github.com/ipfs/go-ds-badger4 v0.1.5
 	github.com/ipfs/go-ds-flatfs v0.5.1
 	github.com/ipfs/go-ds-leveldb v0.5.0
+	github.com/ipfs/go-ds-pebble v0.3.2-0.20241002075519-c174835dc84a
 	github.com/ipfs/go-ipfs-delay v0.0.1
 	github.com/ipfs/go-log/v2 v2.5.1
 	github.com/ipfs/go-metrics-interface v0.0.1
@@ -49,6 +51,7 @@ require (
 )
 
 require (
+	github.com/DataDog/zstd v1.4.5 // indirect
 	github.com/Jorropo/jsync v1.0.1 // indirect
 	github.com/alecthomas/units v0.0.0-20231202071711-9a357b53e9c9 // indirect
 	github.com/alexbrainman/goissue34681 v0.0.0-20191006012335-3fc7a47baff5 // indirect
@@ -56,6 +59,11 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/cockroachdb/errors v1.11.3 // indirect
+	github.com/cockroachdb/fifo v0.0.0-20240606204812-0bbfbd93a7ce // indirect
+	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
+	github.com/cockroachdb/redact v1.1.5 // indirect
+	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
 	github.com/containerd/cgroups v1.1.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/crackcomm/go-gitignore v0.0.0-20231225121904-e25f5bc08668 // indirect
@@ -70,6 +78,7 @@ require (
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.4 // indirect
+	github.com/getsentry/sentry-go v0.27.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
@@ -116,6 +125,8 @@ require (
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
 	github.com/koron/go-ssdp v0.0.4 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/libp2p/go-cidranger v1.1.0 // indirect
 	github.com/libp2p/go-doh-resolver v0.4.0 // indirect
@@ -175,6 +186,7 @@ require (
 	github.com/quic-go/quic-go v0.45.2 // indirect
 	github.com/quic-go/webtransport-go v0.8.0 // indirect
 	github.com/raulk/go-watchdog v1.3.0 // indirect
+	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/samber/lo v1.39.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
