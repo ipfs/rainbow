@@ -7,6 +7,7 @@ term guarantees of support for any particular backing blockstore.
 `rainbow` currently ships with the following blockstores:
 
 - [FlatFS](#flatfs)
+- [Pebble](#pebble)
 - [Badger](#badger)
 
 Note: `rainbow` exposes minimal configurability of each blockstore, if in your experimentation you note that tuning some
@@ -19,6 +20,16 @@ FlatFS is a fairly simple blockstore that puts each block into a separate file o
 filesystem (i.e. not just how bytes are stored on disk but file and directory structure as well) there are various
 optimizations to be had in selection of the filesystem and disk types. For example, choosing a filesystem that enables
 putting file metadata on a fast SSD while keeping the actual data on a slower disk might ease various lookup types.
+
+## Pebble
+
+`rainbow` ships with [Pebble](https://github.com/cockroachdb/pebble) (version in `go.mod`)
+
+The main reasons to choose Pebble compared to FlatFS are:
+- Much faster with reasonable configuration
+- It comes with the ability to compress data on disk
+- Native bloom filters
+- Highly configurable to tune performance to your needs
 
 ## Badger
 

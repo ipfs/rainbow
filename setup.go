@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/cockroachdb/pebble"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
 	nopfs "github.com/ipfs-shipyard/nopfs"
@@ -27,6 +28,7 @@ import (
 	"github.com/ipfs/go-datastore"
 	badger4 "github.com/ipfs/go-ds-badger4"
 	flatfs "github.com/ipfs/go-ds-flatfs"
+	pebbleds "github.com/ipfs/go-ds-pebble"
 	mprome "github.com/ipfs/go-metrics-prometheus"
 	"github.com/ipfs/go-unixfsnode"
 	dagpb "github.com/ipld/go-codec-dagpb"
@@ -107,6 +109,12 @@ type Config struct {
 	IpnsMaxCacheTTL         time.Duration
 	Bitswap                 bool
 
+	// BitswapWantHaveReplaceSize tells the bitswap server to replace WantHave
+	// with WantBlock responses when the block size less then or equal to this
+	// value. Set to zero to disable replacement and avoid block size lookup
+	// when processing HaveWant requests.
+	BitswapWantHaveReplaceSize int
+
 	DenylistSubs []string
 
 	Peering            []peer.AddrInfo
@@ -127,6 +135,18 @@ type Config struct {
 	TracingAuthToken string
 
 	disableMetrics bool // only meant to be used during testing
+
+	// Pebble config values
+	BytesPerSync                int
+	DisableWAL                  bool
+	L0CompactionThreshold       int
+	L0StopWritesThreshold       int
+	LBaseMaxBytes               int64
+	MemTableSize                uint64
+	MemTableStopWritesThreshold int
+	WALBytesPerSync             int
+	MaxConcurrentCompactions    int
+	WALMinSyncInterval          time.Duration
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {
@@ -344,6 +364,11 @@ func setupDatastore(cfg Config) (datastore.Batching, error) {
 	switch cfg.BlockstoreType {
 	case "flatfs":
 		return flatfs.CreateOrOpen(filepath.Join(cfg.DataDir, "flatfs"), flatfs.NextToLast(3), false)
+	case "pebble":
+		return pebbleds.NewDatastore(filepath.Join(cfg.DataDir, "pebbleds"),
+			pebbleds.WithCacheSize(cfg.InMemBlockCache),
+			pebbleds.WithPebbleOpts(getPebbleOpts(cfg)),
+		)
 	case "badger":
 		badgerOpts := badger.DefaultOptions("")
 		badgerOpts.CompactL0OnClose = false
@@ -551,3 +576,24 @@ func (s *switchingBlockstore) HashOnRead(enabled bool) {
 }
 
 var _ blockstore.Blockstore = (*switchingBlockstore)(nil)
+
+func getPebbleOpts(cfg Config) *pebble.Options {
+	opts := &pebble.Options{
+		BytesPerSync:                cfg.BytesPerSync,
+		DisableWAL:                  cfg.DisableWAL,
+		L0CompactionThreshold:       cfg.L0CompactionThreshold,
+		L0StopWritesThreshold:       cfg.L0StopWritesThreshold,
+		LBaseMaxBytes:               cfg.LBaseMaxBytes,
+		MemTableSize:                cfg.MemTableSize,
+		MemTableStopWritesThreshold: cfg.MemTableStopWritesThreshold,
+		WALBytesPerSync:             cfg.WALBytesPerSync,
+	}
+	if cfg.MaxConcurrentCompactions != 0 {
+		opts.MaxConcurrentCompactions = func() int { return cfg.MaxConcurrentCompactions }
+	}
+	if cfg.WALMinSyncInterval != 0 {
+		opts.WALMinSyncInterval = func() time.Duration { return cfg.WALMinSyncInterval }
+	}
+
+	return opts
+}
