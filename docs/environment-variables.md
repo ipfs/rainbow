@@ -300,19 +300,11 @@ Etag: "bafkreicysg23kiwv34eg2d7qweipxwosdo2py4ldv42nbauguluen5v6am"
 
 ## Tracing
 
-Tracing across the stack follows, as much as possible, the [Open Telemetry]
-specifications. Configuration environment variables are specified in the
-[OpenTelemetry Environment Variable Specification] where possible. The
-[Boxo Tracing] documentation is the basis for tracing here.
-
-A major distinction from the more general tracing enabled in boxo is that when
-tracing is enabled it is restricted to flows through HTTP Gateway requests, rather
-than also included background processes.
-
-Note: requests are also traced when there is a `Traceparent` header passed that is valid
-According to the [Trace Context] specification, even if the sampling fraction is set to 0.
+See [tracing.md](tracing.md).
 
 ### `RAINBOW_TRACING_AUTH`
+
+Optional, setting to non-empty value enables on-demand tracing per-request.
 
 The ability to pass `Traceparent` or `Tracestate` headers is guarded by an
 `Authorization` header. The value of the `Authorization` header should match
@@ -320,10 +312,8 @@ the value in the `RAINBOW_TRACING_AUTH` environment variable.
 
 ### `RAINBOW_SAMPLING_FRACTION`
 
+Optional, set to 0 by default.
+
 The fraction (between 0 and 1) of requests that should be sampled.
 This is calculated independently of any Traceparent based sampling.
 
-[Boxo Tracing]: https://github.com/ipfs/boxo/blob/main/docs/tracing.md
-[Open Telemetry]: https://opentelemetry.io/
-[OpenTelemetry Environment Variable Specification]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/sdk-environment-variables.md
-[Trace Context]: https://www.w3.org/TR/trace-context
