@@ -51,6 +51,8 @@ func init() {
 
 const cidContactEndpoint = "https://cid.contact"
 
+var httpRoutersFilterProtocols = []string{"unknown", "transport-bitswap"} // IPIP-484
+
 type DHTRouting string
 
 const (
@@ -100,14 +102,15 @@ type Config struct {
 	MaxMemory       uint64
 	MaxFD           int
 
-	GatewayDomains          []string
-	SubdomainGatewayDomains []string
-	TrustlessGatewayDomains []string
-	RoutingV1Endpoints      []string
-	DHTRouting              DHTRouting
-	DHTSharedHost           bool
-	IpnsMaxCacheTTL         time.Duration
-	Bitswap                 bool
+	GatewayDomains           []string
+	SubdomainGatewayDomains  []string
+	TrustlessGatewayDomains  []string
+	RoutingV1Endpoints       []string
+	RoutingV1FilterProtocols []string
+	DHTRouting               DHTRouting
+	DHTSharedHost            bool
+	IpnsMaxCacheTTL          time.Duration
+	Bitswap                  bool
 
 	// BitswapWantHaveReplaceSize tells the bitswap server to replace WantHave
 	// with WantBlock responses when the block size less then or equal to this

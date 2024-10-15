@@ -204,6 +204,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_HTTP_ROUTERS"},
 			Usage:   "HTTP servers with /routing/v1 endpoints to use for delegated routing (comma-separated)",
 		},
+		&cli.StringSliceFlag{
+			Name:    "http-routers-filter-protocols",
+			Value:   cli.NewStringSlice(httpRoutersFilterProtocols...),
+			EnvVars: []string{"RAINBOW_HTTP_ROUTERS_FILTER_PROTOCOLS"},
+			Usage:   "IPIP-484 filter-protocols to apply to delegated routing requests (comma-separated)",
+		},
 		&cli.StringFlag{
 			Name:    "dht-routing",
 			Value:   "accelerated",
@@ -502,6 +508,7 @@ share the same seed as long as the indexes are different.
 			MaxFD:                      cctx.Int("libp2p-max-fd"),
 			InMemBlockCache:            cctx.Int64("inmem-block-cache"),
 			RoutingV1Endpoints:         cctx.StringSlice("http-routers"),
+			RoutingV1FilterProtocols:   cctx.StringSlice("http-routers-filter-protocols"),
 			DHTRouting:                 dhtRouting,
 			DHTSharedHost:              cctx.Bool("dht-shared-host"),
 			Bitswap:                    bitswap,

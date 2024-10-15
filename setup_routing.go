@@ -52,11 +52,12 @@ func setupDelegatedRouting(cfg Config, dnsCache *cachedDNS) ([]routing.Routing, 
 	)
 
 	for _, endpoint := range cfg.RoutingV1Endpoints {
-		rv1Opts := []routingv1client.Option{routingv1client.WithHTTPClient(httpClient)}
-		if endpoint != cidContactEndpoint {
-			rv1Opts = append(rv1Opts, routingv1client.WithStreamResultsRequired())
-		}
-		delegatedRouter, err := delegatedHTTPContentRouter(endpoint, rv1Opts...)
+		delegatedRouter, err := delegatedHTTPContentRouter(endpoint,
+			routingv1client.WithHTTPClient(httpClient),
+			routingv1client.WithProtocolFilter(cfg.RoutingV1FilterProtocols), // IPIP-484
+			routingv1client.WithStreamResultsRequired(),                      // https://specs.ipfs.tech/routing/http-routing-v1/#streaming
+			routingv1client.WithDisabledLocalFiltering(false),                // force local filtering in case remote server does not support IPIP-484
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -276,7 +277,7 @@ func delegatedHTTPContentRouter(endpoint string, rv1Opts ...routingv1client.Opti
 	cli, err := routingv1client.New(
 		endpoint,
 		append([]routingv1client.Option{
-			routingv1client.WithUserAgent(buildVersion()),
+			routingv1client.WithUserAgent("rainbow/" + buildVersion()),
 		}, rv1Opts...)...,
 	)
 	if err != nil {
