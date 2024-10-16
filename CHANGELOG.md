@@ -15,8 +15,6 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
-- Support implicit default list for `filter-protocols` from [IPIP-484](https://github.com/ipfs/specs/pull/484) and customizing them via `--http-routers-filter-protocols`.
-
 ### Changed
 
 ### Removed
@@ -24,6 +22,13 @@ The following emojis are used to highlight certain changes:
 ### Fixed
 
 ### Security
+
+## [v1.8.0]
+
+### Added
+
+- Support implicit protocol filters from [IPIP-484](https://github.com/ipfs/specs/pull/484) and customizing them via `--http-routers-filter-protocols`. [#173](https://github.com/ipfs/rainbow/pull/173)
+- Dedicated [tracing docs](docs/tracing.md).
 
 ## [v1.7.0]
 
@@ -33,8 +38,6 @@ The following emojis are used to highlight certain changes:
 - Support use and configuration of pebble as [datastore](https://github.com/ipfs/rainbow/blob/main/docs/blockstores.md). Pebble provides a high-performance alternative to badger. Options are available to configure key tuning parameters (`pebble-*` in `rainbow --help`).
 
 ## [v1.6.0]
-
-### Added
 
 ### Changed
 
