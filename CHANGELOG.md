@@ -14,8 +14,8 @@ The following emojis are used to highlight certain changes:
 ## [Unreleased]
 
 ### Added
-- Ability to specify the maximum blocksize that bitswap will replace WantHave with WantBlock responses, and to disable replacement when set to zero. [#165](https://github.com/ipfs/rainbow/pull/165)
-- Support use and configuration of pebble as [datastore](https://github.com/ipfs/rainbow/blob/main/docs/blockstores.md). Pebble provides a high-performance alternative to badger. Options are available to configure key tuning parameters (`pebble-*` in `rainbow --help`). 
+
+- Support implicit default list for `filter-protocols` from [IPIP-484](https://github.com/ipfs/specs/pull/484) and customizing them via `--http-routers-filter-protocols`.
 
 ### Changed
 
@@ -24,6 +24,13 @@ The following emojis are used to highlight certain changes:
 ### Fixed
 
 ### Security
+
+## [v1.7.0]
+
+### Added
+
+- Ability to specify the maximum blocksize that bitswap will replace WantHave with WantBlock responses, and to disable replacement when set to zero. [#165](https://github.com/ipfs/rainbow/pull/165)
+- Support use and configuration of pebble as [datastore](https://github.com/ipfs/rainbow/blob/main/docs/blockstores.md). Pebble provides a high-performance alternative to badger. Options are available to configure key tuning parameters (`pebble-*` in `rainbow --help`).
 
 ## [v1.6.0]
 
