@@ -17,7 +17,7 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
-- boxo [0.24.1](https://github.com/ipfs/boxo/releases/tag/v0.24.1)
+- Updte boxo to [v0.24.1](https://github.com/ipfs/boxo/releases/tag/v0.24.1)
 - Updated Go in go.mod to 1.23
 
 ### Removed
