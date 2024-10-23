@@ -2,8 +2,6 @@ module github.com/ipfs/rainbow
 
 go 1.22.0
 
-toolchain go1.23.2
-
 require (
 	github.com/cockroachdb/pebble v1.1.2
 	github.com/coreos/go-systemd/v22 v22.5.0
