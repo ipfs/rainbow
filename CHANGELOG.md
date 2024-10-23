@@ -17,13 +17,23 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
-- boxo [0.24.1](https://github.com/ipfs/boxo/releases/tag/v0.24.1)
-
 ### Removed
 
 ### Fixed
 
 ### Security
+
+## [v1.8.2]
+
+### Changed
+
+- updated go-libp2p to [v0.37.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.37.0)
+
+## [v1.8.1]
+
+### Changed
+
+- boxo [0.24.1](https://github.com/ipfs/boxo/releases/tag/v0.24.1)
 
 ## [v1.8.0]
 
