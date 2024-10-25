@@ -23,6 +23,12 @@ The following emojis are used to highlight certain changes:
 
 ### Security
 
+## [v1.8.3]
+
+### Changed
+
+- updated to boxo [0.24.2](https://github.com/ipfs/boxo/releases/tag/v0.24.2)
+
 ## [v1.8.2]
 
 ### Changed
