@@ -590,6 +590,8 @@ share the same seed as long as the indexes are different.
 
 		apiMux := makeMetricsAndDebuggingHandler()
 		apiMux.HandleFunc("/mgr/gc", GCHandler(gnd))
+		apiMux.HandleFunc("/mgr/purge", PurgePeerHandler(gnd.host))
+		apiMux.HandleFunc("/mgr/peers", showPeersHandler(gnd.host))
 		addLogHandlers(apiMux)
 
 		apiSrv := &http.Server{
