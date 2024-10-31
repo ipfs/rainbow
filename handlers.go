@@ -74,7 +74,7 @@ func addLogHandlers(mux *http.ServeMux) {
 	})
 }
 
-func GCHandler(gnd *Node) func(w http.ResponseWriter, r *http.Request) {
+func gcHandler(gnd *Node) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -94,7 +94,7 @@ func GCHandler(gnd *Node) func(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func PurgePeerHandler(p2pHost host.Host) func(w http.ResponseWriter, r *http.Request) {
+func purgePeerHandler(p2pHost host.Host) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
