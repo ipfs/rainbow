@@ -15,6 +15,8 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+- Added endpoints to show and purge connected peers [#194](https://github.com/ipfs/rainbow/pull/194)
+
 ### Changed
 
 ### Removed
