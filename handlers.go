@@ -114,8 +114,7 @@ func purgePeerHandler(p2pHost host.Host) func(w http.ResponseWriter, r *http.Req
 			}
 			goLog.Infow("Purged connections", "count", purgeCount)
 
-			h := w.Header()
-			h.Set("Content-Type", "text/plain; charset=utf-8")
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 			fmt.Fprintln(w, "Peer connections purged:", purgeCount)
 			return
 		}
@@ -134,8 +133,7 @@ func purgePeerHandler(p2pHost host.Host) func(w http.ResponseWriter, r *http.Req
 		}
 		goLog.Infow("Purged connection", "peer", peerID)
 
-		h := w.Header()
-		h.Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 		fmt.Fprintln(w, "Purged connection to peer", peerID)
 	}
 }
@@ -183,18 +181,28 @@ func showPeersHandler(p2pHost host.Host) func(w http.ResponseWriter, r *http.Req
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		h := w.Header()
-		h.Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
 		peers := p2pHost.Network().Peers()
-		if len(peers) == 0 {
-			fmt.Fprintln(w, "no connected peers")
-			return
+		body := struct {
+			Count int64
+			Peers []string
+		}{
+			Count: int64(len(peers)),
 		}
 
-		fmt.Fprintln(w, "Connected peers:", len(peers))
-		for _, peerID := range peers {
-			fmt.Fprintln(w, peerID.String())
+		if len(peers) != 0 {
+			peerStrs := make([]string, len(peers))
+			for i, peerID := range peers {
+				peerStrs[i] = peerID.String()
+			}
+			body.Peers = peerStrs
+		}
+
+		enc := json.NewEncoder(w)
+		if err := enc.Encode(body); err != nil {
+			goLog.Errorw("cannot write response", "err", err)
+			http.Error(w, "", http.StatusInternalServerError)
 		}
 	}
 }
