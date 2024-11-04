@@ -146,6 +146,8 @@ possible to dynamically modify the logging at runtime.
 
 Connections to a specific peer, or to all peers, can be closed and the peer information removed from the peer store. This can be useful to help determine if the presence/absence of a connection to a peer is affecting behavior. Be aware that purging a connection is inherently racey as it is possible for the peer to reestablish a connection at any time following a purge.
 
+If `RAINBOW_DHT_SHARED_HOST=false` this endpoint will not show peers connected to DHT host, and only list ones used for Bitswap.
+
 - `http://$RAINBOW_CTL_LISTEN_ADDRESS/mgr/purge?peer=<peer_id>` purges connection and info for peer identifid by peer_id
 - `http://$RAINBOW_CTL_LISTEN_ADDRESS/mgr/purge?peer=all` purges connections and info for all peers
 - `http://$RAINBOW_CTL_LISTEN_ADDRESS/mgr/peers` returns a list of currently connected peers
