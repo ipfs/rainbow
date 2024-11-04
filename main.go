@@ -589,7 +589,9 @@ share the same seed as long as the indexes are different.
 		otel.SetTextMapPropagator(autoprop.NewTextMapPropagator())
 
 		apiMux := makeMetricsAndDebuggingHandler()
-		apiMux.HandleFunc("/mgr/gc", GCHandler(gnd))
+		apiMux.HandleFunc("/mgr/gc", gcHandler(gnd))
+		apiMux.HandleFunc("/mgr/purge", purgePeerHandler(gnd.host))
+		apiMux.HandleFunc("/mgr/peers", showPeersHandler(gnd.host))
 		addLogHandlers(apiMux)
 
 		apiSrv := &http.Server{

@@ -13,6 +13,8 @@ import (
 	"github.com/ipfs/boxo/blockstore"
 	leveldb "github.com/ipfs/go-ds-leveldb"
 	"github.com/ipfs/go-log/v2"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
 
 	_ "embed"
 	_ "net/http/pprof"
@@ -72,7 +74,7 @@ func addLogHandlers(mux *http.ServeMux) {
 	})
 }
 
-func GCHandler(gnd *Node) func(w http.ResponseWriter, r *http.Request) {
+func gcHandler(gnd *Node) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -88,6 +90,119 @@ func GCHandler(gnd *Node) func(w http.ResponseWriter, r *http.Request) {
 		if err := gnd.GC(r.Context(), body.BytesToFree); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
+		}
+	}
+}
+
+func purgePeerHandler(p2pHost host.Host) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		q := r.URL.Query()
+		peerIDStr := q.Get("peer")
+		if peerIDStr == "" {
+			http.Error(w, "missing peer id", http.StatusBadRequest)
+			return
+		}
+
+		if peerIDStr == "all" {
+			purgeCount, err := purgeAllConnections(p2pHost)
+			if err != nil {
+				goLog.Errorw("Error closing all libp2p connections", "err", err)
+				http.Error(w, "error closing connections", http.StatusInternalServerError)
+				return
+			}
+			goLog.Infow("Purged connections", "count", purgeCount)
+
+			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+			fmt.Fprintln(w, "Peer connections purged:", purgeCount)
+			return
+		}
+
+		peerID, err := peer.Decode(peerIDStr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		err = purgeConnection(p2pHost, peerID)
+		if err != nil {
+			goLog.Errorw("Error closing libp2p connection", "err", err, "peer", peerID)
+			http.Error(w, "error closing connection", http.StatusInternalServerError)
+			return
+		}
+		goLog.Infow("Purged connection", "peer", peerID)
+
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		fmt.Fprintln(w, "Purged connection to peer", peerID)
+	}
+}
+
+func purgeConnection(p2pHost host.Host, peerID peer.ID) error {
+	peerStore := p2pHost.Peerstore()
+	if peerStore != nil {
+		peerStore.RemovePeer(peerID)
+		peerStore.ClearAddrs(peerID)
+	}
+	return p2pHost.Network().ClosePeer(peerID)
+}
+
+func purgeAllConnections(p2pHost host.Host) (int, error) {
+	net := p2pHost.Network()
+	peers := net.Peers()
+
+	peerStore := p2pHost.Peerstore()
+	if peerStore != nil {
+		for _, peerID := range peers {
+			peerStore.RemovePeer(peerID)
+			peerStore.ClearAddrs(peerID)
+		}
+	}
+
+	var errCount, purgeCount int
+	for _, peerID := range peers {
+		err := net.ClosePeer(peerID)
+		if err != nil {
+			goLog.Errorw("Closing libp2p connection", "err", err, "peer", peerID)
+			errCount++
+		} else {
+			purgeCount++
+		}
+	}
+
+	if errCount != 0 {
+		return 0, fmt.Errorf("error closing connections to %d peers", errCount)
+	}
+
+	return purgeCount, nil
+}
+
+func showPeersHandler(p2pHost host.Host) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+
+		peers := p2pHost.Network().Peers()
+		body := struct {
+			Count int64
+			Peers []string
+		}{
+			Count: int64(len(peers)),
+		}
+
+		if len(peers) != 0 {
+			peerStrs := make([]string, len(peers))
+			for i, peerID := range peers {
+				peerStrs[i] = peerID.String()
+			}
+			body.Peers = peerStrs
+		}
+
+		enc := json.NewEncoder(w)
+		if err := enc.Encode(body); err != nil {
+			goLog.Errorw("cannot write response", "err", err)
+			http.Error(w, "", http.StatusInternalServerError)
 		}
 	}
 }
