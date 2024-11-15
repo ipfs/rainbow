@@ -23,13 +23,16 @@ import (
 
 func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routing.ContentRouting, bstore blockstore.Blockstore) exchange.Interface {
 	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
-	n := &providerQueryNetwork{cr, h}
-	pqm, err := providerquerymanager.New(ctx, n, providerquerymanager.WithMaxInProcessRequests(100))
+
+	bn := bsnet.NewFromIpfsHost(h)
+
+	// Custom query manager with the content router and the host
+	// and our custom options to overwrite the default.
+	pqm, err := providerquerymanager.New(ctx, h, cr, providerquerymanager.WithMaxInProcessRequests(100))
+
 	if err != nil {
 		panic(err)
 	}
-	cr = &wrapProv{pqm: pqm}
-	bn := bsnet.NewFromIpfsHost(h, cr)
 
 	// --- Client Options
 	// bitswap.RebroadcastDelay: default is 1 minute to search for a random
@@ -44,7 +47,7 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 		bsclient.RebroadcastDelay(rebroadcastDelay),
 		bsclient.ProviderSearchDelay(providerSearchDelay),
 		bsclient.WithoutDuplicatedBlockStats(),
-		bsclient.WithDefaultLookupManagement(false),
+		bsclient.WithDefaultProviderQueryManager(false), // we pass it in manually
 	}
 
 	// If peering and shared cache are both enabled, we initialize both a
@@ -73,20 +76,19 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 		// ---- Server Options
 		opts = append(opts,
 			bitswap.WithPeerBlockRequestFilter(peerBlockRequestFilter),
-			bitswap.ProvideEnabled(false),
 			// When we don't have a block, don't reply. This reduces processment.
 			bitswap.SetSendDontHaves(false),
 			bitswap.WithWantHaveReplaceSize(cfg.BitswapWantHaveReplaceSize),
 		)
 
 		// Initialize client+server
-		bswap := bitswap.New(bsctx, bn, bstore, opts...)
+		bswap := bitswap.New(bsctx, bn, pqm, bstore, opts...)
 		bn.Start(bswap)
 		return &noNotifyExchange{bswap}
 	}
 
 	// By default, rainbow runs with bitswap client alone
-	bswap := bsclient.New(bsctx, bn, bstore, clientOpts...)
+	bswap := bsclient.New(bsctx, bn, pqm, bstore, clientOpts...)
 	bn.Start(bswap)
 	return bswap
 }
