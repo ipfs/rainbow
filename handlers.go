@@ -364,8 +364,7 @@ func withTracingAndDebug(next http.Handler, authToken string) http.Handler {
 		// Disable tracing/debug headers if auth token missing or invalid
 		if authToken == "" || request.Header.Get("Authorization") != authToken {
 			if request.Header.Get("Traceparent") != "" || request.Header.Get("Tracestate") != "" || request.Header.Get(NoBlockcacheHeader) != "" {
-				writer.WriteHeader(http.StatusUnauthorized)
-				_, _ = writer.Write([]byte("The request is not accompanied by a valid authorization header"))
+				http.Error(writer, "The request is not accompanied by a valid authorization header", http.StatusUnauthorized)
 				return
 			}
 		}
