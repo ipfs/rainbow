@@ -72,6 +72,8 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 		bsclient.RebroadcastDelay(rebroadcastDelay),
 		bsclient.ProviderSearchDelay(providerSearchDelay),
 		bsclient.WithoutDuplicatedBlockStats(),
+		bsclient.WithMaxConcurrentFinds(cfg.bitswapMaxConcurrentFinds),
+		bsclient.WithMaxProvidersPerFind(cfg.bitswapMaxProvidersPerFind),
 	)
 	bn.Start(bswap)
 	return bswap
