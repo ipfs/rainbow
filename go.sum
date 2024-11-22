@@ -260,8 +260,8 @@ github.com/ipfs-shipyard/nopfs/ipfs v0.13.2-0.20231024163508-120e0c51ee3a h1:MKG
 github.com/ipfs-shipyard/nopfs/ipfs v0.13.2-0.20231024163508-120e0c51ee3a/go.mod h1:6EekK/jo+TynwSE/ZOiOJd4eEvRXoavEC3vquKtv4yI=
 github.com/ipfs/bbloom v0.0.4 h1:Gi+8EGJ2y5qiD5FbsbpX/TMNcJw8gSqr7eyjHa4Fhvs=
 github.com/ipfs/bbloom v0.0.4/go.mod h1:cS9YprKXpoZ9lT0n/Mw/a6/aFV6DTjTLYHeA+gyqMG0=
-github.com/ipfs/boxo v0.24.4-0.20241122211943-31d3e4d81004 h1:W+qmDx3L5e1MJY6RHALOMvdrCdqm/0nClgeXvgKiUzY=
-github.com/ipfs/boxo v0.24.4-0.20241122211943-31d3e4d81004/go.mod h1:mBC/110NmitZRaEOyp1l/VBWj9guCzNVlg4uuWR7ZfA=
+github.com/ipfs/boxo v0.24.4-0.20241122213905-f6d672a073dc h1:nEIKTi3bW7HbO7VX0KAF82K1rm6mmHPD6BxppZCYTKE=
+github.com/ipfs/boxo v0.24.4-0.20241122213905-f6d672a073dc/go.mod h1:DbXsp9GnF9cL4wDurnFnh2SSGjUcuiZmkhAcCA63J5A=
 github.com/ipfs/go-bitfield v1.1.0 h1:fh7FIo8bSwaJEh6DdTWbCeZ1eqOaOkKFI74SCnsWbGA=
 github.com/ipfs/go-bitfield v1.1.0/go.mod h1:paqf1wjq/D2BBmzfTVFlJQ9IlFOZpg422HL0HqsGWHU=
 github.com/ipfs/go-bitswap v0.11.0 h1:j1WVvhDX1yhG32NTC9xfxnqycqYIlhzEzLXG/cU1HyQ=
@@ -662,6 +662,8 @@ github.com/shurcooL/users v0.0.0-20180125191416-49c67e49c537/go.mod h1:QJTqeLYED
 github.com/shurcooL/webdavfs v0.0.0-20170829043945-18c3829fa133/go.mod h1:hKmq5kWdCj2z2KEozexVbfEZIWiTjhE0+UjmZgPqehw=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.7.0/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
+github.com/slok/go-http-metrics v0.12.0 h1:mAb7hrX4gB4ItU6NkFoKYdBslafg3o60/HbGBRsKaG8=
+github.com/slok/go-http-metrics v0.12.0/go.mod h1:Ee/mdT9BYvGrlGzlClkK05pP2hRHmVbRF9dtUVS8LNA=
 github.com/smartystreets/assertions v1.2.0 h1:42S6lae5dvLc7BrLu/0ugRtcFVjoJNMC/N3yZFZkDFs=
 github.com/smartystreets/assertions v1.2.0/go.mod h1:tcbTF8ujkAEcZ8TElKY+i30BzYlVhC/LOxJk7iOWnoo=
 github.com/smartystreets/goconvey v1.7.2 h1:9RBaZCeXEQ3UselpuwUQHltGVXvdwm6cv1hgR6gDIPg=

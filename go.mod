@@ -10,7 +10,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.4
 	github.com/ipfs-shipyard/nopfs v0.0.12
 	github.com/ipfs-shipyard/nopfs/ipfs v0.13.2-0.20231024163508-120e0c51ee3a
-	github.com/ipfs/boxo v0.24.4-0.20241122211943-31d3e4d81004
+	github.com/ipfs/boxo v0.24.4-0.20241122213905-f6d672a073dc
 	github.com/ipfs/go-block-format v0.2.0
 	github.com/ipfs/go-cid v0.4.1
 	github.com/ipfs/go-datastore v0.6.0
