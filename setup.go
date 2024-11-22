@@ -152,6 +152,7 @@ type Config struct {
 	WALMinSyncInterval          time.Duration
 
 	// Bitswap ProviderQueryManager config
+	bitswapFindProviderTimeout time.Duration
 	bitswapMaxConcurrentFinds  int
 	bitswapMaxProvidersPerFind int
 }

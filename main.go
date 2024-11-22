@@ -381,17 +381,23 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"PEBBLE_WAL_MIN_SYNC_INTERVAL"},
 			Usage:   "Sets the minimum duration between syncs of the WAL",
 		},
+		&cli.DurationFlag{
+			Name:    "bitswap-find-provider-timeout",
+			Value:   10 * time.Second,
+			EnvVars: []string{"BITSWAP_FIND_PROVIDER_TIMEOUT"},
+			Usage:   "Maximum time to spend on an attempt to find providers. 0 for bitswap default",
+		},
 		&cli.IntFlag{
 			Name:    "bitswap-max-concurrent-finds",
-			Value:   0,
+			Value:   16,
 			EnvVars: []string{"BITSWAP_MAX_CONCURRENT_FINDS"},
-			Usage:   "Maximum number of concurrent bitswap finds. Set 0 for bitswap default.",
+			Usage:   "Maximum number of concurrent bitswap finds. 0 for bitswap default.",
 		},
 		&cli.IntFlag{
 			Name:    "bitswap-max-providers-per-find",
 			EnvVars: []string{"BITSWAP_MAX_PROVIDERS_PER_FIND"},
-			Value:   0,
-			Usage:   "Maximum number of providers to return for each bitswap find. Set 0 for bitswap default.",
+			Value:   10,
+			Usage:   "Maximum number of providers to return for each bitswap find. 0 for bitswap default.",
 		},
 	}
 
@@ -554,6 +560,7 @@ share the same seed as long as the indexes are different.
 			WALMinSyncInterval:          time.Second * time.Duration(cctx.Int("pebble-wal-min-sync-interval-sec")),
 
 			// Bitswap ProviderQueryManager config
+			bitswapFindProviderTimeout: cctx.Duration("bitswap-find-provider-timeout"),
 			bitswapMaxConcurrentFinds:  cctx.Int("bitswap-max-concurrent-finds"),
 			bitswapMaxProvidersPerFind: cctx.Int("bitswap-max-providers-per-find"),
 		}
