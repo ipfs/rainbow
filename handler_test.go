@@ -158,15 +158,12 @@ func TestNoBlockcacheHeader(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		require.NoError(t, err)
 
-		// Authorization missing, expect NoBlockcacheHeader to be ignored
+		// Authorization missing, expect NoBlockcacheHeader to result in an error
 		req.Header.Set(NoBlockcacheHeader, "true")
 
 		res, err := http.DefaultClient.Do(req)
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, res.StatusCode)
-		responseBody, err := io.ReadAll(res.Body)
-		assert.NoError(t, err)
-		assert.Equal(t, content, responseBody)
+		assert.Equal(t, http.StatusUnauthorized, res.StatusCode)
 	})
 
 	t.Run("Skipping the cache only works when RAINBOW_TRACING_AUTH is set", func(t *testing.T) {
@@ -185,14 +182,11 @@ func TestNoBlockcacheHeader(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, url, nil)
 		require.NoError(t, err)
 
-		// Authorization missing, expect NoBlockcacheHeader to be ignored
+		// Authorization missing, expect NoBlockcacheHeader to result in an error
 		req.Header.Set(NoBlockcacheHeader, "true")
 
 		res, err := http.DefaultClient.Do(req)
 		assert.NoError(t, err)
-		assert.Equal(t, http.StatusOK, res.StatusCode)
-		responseBody, err := io.ReadAll(res.Body)
-		assert.NoError(t, err)
-		assert.Equal(t, content, responseBody)
+		assert.Equal(t, http.StatusUnauthorized, res.StatusCode)
 	})
 }
