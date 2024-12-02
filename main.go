@@ -272,24 +272,6 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"BITSWAP_WANTHAVE_REPLACE_SIZE"},
 			Usage:   "Replace WantHave with WantBlock responses for small blocks up to this size, 0 to disable replacement",
 		},
-		&cli.IntFlag{
-			Name:    "bitswap-max-requests",
-			Value:   16,
-			EnvVars: []string{"BITSWAP_MAX_REQUESTS"},
-			Usage:   "Maximum number of concurrent bitswap find requests, 0 for unlimited",
-		},
-		&cli.IntFlag{
-			Name:    "bitswap-max-providers",
-			EnvVars: []string{"BITSWAP_MAX_PROVIDERS"},
-			Value:   0,
-			Usage:   "Maximum number of providers to return for each bitswap find request, 0 for unlimited",
-		},
-		&cli.DurationFlag{
-			Name:    "bitswap-max-timeout",
-			Value:   10 * time.Second,
-			EnvVars: []string{"BITSWAP_MAX_TIMEOUT"},
-			Usage:   "Maximum time for bitswap to find the maximum number of providers",
-		},
 		&cli.StringSliceFlag{
 			Name:    "remote-backends",
 			Value:   cli.NewStringSlice(),
@@ -398,6 +380,24 @@ Generate an identity seed and launch a gateway:
 			Value:   0,
 			EnvVars: []string{"PEBBLE_WAL_MIN_SYNC_INTERVAL"},
 			Usage:   "Sets the minimum duration between syncs of the WAL",
+		},
+		&cli.IntFlag{
+			Name:    "routing-max-requests",
+			Value:   16,
+			EnvVars: []string{"ROUTING_MAX_REQUESTS"},
+			Usage:   "Maximum number of concurrent provider find requests, 0 for unlimited",
+		},
+		&cli.IntFlag{
+			Name:    "routing-max-providers",
+			EnvVars: []string{"ROUTING_MAX_PROVIDERS"},
+			Value:   0,
+			Usage:   "Maximum number of providers to return for each provider find request, 0 for unlimited",
+		},
+		&cli.DurationFlag{
+			Name:    "routing-max-timeout",
+			Value:   10 * time.Second,
+			EnvVars: []string{"ROUTING_MAX_TIMEOUT"},
+			Usage:   "Maximum time for routing to find the maximum number of providers",
 		},
 	}
 
@@ -531,9 +531,6 @@ share the same seed as long as the indexes are different.
 			DHTSharedHost:              cctx.Bool("dht-shared-host"),
 			Bitswap:                    bitswap,
 			BitswapWantHaveReplaceSize: cctx.Int("bitswap-wanthave-replace-size"),
-			BitswapMaxRequests:         cctx.Int("bitswap-max-requests"),
-			BitswapMaxProviders:        cctx.Int("bitswap-max-providers"),
-			BitswapMaxTimeout:          cctx.Duration("bitswap-max-timeout"),
 			IpnsMaxCacheTTL:            cctx.Duration("ipns-max-cache-ttl"),
 			DenylistSubs:               cctx.StringSlice("denylists"),
 			Peering:                    peeringAddrs,
@@ -561,6 +558,11 @@ share the same seed as long as the indexes are different.
 			WALBytesPerSync:             cctx.Int("pebble-wal-Bytes-per-sync"),
 			MaxConcurrentCompactions:    cctx.Int("pebble-max-concurrent-compactions"),
 			WALMinSyncInterval:          time.Second * time.Duration(cctx.Int("pebble-wal-min-sync-interval-sec")),
+
+			// Routing ProviderQueryManager config
+			RoutingMaxRequests:  cctx.Int("routing-max-requests"),
+			RoutingMaxProviders: cctx.Int("routing-max-providers"),
+			RoutingMaxTimeout:   cctx.Duration("routing-max-timeout"),
 		}
 		var gnd *Node
 
