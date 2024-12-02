@@ -111,7 +111,7 @@ func TestNoBlockcacheHeader(t *testing.T) {
 		ctx := context.Background()
 		// pacify metrics reporting code
 		ctx = metrics.CtxScope(ctx, "test.bsserver.host")
-		n := bsnet.NewFromIpfsHost(newHost, nil)
+		n := bsnet.NewFromIpfsHost(newHost)
 		bs := bsserver.New(ctx, n, gnd.blockstore)
 		n.Start(bs)
 		defer bs.Close()
