@@ -276,7 +276,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "bitswap-max-requests",
 			Value:   16,
 			EnvVars: []string{"BITSWAP_MAX_REQUESTS"},
-			Usage:   "Maximum number of concurrent bitswap find requests, 0 for unlimites",
+			Usage:   "Maximum number of concurrent bitswap find requests, 0 for unlimited",
 		},
 		&cli.IntFlag{
 			Name:    "bitswap-max-providers",
