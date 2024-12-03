@@ -150,6 +150,11 @@ type Config struct {
 	WALBytesPerSync             int
 	MaxConcurrentCompactions    int
 	WALMinSyncInterval          time.Duration
+
+	// ProviderQueryManager configuration.
+	RoutingMaxRequests  int
+	RoutingMaxProviders int
+	RoutingMaxTimeout   time.Duration
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {

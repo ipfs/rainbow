@@ -381,6 +381,24 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"PEBBLE_WAL_MIN_SYNC_INTERVAL"},
 			Usage:   "Sets the minimum duration between syncs of the WAL",
 		},
+		&cli.IntFlag{
+			Name:    "routing-max-requests",
+			Value:   16,
+			EnvVars: []string{"ROUTING_MAX_REQUESTS"},
+			Usage:   "Maximum number of concurrent provider find requests, 0 for unlimited",
+		},
+		&cli.IntFlag{
+			Name:    "routing-max-providers",
+			EnvVars: []string{"ROUTING_MAX_PROVIDERS"},
+			Value:   0,
+			Usage:   "Maximum number of providers to return for each provider find request, 0 for unlimited",
+		},
+		&cli.DurationFlag{
+			Name:    "routing-max-timeout",
+			Value:   10 * time.Second,
+			EnvVars: []string{"ROUTING_MAX_TIMEOUT"},
+			Usage:   "Maximum time for routing to find the maximum number of providers",
+		},
 	}
 
 	app.Commands = []*cli.Command{
@@ -540,6 +558,11 @@ share the same seed as long as the indexes are different.
 			WALBytesPerSync:             cctx.Int("pebble-wal-Bytes-per-sync"),
 			MaxConcurrentCompactions:    cctx.Int("pebble-max-concurrent-compactions"),
 			WALMinSyncInterval:          time.Second * time.Duration(cctx.Int("pebble-wal-min-sync-interval-sec")),
+
+			// Routing ProviderQueryManager config
+			RoutingMaxRequests:  cctx.Int("routing-max-requests"),
+			RoutingMaxProviders: cctx.Int("routing-max-providers"),
+			RoutingMaxTimeout:   cctx.Duration("routing-max-timeout"),
 		}
 		var gnd *Node
 
