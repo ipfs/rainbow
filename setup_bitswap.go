@@ -36,7 +36,6 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 	if err != nil {
 		panic(err)
 	}
-	pqm.Startup()
 
 	// --- Client Options
 	// bitswap.RebroadcastDelay: default is 1 minute to search for a random
