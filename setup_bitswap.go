@@ -28,7 +28,7 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 
 	// Custom query manager with the content router and the host
 	// and our custom options to overwrite the default.
-	pqm, err := providerquerymanager.New(ctx, h, cr,
+	pqm, err := providerquerymanager.New(h, cr,
 		providerquerymanager.WithMaxInProcessRequests(cfg.RoutingMaxRequests),
 		providerquerymanager.WithMaxProviders(cfg.RoutingMaxProviders),
 		providerquerymanager.WithMaxTimeout(cfg.RoutingMaxTimeout),
@@ -36,6 +36,9 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 	if err != nil {
 		panic(err)
 	}
+	context.AfterFunc(ctx, func() {
+		pqm.Close()
+	})
 
 	// --- Client Options
 	// bitswap.RebroadcastDelay: default is 1 minute to search for a random
