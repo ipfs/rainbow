@@ -15,6 +15,14 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## [v1.9.0]
+
+### Added
+
 - Added endpoints to show and purge connected peers [#194](https://github.com/ipfs/rainbow/pull/194)
 - Added flags to configure bitswap/routing tuning params:
   - `routing-max-requests`
