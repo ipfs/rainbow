@@ -23,7 +23,7 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
-- boxo [v0.24.3](https://github.com/ipfs/boxo/releases/tag/v0.24.3)
+- boxo [v0.25.0](https://github.com/ipfs/boxo/releases/tag/v0.25.0)
 - go-libp2p-kad-dht [v0.28.1](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.28.1)
 - passing headers that require authorization but are not authorized now results in an HTTP 401 instead of ignoring those headers
 - Bitswap settings: Increased default content-discovery limits, with up to 100 in-flight requests.
