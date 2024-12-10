@@ -19,6 +19,12 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
+### Removed
+
+### Fixed
+
+### Security
+
 ## [v1.9.0]
 
 ### Added
@@ -35,12 +41,6 @@ The following emojis are used to highlight certain changes:
 - go-libp2p-kad-dht [v0.28.1](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.28.1)
 - passing headers that require authorization but are not authorized now results in an HTTP 401 instead of ignoring those headers
 - Bitswap settings: Increased default content-discovery limits, with up to 100 in-flight requests.
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [v1.8.3]
 
