@@ -32,7 +32,7 @@ require (
 	github.com/libp2p/go-libp2p-testing v0.12.0
 	github.com/mitchellh/go-server-timing v1.0.1
 	github.com/mr-tron/base58 v1.2.0
-	github.com/multiformats/go-multiaddr v0.13.0
+	github.com/multiformats/go-multiaddr v0.14.0
 	github.com/multiformats/go-multicodec v0.9.0
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/prometheus/client_golang v1.20.5
