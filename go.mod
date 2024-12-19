@@ -8,7 +8,7 @@ require (
 	github.com/dgraph-io/badger/v4 v4.5.0
 	github.com/dustin/go-humanize v1.0.1
 	github.com/felixge/httpsnoop v1.0.4
-	github.com/ipfs-shipyard/nopfs v0.0.13
+	github.com/ipfs-shipyard/nopfs v0.0.14
 	github.com/ipfs-shipyard/nopfs/ipfs v0.25.0
 	github.com/ipfs/boxo v0.26.0
 	github.com/ipfs/go-block-format v0.2.0
