@@ -309,7 +309,7 @@ func SetupWithLibp2p(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCac
 			// seek onto LSM. If not in memory it will be a pain.
 			// We opt to write every block Put into the blockstore.
 			// See also comment in blockservice.
-			blockstore.WriteThrough(),
+			blockstore.WriteThrough(true),
 		)
 		blkst = &switchingBlockstore{
 			baseBlockstore:      blkst,
@@ -325,7 +325,7 @@ func SetupWithLibp2p(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCac
 			// we should not be writing many blocks that we already
 			// have. Thus, no point in checking whether we have a block
 			// before writing new blocks.
-			blockservice.WriteThrough(),
+			blockservice.WriteThrough(true),
 		)
 	} else {
 		if len(cfg.RemoteBackends) == 0 || cfg.RemoteBackendMode != RemoteBackendBlock {
