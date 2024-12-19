@@ -17,9 +17,6 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
-- boxo [v0.26.0](https://github.com/ipfs/boxo/releases/tag/v0.26.0)
-- Upgrade to latest nopfs v0.14.0
-
 ### Fixed
 
 ### Removed
@@ -27,6 +24,15 @@ The following emojis are used to highlight certain changes:
 ### Fixed
 
 ### Security
+
+
+## [1.10.0]
+
+### Changed
+
+- boxo [v0.26.0](https://github.com/ipfs/boxo/releases/tag/v0.26.0)
+  - This has a number of significant updates including go-libp2p v0.38.1 and go-libp2p-kad-dht v0.28.1
+- Upgrade to latest nopfs v0.14.0
 
 ## [v1.9.0]
 
