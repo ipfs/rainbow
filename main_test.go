@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	chunker "github.com/ipfs/boxo/chunker"
+	"github.com/ipfs/boxo/gateway"
 	"github.com/ipfs/boxo/ipld/merkledag"
 	"github.com/ipfs/boxo/ipld/unixfs/importer/balanced"
 	uih "github.com/ipfs/boxo/ipld/unixfs/importer/helpers"
@@ -62,6 +63,12 @@ func mustTestNodeWithKey(t *testing.T, cfg Config, sk ic.PrivKey) *Node {
 	t.Cleanup(func() {
 		_ = cdns.Close()
 	})
+
+	if cfg.DNSLinkResolver == nil {
+		dnslinkResovler, err := gateway.NewDNSResolver(nil)
+		require.NoError(t, err)
+		cfg.DNSLinkResolver = dnslinkResovler
+	}
 
 	nd, err := SetupWithLibp2p(ctx, cfg, sk, cdns)
 	require.NoError(t, err)

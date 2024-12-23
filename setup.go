@@ -41,6 +41,7 @@ import (
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/libp2p/go-libp2p/p2p/protocol/identify"
 	"github.com/multiformats/go-multiaddr"
+	madns "github.com/multiformats/go-multiaddr-dns"
 )
 
 func init() {
@@ -52,6 +53,11 @@ func init() {
 const cidContactEndpoint = "https://cid.contact"
 
 var httpRoutersFilterProtocols = []string{"unknown", "transport-bitswap"} // IPIP-484
+
+var extraDNSLinkResolvers = []string{
+	"eth. : https://resolver.cloudflare-eth.com/dns-query",
+	"crypto. : https://resolver.cloudflare-eth.com/dns-query",
+}
 
 type DHTRouting string
 
@@ -111,6 +117,8 @@ type Config struct {
 	DHTSharedHost            bool
 	IpnsMaxCacheTTL          time.Duration
 	Bitswap                  bool
+
+	DNSLinkResolver madns.BasicResolver
 
 	// BitswapWantHaveReplaceSize tells the bitswap server to replace WantHave
 	// with WantBlock responses when the block size less then or equal to this
@@ -194,7 +202,7 @@ func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node,
 		bsrv = nopfsipfs.WrapBlockService(bsrv, blocker)
 	}
 
-	ns, err := setupNamesys(cfg, vs, blocker)
+	ns, err := setupNamesys(cfg, vs, blocker, cfg.DNSLinkResolver)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +365,7 @@ func SetupWithLibp2p(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCac
 	n.bsrv = bsrv
 	n.resolver = r
 
-	ns, err := setupNamesys(cfg, vs, blocker)
+	ns, err := setupNamesys(cfg, vs, blocker, cfg.DNSLinkResolver)
 	if err != nil {
 		return nil, err
 	}
@@ -521,12 +529,8 @@ func setupDenylists(cfg Config) ([]*nopfs.HTTPSubscriber, *nopfs.Blocker, error)
 	return denylists, blocker, nil
 }
 
-func setupNamesys(cfg Config, vs routing.ValueStore, blocker *nopfs.Blocker) (namesys.NameSystem, error) {
-	dns, err := gateway.NewDNSResolver(nil)
-	if err != nil {
-		return nil, err
-	}
-	nsOptions := []namesys.Option{namesys.WithDNSResolver(dns)}
+func setupNamesys(cfg Config, vs routing.ValueStore, blocker *nopfs.Blocker, dnslinkResolver madns.BasicResolver) (namesys.NameSystem, error) {
+	nsOptions := []namesys.Option{namesys.WithDNSResolver(dnslinkResolver)}
 	if cfg.IpnsMaxCacheTTL > 0 {
 		nsOptions = append(nsOptions, namesys.WithMaxCacheTTL(cfg.IpnsMaxCacheTTL))
 	}
