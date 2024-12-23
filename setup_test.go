@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ipfs/boxo/gateway"
 	blocks "github.com/ipfs/go-block-format"
 	ci "github.com/libp2p/go-libp2p-testing/ci"
 	ic "github.com/libp2p/go-libp2p/core/crypto"
@@ -173,6 +174,8 @@ func testSeedPeering(t *testing.T, n int, dhtRouting DHTRouting, dhtSharedHost b
 	nodes := make([]*Node, n)
 
 	for i := 0; i < n; i++ {
+		dnslinkResolver, err := gateway.NewDNSResolver(nil)
+		require.NoError(t, err)
 		cfgs[i] = Config{
 			DataDir:             t.TempDir(),
 			BlockstoreType:      "flatfs",
@@ -183,6 +186,7 @@ func testSeedPeering(t *testing.T, n int, dhtRouting DHTRouting, dhtSharedHost b
 			SeedIndex:           i,
 			SeedPeering:         true,
 			SeedPeeringMaxIndex: n,
+			DNSLinkResolver:     dnslinkResolver,
 		}
 
 		nodes[i], err = SetupWithLibp2p(ctx, cfgs[i], keys[i], cdns)

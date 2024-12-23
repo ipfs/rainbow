@@ -15,6 +15,8 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+- Add support for custom DNSLink resolvers (e.g. to support .eth, .crypto, etc.)
+
 ### Changed
 
 ### Fixed

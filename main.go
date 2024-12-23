@@ -19,9 +19,11 @@ import (
 	"time"
 
 	sddaemon "github.com/coreos/go-systemd/v22/daemon"
+	"github.com/ipfs/boxo/gateway"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	peer "github.com/libp2p/go-libp2p/core/peer"
+	madns "github.com/multiformats/go-multiaddr-dns"
 	"github.com/urfave/cli/v2"
 	"go.opentelemetry.io/contrib/propagators/autoprop"
 	"go.opentelemetry.io/otel"
@@ -399,6 +401,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"ROUTING_MAX_TIMEOUT"},
 			Usage:   "Maximum time for routing to find the maximum number of providers",
 		},
+		&cli.StringSliceFlag{
+			Name:    "dnslink-resolvers",
+			Value:   cli.NewStringSlice(),
+			EnvVars: []string{"RAINBOW_DNSLINK_RESOLVERS"},
+			Usage:   "The DNSLink resolvers to use (comma-separated tuples that each look like `eth. : https://dns.eth.limo/dns-query`)",
+		},
 	}
 
 	app.Commands = []*cli.Command{
@@ -513,6 +521,12 @@ share the same seed as long as the indexes are different.
 			}
 		}
 
+		customDNSResolvers := cctx.StringSlice("dnslink-resolvers")
+		dns, err := parseCustomDNSLinkResolvers(customDNSResolvers)
+		if err != nil {
+			return err
+		}
+
 		cfg := Config{
 			DataDir:                    ddir,
 			BlockstoreType:             cctx.String("blockstore"),
@@ -546,6 +560,7 @@ share the same seed as long as the indexes are different.
 			GCThreshold:                cctx.Float64("gc-threshold"),
 			ListenAddrs:                cctx.StringSlice("libp2p-listen-addrs"),
 			TracingAuthToken:           cctx.String("tracing-auth"),
+			DNSLinkResolver:            dns,
 
 			// Pebble config
 			BytesPerSync:                cctx.Int("pebble-bytes-per-sync"),
@@ -765,4 +780,22 @@ func replaceRainbowSeedWithPeer(addr string, seed string) (string, error) {
 	}
 
 	return strings.Replace(addr, match[0], "/p2p/"+pid.String(), 1), nil
+}
+
+func parseCustomDNSLinkResolvers(customDNSResolvers []string) (madns.BasicResolver, error) {
+	customDNSResolverMap := make(map[string]string)
+	for _, s := range customDNSResolvers {
+		split := strings.SplitN(s, ":", 2)
+		if len(split) != 2 {
+			return nil, fmt.Errorf("invalid DNS resolver: %s", s)
+		}
+		domain := strings.TrimSpace(split[0])
+		resolverUrl := strings.TrimSpace(split[1])
+		customDNSResolverMap[domain] = resolverUrl
+	}
+	dns, err := gateway.NewDNSResolver(customDNSResolverMap)
+	if err != nil {
+		return nil, err
+	}
+	return dns, nil
 }
