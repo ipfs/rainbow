@@ -403,7 +403,7 @@ Generate an identity seed and launch a gateway:
 		},
 		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
-			Value:   cli.NewStringSlice(),
+			Value:   cli.NewStringSlice(extraDNSLinkResolvers...),
 			EnvVars: []string{"RAINBOW_DNSLINK_RESOLVERS"},
 			Usage:   "The DNSLink resolvers to use (comma-separated tuples that each look like `eth. : https://dns.eth.limo/dns-query`)",
 		},
@@ -654,6 +654,7 @@ share the same seed as long as the indexes are different.
 		printIfListConfigured("  RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS = ", cfg.SubdomainGatewayDomains)
 		printIfListConfigured("  RAINBOW_TRUSTLESS_GATEWAY_DOMAINS = ", cfg.TrustlessGatewayDomains)
 		printIfListConfigured("  RAINBOW_HTTP_ROUTERS              = ", cfg.RoutingV1Endpoints)
+		printIfListConfigured("  RAINBOW_DNSLINK_RESOLVERS         = ", customDNSResolvers)
 		printIfListConfigured("  RAINBOW_REMOTE_BACKENDS           = ", cfg.RemoteBackends)
 
 		fmt.Printf("\n")

@@ -54,6 +54,11 @@ const cidContactEndpoint = "https://cid.contact"
 
 var httpRoutersFilterProtocols = []string{"unknown", "transport-bitswap"} // IPIP-484
 
+var extraDNSLinkResolvers = []string{
+	"eth. : https://resolver.cloudflare-eth.com/dns-query",
+	"crypto. : https://resolver.cloudflare-eth.com/dns-query",
+}
+
 type DHTRouting string
 
 const (

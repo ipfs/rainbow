@@ -15,6 +15,7 @@
   - [`RAINBOW_SEED_INDEX`](#rainbow_seed_index)
   - [`RAINBOW_DHT_ROUTING`](#rainbow_dht_routing)
   - [`RAINBOW_HTTP_ROUTERS`](#rainbow_http_routers)
+  - [`RAINBOW_DNSLINK_RESOLVERS`](#rainbow_dnslink_resolvers)
 - [Experiments](#experiments)
   - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
   - [`RAINBOW_SEED_PEERING_MAX_INDEX`](#rainbow_seed_peering_max_index)
@@ -32,6 +33,7 @@
   - [`IPFS_NS_MAP`](#ipfs_ns_map)
 - [Tracing](#tracing)
   - [`RAINBOW_TRACING_AUTH`](#rainbow_tracing_auth)
+  - [`RAINBOW_SAMPLING_FRACTION`](#rainbow_sampling_fraction)
 
 ## Configuration
 
@@ -147,6 +149,14 @@ Default: `accelerated`
 HTTP servers with /routing/v1 endpoints to use for delegated routing (comma-separated).
 
 Default: `https://cid.contact`
+
+### `RAINBOW_DNSLINK_RESOLVERS`
+
+DNS-over-HTTPS servers to use for resolving DNSLink on specified TLDs (comma-separated map: `TLD:URL,TLD2:URL2`).
+
+It is possible to override OS resolver by passing root:  `. : catch-URL`.
+
+Default: `eth. : https://resolver.cloudflare-eth.com/dns-query, crypto. : https://resolver.cloudflare-eth.com/dns-query`
 
 ## Experiments
 
