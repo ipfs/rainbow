@@ -156,7 +156,7 @@ DNS-over-HTTPS servers to use for resolving DNSLink on specified TLDs (comma-sep
 
 It is possible to override OS resolver by passing root:  `. : catch-URL`.
 
-Default: `eth. : https://resolver.cloudflare-eth.com/dns-query, crypto. : https://resolver.cloudflare-eth.com/dns-query`
+Default: `eth. : https://dns.eth.limo/dns-query, crypto. : https://resolver.unstoppable.io/dns-query`
 
 ## Experiments
 
