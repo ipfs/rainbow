@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	bsnet "github.com/ipfs/boxo/bitswap/network"
+	bsnet "github.com/ipfs/boxo/bitswap/network/bsnet"
 	bsserver "github.com/ipfs/boxo/bitswap/server"
 	"github.com/ipfs/go-metrics-interface"
 	"github.com/libp2p/go-libp2p"

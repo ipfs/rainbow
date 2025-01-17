@@ -52,6 +52,8 @@ func init() {
 
 const cidContactEndpoint = "https://cid.contact"
 
+const httpRouterGatewayProtocol = "transport-ipfs-gateway-http"
+
 var httpRoutersFilterProtocols = []string{"unknown", "transport-bitswap"} // IPIP-484
 
 var extraDNSLinkResolvers = []string{
@@ -113,6 +115,7 @@ type Config struct {
 	TrustlessGatewayDomains  []string
 	RoutingV1Endpoints       []string
 	RoutingV1FilterProtocols []string
+	RoutingIgnoreProviders   []peer.ID
 	DHTRouting               DHTRouting
 	DHTSharedHost            bool
 	IpnsMaxCacheTTL          time.Duration
@@ -163,6 +166,11 @@ type Config struct {
 	RoutingMaxRequests  int
 	RoutingMaxProviders int
 	RoutingMaxTimeout   time.Duration
+
+	// HTTP Retrieval configuration
+	HTTPRetrievalEnable    bool
+	HTTPRetrievalAllowlist []string
+	HTTPRetrievalWorkers   int
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {

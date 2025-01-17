@@ -8,7 +8,9 @@ import (
 
 	"github.com/ipfs/boxo/bitswap"
 	bsclient "github.com/ipfs/boxo/bitswap/client"
-	bsnet "github.com/ipfs/boxo/bitswap/network"
+	"github.com/ipfs/boxo/bitswap/network"
+	bsnet "github.com/ipfs/boxo/bitswap/network/bsnet"
+	"github.com/ipfs/boxo/bitswap/network/httpnet"
 	bsserver "github.com/ipfs/boxo/bitswap/server"
 	"github.com/ipfs/boxo/blockstore"
 	"github.com/ipfs/boxo/exchange"
@@ -24,14 +26,26 @@ import (
 func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routing.ContentRouting, bstore blockstore.Blockstore) exchange.Interface {
 	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
 
+	var exnet network.BitSwapNetwork
 	bn := bsnet.NewFromIpfsHost(h)
+
+	if cfg.HTTPRetrievalEnable {
+		htnet := httpnet.New(h,
+			httpnet.WithHTTPWorkers(cfg.HTTPRetrievalWorkers),
+			httpnet.WithAllowlist(cfg.HTTPRetrievalAllowlist),
+		)
+		exnet = network.New(h.Peerstore(), bn, htnet)
+	} else {
+		exnet = bn
+	}
 
 	// Custom query manager with the content router and the host
 	// and our custom options to overwrite the default.
-	pqm, err := providerquerymanager.New(h, cr,
+	pqm, err := providerquerymanager.New(exnet, cr,
 		providerquerymanager.WithMaxInProcessRequests(cfg.RoutingMaxRequests),
 		providerquerymanager.WithMaxProviders(cfg.RoutingMaxProviders),
 		providerquerymanager.WithMaxTimeout(cfg.RoutingMaxTimeout),
+		providerquerymanager.WithIgnoreProviders(cfg.RoutingIgnoreProviders...),
 	)
 	if err != nil {
 		panic(err)
@@ -88,14 +102,14 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 		)
 
 		// Initialize client+server
-		bswap := bitswap.New(bsctx, bn, pqm, bstore, opts...)
-		bn.Start(bswap)
+		bswap := bitswap.New(bsctx, exnet, pqm, bstore, opts...)
+		exnet.Start(bswap)
 		return &noNotifyExchange{bswap}
 	}
 
 	// By default, rainbow runs with bitswap client alone
-	bswap := bsclient.New(bsctx, bn, pqm, bstore, clientOpts...)
-	bn.Start(bswap)
+	bswap := bsclient.New(bsctx, exnet, pqm, bstore, clientOpts...)
+	exnet.Start(bswap)
 	return bswap
 }
 
