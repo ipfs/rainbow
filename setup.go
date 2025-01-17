@@ -52,7 +52,7 @@ func init() {
 
 const cidContactEndpoint = "https://cid.contact"
 
-var httpRoutersFilterProtocols = []string{"unknown", "transport-bitswap"} // IPIP-484
+var httpRoutersFilterProtocols = []string{"unknown", "transport-bitswap", "transport-ipfs-gateway-http"} // IPIP-484
 
 var extraDNSLinkResolvers = []string{
 	"eth. : https://dns.eth.limo/dns-query",
@@ -113,6 +113,7 @@ type Config struct {
 	TrustlessGatewayDomains  []string
 	RoutingV1Endpoints       []string
 	RoutingV1FilterProtocols []string
+	HTTPRetrievalAllowlist   []string
 	DHTRouting               DHTRouting
 	DHTSharedHost            bool
 	IpnsMaxCacheTTL          time.Duration

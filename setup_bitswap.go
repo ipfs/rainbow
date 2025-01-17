@@ -8,7 +8,9 @@ import (
 
 	"github.com/ipfs/boxo/bitswap"
 	bsclient "github.com/ipfs/boxo/bitswap/client"
-	bsnet "github.com/ipfs/boxo/bitswap/network"
+	"github.com/ipfs/boxo/bitswap/network"
+	bsnet "github.com/ipfs/boxo/bitswap/network/bsnet"
+	"github.com/ipfs/boxo/bitswap/network/httpnet"
 	bsserver "github.com/ipfs/boxo/bitswap/server"
 	"github.com/ipfs/boxo/blockstore"
 	"github.com/ipfs/boxo/exchange"
@@ -25,10 +27,14 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
 
 	bn := bsnet.NewFromIpfsHost(h)
+	htnet := httpnet.New(h,
+		httpnet.WithAllowlist(cfg.HTTPRetrievalAllowlist),
+	)
+	netRouter := network.New(h.Peerstore(), bn, htnet)
 
 	// Custom query manager with the content router and the host
 	// and our custom options to overwrite the default.
-	pqm, err := providerquerymanager.New(h, cr,
+	pqm, err := providerquerymanager.New(netRouter, cr,
 		providerquerymanager.WithMaxInProcessRequests(cfg.RoutingMaxRequests),
 		providerquerymanager.WithMaxProviders(cfg.RoutingMaxProviders),
 		providerquerymanager.WithMaxTimeout(cfg.RoutingMaxTimeout),
@@ -88,14 +94,14 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 		)
 
 		// Initialize client+server
-		bswap := bitswap.New(bsctx, bn, pqm, bstore, opts...)
-		bn.Start(bswap)
+		bswap := bitswap.New(bsctx, netRouter, pqm, bstore, opts...)
+		netRouter.Start(bswap)
 		return &noNotifyExchange{bswap}
 	}
 
 	// By default, rainbow runs with bitswap client alone
-	bswap := bsclient.New(bsctx, bn, pqm, bstore, clientOpts...)
-	bn.Start(bswap)
+	bswap := bsclient.New(bsctx, netRouter, pqm, bstore, clientOpts...)
+	netRouter.Start(bswap)
 	return bswap
 }
 
