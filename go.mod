@@ -3,7 +3,7 @@ module github.com/ipfs/rainbow
 go 1.23.2
 
 require (
-	github.com/cockroachdb/pebble v1.1.2
+	github.com/cockroachdb/pebble v1.1.4
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dgraph-io/badger/v4 v4.5.0
 	github.com/dustin/go-humanize v1.0.1
@@ -17,7 +17,7 @@ require (
 	github.com/ipfs/go-ds-badger4 v0.1.5
 	github.com/ipfs/go-ds-flatfs v0.5.1
 	github.com/ipfs/go-ds-leveldb v0.5.0
-	github.com/ipfs/go-ds-pebble v0.4.0
+	github.com/ipfs/go-ds-pebble v0.4.2
 	github.com/ipfs/go-ipfs-delay v0.0.1
 	github.com/ipfs/go-log/v2 v2.5.1
 	github.com/ipfs/go-metrics-interface v0.0.1
