@@ -18,6 +18,7 @@ The following emojis are used to highlight certain changes:
 ### Changed
 
 - The default DNSLink resolver for `.eth` TLD changed to `https://dns.eth.limo/dns-query` and  `.crypto` one changed to `https://resolver.unstoppable.io/dns-query` [#231](https://github.com/ipfs/rainbow/pull/231)
+- Upgrade to Boxo [v0.27.0](https://github.com/ipfs/boxo/releases/tag/v0.27.0)
 
 ### Fixed
 
