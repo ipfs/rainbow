@@ -43,7 +43,7 @@ require (
 	github.com/urfave/cli/v2 v2.27.5
 	go.opencensus.io v0.24.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.58.0
-	go.opentelemetry.io/contrib/propagators/autoprop v0.57.0
+	go.opentelemetry.io/contrib/propagators/autoprop v0.58.0
 	go.opentelemetry.io/otel v1.33.0
 	go.opentelemetry.io/otel/sdk v1.33.0
 	go.opentelemetry.io/otel/trace v1.33.0
@@ -204,10 +204,10 @@ require (
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
-	go.opentelemetry.io/contrib/propagators/aws v1.32.0 // indirect
-	go.opentelemetry.io/contrib/propagators/b3 v1.32.0 // indirect
-	go.opentelemetry.io/contrib/propagators/jaeger v1.32.0 // indirect
-	go.opentelemetry.io/contrib/propagators/ot v1.32.0 // indirect
+	go.opentelemetry.io/contrib/propagators/aws v1.33.0 // indirect
+	go.opentelemetry.io/contrib/propagators/b3 v1.33.0 // indirect
+	go.opentelemetry.io/contrib/propagators/jaeger v1.33.0 // indirect
+	go.opentelemetry.io/contrib/propagators/ot v1.33.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.31.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.31.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.31.0 // indirect
