@@ -11,7 +11,7 @@ on:
 
 env:
   GATEWAY_CONFORMANCE_TEST: true  # rainbow preset for conformance testing
-  KUBO_VER: 'v0.32.1'             # kubo daemon used as no-libp2p-remote-* backend
+  KUBO_VER: 'v0.33.0-rc1'         # kubo daemon used as no-libp2p-remote-* backend
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'push' && github.sha || github.ref }}
