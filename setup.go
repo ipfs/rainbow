@@ -113,6 +113,7 @@ type Config struct {
 	TrustlessGatewayDomains  []string
 	RoutingV1Endpoints       []string
 	RoutingV1FilterProtocols []string
+	RoutingIgnoreProviders   []peer.ID
 	HTTPRetrievalAllowlist   []string
 	DHTRouting               DHTRouting
 	DHTSharedHost            bool

@@ -38,6 +38,7 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 		providerquerymanager.WithMaxInProcessRequests(cfg.RoutingMaxRequests),
 		providerquerymanager.WithMaxProviders(cfg.RoutingMaxProviders),
 		providerquerymanager.WithMaxTimeout(cfg.RoutingMaxTimeout),
+		providerquerymanager.WithIgnoreProviders(cfg.RoutingIgnoreProviders...),
 	)
 	if err != nil {
 		panic(err)

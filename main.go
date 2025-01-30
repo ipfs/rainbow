@@ -408,6 +408,11 @@ Generate an identity seed and launch a gateway:
 			Usage:   "Maximum time for routing to find the maximum number of providers",
 		},
 		&cli.StringSliceFlag{
+			Name:    "routing-ignore-providers",
+			EnvVars: []string{"ROUTING_IGNORE_PROVIDERS"},
+			Usage:   "Ignore provider records from the given peer IDs",
+		},
+		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
 			Value:   cli.NewStringSlice(extraDNSLinkResolvers...),
 			EnvVars: []string{"RAINBOW_DNSLINK_RESOLVERS"},
@@ -533,6 +538,15 @@ share the same seed as long as the indexes are different.
 			return err
 		}
 
+		var routingIgnoreProviders []peer.ID
+		for _, pstr := range cctx.StringSlice("routing-ignore-providers") {
+			pid, err := peer.Decode(pstr)
+			if err != nil {
+				return fmt.Errorf("error parsing peer in routing-ignore-providers: %w", err)
+			}
+			routingIgnoreProviders = append(routingIgnoreProviders, pid)
+		}
+
 		cfg := Config{
 			DataDir:                    ddir,
 			BlockstoreType:             cctx.String("blockstore"),
@@ -582,9 +596,10 @@ share the same seed as long as the indexes are different.
 			WALMinSyncInterval:          time.Second * time.Duration(cctx.Int("pebble-wal-min-sync-interval-sec")),
 
 			// Routing ProviderQueryManager config
-			RoutingMaxRequests:  cctx.Int("routing-max-requests"),
-			RoutingMaxProviders: cctx.Int("routing-max-providers"),
-			RoutingMaxTimeout:   cctx.Duration("routing-max-timeout"),
+			RoutingMaxRequests:     cctx.Int("routing-max-requests"),
+			RoutingMaxProviders:    cctx.Int("routing-max-providers"),
+			RoutingMaxTimeout:      cctx.Duration("routing-max-timeout"),
+			RoutingIgnoreProviders: routingIgnoreProviders,
 		}
 		var gnd *Node
 
