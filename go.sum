@@ -260,10 +260,8 @@ github.com/ipfs-shipyard/nopfs/ipfs v0.25.0 h1:OqNqsGZPX8zh3eFMO8Lf8EHRRnSGBMqcd
 github.com/ipfs-shipyard/nopfs/ipfs v0.25.0/go.mod h1:BxhUdtBgOXg1B+gAPEplkg/GpyTZY+kCMSfsJvvydqU=
 github.com/ipfs/bbloom v0.0.4 h1:Gi+8EGJ2y5qiD5FbsbpX/TMNcJw8gSqr7eyjHa4Fhvs=
 github.com/ipfs/bbloom v0.0.4/go.mod h1:cS9YprKXpoZ9lT0n/Mw/a6/aFV6DTjTLYHeA+gyqMG0=
-github.com/ipfs/boxo v0.27.3-0.20250210095233-70538fd219ba h1:Nf4bQytkNbiUvLRWqaBlBG+PwB10EW+mG65Xx8B3sQs=
-github.com/ipfs/boxo v0.27.3-0.20250210095233-70538fd219ba/go.mod h1:qEIRrGNr0bitDedTCzyzBHxzNWqYmyuHgK8LG9Q83EM=
-github.com/ipfs/boxo v0.27.3-0.20250211104903-eba2b19ed78c h1:Ykn5cHfyP0bSZ2916rOWWhf/9+mg3lVldOt4dxUBxRI=
-github.com/ipfs/boxo v0.27.3-0.20250211104903-eba2b19ed78c/go.mod h1:qEIRrGNr0bitDedTCzyzBHxzNWqYmyuHgK8LG9Q83EM=
+github.com/ipfs/boxo v0.27.5-0.20250211105117-612f23abc23a h1:s1f97ex/q/63ChvAU+ffSXHFBFkhf1U3J0HRxgj1A3k=
+github.com/ipfs/boxo v0.27.5-0.20250211105117-612f23abc23a/go.mod h1:vx21MbOeVcbK7XsCst5uGBIEEdwFNHJP7Cxk84xYwt8=
 github.com/ipfs/go-bitfield v1.1.0 h1:fh7FIo8bSwaJEh6DdTWbCeZ1eqOaOkKFI74SCnsWbGA=
 github.com/ipfs/go-bitfield v1.1.0/go.mod h1:paqf1wjq/D2BBmzfTVFlJQ9IlFOZpg422HL0HqsGWHU=
 github.com/ipfs/go-bitswap v0.11.0 h1:j1WVvhDX1yhG32NTC9xfxnqycqYIlhzEzLXG/cU1HyQ=
