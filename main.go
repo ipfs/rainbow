@@ -842,8 +842,11 @@ func parseCustomDNSLinkResolvers(customDNSResolvers []string) (madns.BasicResolv
 			return nil, fmt.Errorf("invalid DNS resolver: %s", s)
 		}
 		domain := strings.TrimSpace(split[0])
-		resolverURL := strings.TrimSpace(split[1])
-		customDNSResolverMap[domain] = resolverURL
+		resolverURL, err := url.Parse(strings.TrimSpace(split[1]))
+		if err != nil {
+			return nil, err
+		}
+		customDNSResolverMap[domain] = resolverURL.String()
 	}
 	dns, err := gateway.NewDNSResolver(customDNSResolverMap)
 	if err != nil {
