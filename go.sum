@@ -266,6 +266,8 @@ github.com/ipfs/boxo v0.27.5-0.20250220081757-791468bec721 h1:fyqJWJBgKALgRTeAYt
 github.com/ipfs/boxo v0.27.5-0.20250220081757-791468bec721/go.mod h1:nOdzRlfMndlQskP1/aT00JBOLsFcWMOpjgXIBFpwMqg=
 github.com/ipfs/boxo v0.27.5-0.20250220083032-adb7a6317086 h1:F39FeKsc0QC87oG3VvSzzWEnmsomsodo8G/LbQ2SqQc=
 github.com/ipfs/boxo v0.27.5-0.20250220083032-adb7a6317086/go.mod h1:nOdzRlfMndlQskP1/aT00JBOLsFcWMOpjgXIBFpwMqg=
+github.com/ipfs/boxo v0.27.5-0.20250220084234-798fdf274be7 h1:9WvQPlxdACef3W5c6k9GvgMol/eXj6z6t8qxPKu2bSY=
+github.com/ipfs/boxo v0.27.5-0.20250220084234-798fdf274be7/go.mod h1:nOdzRlfMndlQskP1/aT00JBOLsFcWMOpjgXIBFpwMqg=
 github.com/ipfs/go-bitfield v1.1.0 h1:fh7FIo8bSwaJEh6DdTWbCeZ1eqOaOkKFI74SCnsWbGA=
 github.com/ipfs/go-bitfield v1.1.0/go.mod h1:paqf1wjq/D2BBmzfTVFlJQ9IlFOZpg422HL0HqsGWHU=
 github.com/ipfs/go-bitswap v0.11.0 h1:j1WVvhDX1yhG32NTC9xfxnqycqYIlhzEzLXG/cU1HyQ=
