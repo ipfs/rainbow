@@ -260,8 +260,8 @@ github.com/ipfs-shipyard/nopfs/ipfs v0.25.0 h1:OqNqsGZPX8zh3eFMO8Lf8EHRRnSGBMqcd
 github.com/ipfs-shipyard/nopfs/ipfs v0.25.0/go.mod h1:BxhUdtBgOXg1B+gAPEplkg/GpyTZY+kCMSfsJvvydqU=
 github.com/ipfs/bbloom v0.0.4 h1:Gi+8EGJ2y5qiD5FbsbpX/TMNcJw8gSqr7eyjHa4Fhvs=
 github.com/ipfs/bbloom v0.0.4/go.mod h1:cS9YprKXpoZ9lT0n/Mw/a6/aFV6DTjTLYHeA+gyqMG0=
-github.com/ipfs/boxo v0.27.5-0.20250219163737-83e9ff177537 h1:1cM/rLVCVbdGd1YjdupLvgPtUrY/N1CGwNDiL24XwK8=
-github.com/ipfs/boxo v0.27.5-0.20250219163737-83e9ff177537/go.mod h1:nOdzRlfMndlQskP1/aT00JBOLsFcWMOpjgXIBFpwMqg=
+github.com/ipfs/boxo v0.27.5-0.20250219173146-54431c975a0f h1:9MAa3/BcPiQDFL7JFDfmtBpYkVyMyZMxj7sJJZzjd64=
+github.com/ipfs/boxo v0.27.5-0.20250219173146-54431c975a0f/go.mod h1:nOdzRlfMndlQskP1/aT00JBOLsFcWMOpjgXIBFpwMqg=
 github.com/ipfs/go-bitfield v1.1.0 h1:fh7FIo8bSwaJEh6DdTWbCeZ1eqOaOkKFI74SCnsWbGA=
 github.com/ipfs/go-bitfield v1.1.0/go.mod h1:paqf1wjq/D2BBmzfTVFlJQ9IlFOZpg422HL0HqsGWHU=
 github.com/ipfs/go-bitswap v0.11.0 h1:j1WVvhDX1yhG32NTC9xfxnqycqYIlhzEzLXG/cU1HyQ=
@@ -330,8 +330,6 @@ github.com/ipfs/go-merkledag v0.11.0 h1:DgzwK5hprESOzS4O1t/wi6JDpyVQdvm9Bs59N/jq
 github.com/ipfs/go-merkledag v0.11.0/go.mod h1:Q4f/1ezvBiJV0YCIXvt51W/9/kqJGH4I1LsA7+djsM4=
 github.com/ipfs/go-metrics-interface v0.3.0 h1:YwG7/Cy4R94mYDUuwsBfeziJCVm9pBMJ6q/JR9V40TU=
 github.com/ipfs/go-metrics-interface v0.3.0/go.mod h1:OxxQjZDGocXVdyTPocns6cOLwHieqej/jos7H4POwoY=
-github.com/ipfs/go-metrics-prometheus v0.0.3 h1:MVgBw30nE9eKC598ZQg+LIIbgIcx46NG8KISWLCLkMo=
-github.com/ipfs/go-metrics-prometheus v0.0.3/go.mod h1:qjWVLyK+ZJrQuiyTqfgoECgKfd4b4lEtpQemAWomWc8=
 github.com/ipfs/go-metrics-prometheus v0.1.0 h1:bApWOHkrH3VTBHzTHrZSfq4n4weOZDzZFxUXv+HyKcA=
 github.com/ipfs/go-metrics-prometheus v0.1.0/go.mod h1:2GtL525C/4yxtvSXpRJ4dnE45mCX9AS0XRa03vHx7G0=
 github.com/ipfs/go-peertaskqueue v0.8.2 h1:PaHFRaVFdxQk1Qo3OKiHPYjmmusQy7gKQUaL8JDszAU=
