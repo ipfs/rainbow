@@ -128,15 +128,15 @@ See [Blockstores](./docs/blockstores.md) for more details.
 
 Over time, the datastore can fill up with previously fetched blocks. To free up this used disk space, garbage collection can be run. 
 
-### Automatic GC
+### Automatic Garbage Collection
 
-Automatic GC is based on [`RAINBOW_GC_INTERVAL`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_gc_interval) and [`RAINBOW_GC_THRESHOLD`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_gc_threshold).
+Automatic GC is enabled by default, and configurable with [`RAINBOW_GC_INTERVAL`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_gc_interval) and [`RAINBOW_GC_THRESHOLD`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_gc_threshold).
 
-### Manual GC
+### Manual Garbage Collection
 
 Garbage collection can also be manually triggered. This process can be automated by using a cron job.
 
-The API route to trigger GC is `http://$RAINBOW_CTL_LISTEN_ADDRESS/mgr/gc`. The `BytesToFree` parameter must be passed in order to specify the upper limit of how much disk space should be cleared. Setting this parameter to a very high value will GC the entire datastore.
+The API route to trigger GC is `http://$RAINBOW_CTL_LISTEN_ADDRESS/mgr/gc`. The `BytesToFree` parameter must be passed as JSON in the POST request body to specify the upper limit of how much disk space should be cleared. GC will try to clear as much space as needed, up to `BytesToFree`, to create `RAINBOW_GC_THRESHOLD` of free space. Setting this parameter to a very high value will GC the entire datastore.
 
 Example cURL commmand to run GC:
 
