@@ -21,6 +21,7 @@ The following emojis are used to highlight certain changes:
 - Upgrade to Boxo [v0.27.4](https://github.com/ipfs/boxo/releases/tag/v0.27.4)
 - Upgrade go-ds-pebble to [v0.4.2](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.4.2) and pebble to [v1.1.4](https://github.com/cockroachdb/pebble/releases/tag/v1.1.4)
 - updated go-libp2p to [v0.39.1](https://github.com/libp2p/go-libp2p/releases/tag/v0.39.1)
+- require minimum go version 1.24 in go.mod
 
 ### Fixed
 

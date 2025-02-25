@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.23-bookworm AS builder
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.24-bookworm AS builder
 
 LABEL org.opencontainers.image.source=https://github.com/ipfs/rainbow
 LABEL org.opencontainers.image.documentation=https://github.com/ipfs/rainbow#docker
