@@ -1,6 +1,6 @@
 module github.com/ipfs/rainbow
 
-go 1.23.2
+go 1.24
 
 require (
 	github.com/cockroachdb/pebble v1.1.4
