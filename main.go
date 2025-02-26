@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net/http"
 	_ "net/http/pprof"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -402,6 +403,30 @@ Generate an identity seed and launch a gateway:
 			Usage:   "Maximum time for routing to find the maximum number of providers",
 		},
 		&cli.StringSliceFlag{
+			Name:    "routing-ignore-providers",
+			EnvVars: []string{"ROUTING_IGNORE_PROVIDERS"},
+			Usage:   "Ignore provider records from the given peer IDs",
+		},
+		&cli.BoolFlag{
+			Name:    "http-retrieval-enable",
+			Value:   false,
+			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_ENABLE"},
+			Usage:   "Enable HTTP-retrieval of blocks.",
+		},
+		&cli.StringSliceFlag{
+			Name:    "http-retrieval-allowlist",
+			Value:   cli.NewStringSlice(),
+			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_ALLOWLIST"},
+			Usage:   "When HTTP retrieval is enabled, allow it only to the given hosts. Empty means 'everyone'",
+		},
+		&cli.IntFlag{
+			Name:    "http-retrieval-workers",
+			Value:   32,
+			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_WORKERS"},
+			Usage:   "Number of workers to use for HTTP retrieval",
+		},
+
+		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
 			Value:   cli.NewStringSlice(extraDNSLinkResolvers...),
 			EnvVars: []string{"RAINBOW_DNSLINK_RESOLVERS"},
@@ -527,6 +552,27 @@ share the same seed as long as the indexes are different.
 			return err
 		}
 
+		var routingIgnoreProviders []peer.ID
+		for _, pstr := range cctx.StringSlice("routing-ignore-providers") {
+			pid, err := peer.Decode(pstr)
+			if err != nil {
+				return fmt.Errorf("error parsing peer in routing-ignore-providers: %w", err)
+			}
+			routingIgnoreProviders = append(routingIgnoreProviders, pid)
+		}
+
+		routerFilterProtocols := cctx.StringSlice("http-routers-filter-protocols")
+		httpRetrievalEnable := cctx.Bool("http-retrieval-enable")
+		httpRetrievalWorkers := cctx.Int("http-retrieval-workers")
+		httpRetrievalAllowlist := cctx.StringSlice("http-retrieval-allowlist")
+		if httpRetrievalEnable {
+			routerFilterProtocols = append(routerFilterProtocols, httpRouterGatewayProtocol)
+			fmt.Printf("HTTP block-retrievals enabled. Workers: %d. Allowlist set: %t\n",
+				httpRetrievalWorkers,
+				len(httpRetrievalAllowlist) == 0,
+			)
+		}
+
 		cfg := Config{
 			DataDir:                    ddir,
 			BlockstoreType:             cctx.String("blockstore"),
@@ -540,7 +586,7 @@ share the same seed as long as the indexes are different.
 			MaxFD:                      cctx.Int("libp2p-max-fd"),
 			InMemBlockCache:            cctx.Int64("inmem-block-cache"),
 			RoutingV1Endpoints:         cctx.StringSlice("http-routers"),
-			RoutingV1FilterProtocols:   cctx.StringSlice("http-routers-filter-protocols"),
+			RoutingV1FilterProtocols:   routerFilterProtocols,
 			DHTRouting:                 dhtRouting,
 			DHTSharedHost:              cctx.Bool("dht-shared-host"),
 			Bitswap:                    bitswap,
@@ -575,9 +621,15 @@ share the same seed as long as the indexes are different.
 			WALMinSyncInterval:          time.Second * time.Duration(cctx.Int("pebble-wal-min-sync-interval-sec")),
 
 			// Routing ProviderQueryManager config
-			RoutingMaxRequests:  cctx.Int("routing-max-requests"),
-			RoutingMaxProviders: cctx.Int("routing-max-providers"),
-			RoutingMaxTimeout:   cctx.Duration("routing-max-timeout"),
+			RoutingMaxRequests:     cctx.Int("routing-max-requests"),
+			RoutingMaxProviders:    cctx.Int("routing-max-providers"),
+			RoutingMaxTimeout:      cctx.Duration("routing-max-timeout"),
+			RoutingIgnoreProviders: routingIgnoreProviders,
+
+			// HTTP Retrieval config
+			HTTPRetrievalEnable:    httpRetrievalEnable,
+			HTTPRetrievalAllowlist: httpRetrievalAllowlist,
+			HTTPRetrievalWorkers:   httpRetrievalWorkers,
 		}
 		var gnd *Node
 
@@ -791,8 +843,11 @@ func parseCustomDNSLinkResolvers(customDNSResolvers []string) (madns.BasicResolv
 			return nil, fmt.Errorf("invalid DNS resolver: %s", s)
 		}
 		domain := strings.TrimSpace(split[0])
-		resolverUrl := strings.TrimSpace(split[1])
-		customDNSResolverMap[domain] = resolverUrl
+		resolverURL, err := url.Parse(strings.TrimSpace(split[1]))
+		if err != nil {
+			return nil, err
+		}
+		customDNSResolverMap[domain] = resolverURL.String()
 	}
 	dns, err := gateway.NewDNSResolver(customDNSResolverMap)
 	if err != nil {
