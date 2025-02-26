@@ -18,9 +18,9 @@ The following emojis are used to highlight certain changes:
 ### Changed
 
 - The default DNSLink resolver for `.eth` TLD changed to `https://dns.eth.limo/dns-query` and  `.crypto` one changed to `https://resolver.unstoppable.io/dns-query` [#231](https://github.com/ipfs/rainbow/pull/231)
-- Upgrade to Boxo [v0.27.4](https://github.com/ipfs/boxo/releases/tag/v0.27.4)
+- Upgrade to Boxo [v0.28.0](https://github.com/ipfs/boxo/releases/tag/v0.28.0)
 - Upgrade go-ds-pebble to [v0.4.2](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.4.2) and pebble to [v1.1.4](https://github.com/cockroachdb/pebble/releases/tag/v1.1.4)
-- updated go-libp2p to [v0.39.1](https://github.com/libp2p/go-libp2p/releases/tag/v0.39.1)
+- updated go-libp2p to [v0.40.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.40.0)
 - require minimum go version 1.24 in go.mod
 
 ### Fixed
