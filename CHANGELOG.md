@@ -15,7 +15,11 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
-- HTTP block retrieval support: rainbow can now use trustless http gateways to perform block retrievals in parallel to bitswap. This takes advantage of peers with HTTP endpoints and provider records of "transport-ipfs-gateway-http" type. You can enable http retrievals with `--http-retrieval-enable`, and limit it to urls of specific hostnames with `--http-retrieval-allowlist <hostname>`. You can also ignore provider records from certain peer IDs with `--routing-ignore-providers <peerID>` (for example to ignore peer IDs from bitswap endpoints of providers that offer HTTP). Note this works in the same way as bitswap: known http-peers receive optimistic block requests even for content that they are not announcing. See [Boxo's CHANGELOG](https://github.com/ipfs/boxo/blob/main/CHANGELOG.md) for more information.
+- HTTP block retrieval support: rainbow can now use [Trustless HTTP Gateways](https://specs.ipfs.tech/http-gateways/trustless-gateway/) to perform block retrievals in parallel to [Bitswap](https://specs.ipfs.tech/bitswap-protocol/). 
+  - This takes advantage of peers with `/tls` + `/http` multiaddrs (HTTPS is required). 
+  - You can enable HTTP retrievals with `--http-retrieval-enable`, and limit it to urls of specific hostnames with `--http-retrieval-allowlist <hostname>`. 
+  - You can also ignore provider records from certain peer IDs with `--routing-ignore-providers <peerID>` (for example to ignore peer IDs from bitswap endpoints of providers that offer HTTP). 
+  - **NOTE**: this feature works in the same way as Bitswap: known HTTP-peers receive optimistic block requests even for content that they are not announcing. See [Boxo's CHANGELOG](https://github.com/ipfs/boxo/blob/main/CHANGELOG.md) for more information.
 
 ### Changed
 
