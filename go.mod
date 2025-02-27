@@ -10,7 +10,7 @@ require (
 	github.com/felixge/httpsnoop v1.0.4
 	github.com/ipfs-shipyard/nopfs v0.0.14
 	github.com/ipfs-shipyard/nopfs/ipfs v0.25.0
-	github.com/ipfs/boxo v0.28.0
+	github.com/ipfs/boxo v0.28.1-0.20250226223343-102e45555c8f
 	github.com/ipfs/go-block-format v0.2.0
 	github.com/ipfs/go-cid v0.5.0
 	github.com/ipfs/go-datastore v0.7.0
@@ -20,8 +20,8 @@ require (
 	github.com/ipfs/go-ds-pebble v0.4.2
 	github.com/ipfs/go-ipfs-delay v0.0.1
 	github.com/ipfs/go-log/v2 v2.5.1
-	github.com/ipfs/go-metrics-interface v0.0.1
-	github.com/ipfs/go-metrics-prometheus v0.0.3
+	github.com/ipfs/go-metrics-interface v0.3.0
+	github.com/ipfs/go-metrics-prometheus v0.1.0
 	github.com/ipfs/go-test v0.2.1
 	github.com/ipfs/go-unixfsnode v1.9.2
 	github.com/ipld/go-codec-dagpb v1.6.0
@@ -36,7 +36,7 @@ require (
 	github.com/multiformats/go-multiaddr-dns v0.4.1
 	github.com/multiformats/go-multicodec v0.9.0
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
-	github.com/prometheus/client_golang v1.20.5
+	github.com/prometheus/client_golang v1.21.0
 	github.com/rs/dnscache v0.0.0-20230804202142-fc85eb664529
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/stretchr/testify v1.10.0
