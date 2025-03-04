@@ -569,7 +569,7 @@ share the same seed as long as the indexes are different.
 			routerFilterProtocols = append(routerFilterProtocols, httpRouterGatewayProtocol)
 			fmt.Printf("HTTP block-retrievals enabled. Workers: %d. Allowlist set: %t\n",
 				httpRetrievalWorkers,
-				len(httpRetrievalAllowlist) == 0,
+				len(httpRetrievalAllowlist) != 0,
 			)
 		}
 
