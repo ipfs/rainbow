@@ -17,6 +17,10 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
+- upgrade to Boxo [v0.29.0](https://github.com/ipfs/boxo/releases/tag/v0.29.0)
+- upgrade go-ds-xxx packages to support `go-datastore` [v0.8.2](https://github.com/ipfs/go-datastore/releases/tag/v0.8.2) query API
+- updated go-libp2p to [v0.41.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.41.0)
+
 ### Fixed
 
 ### Removed
