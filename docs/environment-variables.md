@@ -16,6 +16,10 @@
   - [`RAINBOW_DHT_ROUTING`](#rainbow_dht_routing)
   - [`RAINBOW_HTTP_ROUTERS`](#rainbow_http_routers)
   - [`RAINBOW_DNSLINK_RESOLVERS`](#rainbow_dnslink_resolvers)
+  - [`ROUTING_IGNORE_PROVIDERS`](#routing_ignore_providers)
+  - [`RAINBOW_HTTP_RETRIEVAL_ENABLE`](#rainbow_http_retrieval_enable)
+  - [`RAINBOW_HTTP_RETRIEVAL_ALLOWLIST`](#rainbow_http_retrieval_allowlist)
+  - [`RAINBOW_HTTP_RETRIEVAL_WORKERS`](#rainbow_http_retrieval_workers)
 - [Experiments](#experiments)
   - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
   - [`RAINBOW_SEED_PEERING_MAX_INDEX`](#rainbow_seed_peering_max_index)
@@ -158,6 +162,40 @@ It is possible to override OS resolver by passing root:  `. : catch-URL`.
 
 Default: `eth. : https://dns.eth.limo/dns-query, crypto. : https://resolver.unstoppable.io/dns-query`
 
+### `ROUTING_IGNORE_PROVIDERS`
+
+Comma-separated list of peer IDs whose provider records should be ignored during routing.
+
+This is useful when you want to exclude specific peers from being considered as content providers, especially in cases where you know certain peers might advertise content but you prefer not to retrieve from them directly (for example, to ignore peer IDs from bitswap endpoints of providers that offer HTTP).
+
+Default: not set (no peers are ignored)
+
+### `RAINBOW_HTTP_RETRIEVAL_ENABLE`
+
+Controls whether HTTP-based block retrieval is enabled.
+
+When enabled, Rainbow can use [Trustless HTTP Gateways](https://specs.ipfs.tech/http-gateways/trustless-gateway/) to perform block retrievals in parallel to [Bitswap](https://specs.ipfs.tech/bitswap-protocol/). This takes advantage of peers with `/tls` + `/http` multiaddrs (HTTPS is required).
+
+Note that this feature works in the same way as Bitswap: known HTTP-peers receive optimistic block requests even for content that they are not announcing.
+
+Default: `false` (HTTP retrieval disabled)
+
+### `RAINBOW_HTTP_RETRIEVAL_ALLOWLIST`
+
+Comma-separated list of hostnames that are allowed for HTTP retrievals.
+
+When HTTP retrieval is enabled, this setting limits HTTP retrievals to only the specified hostnames. This provides a way to restrict which gateways Rainbow will attempt to retrieve blocks from.
+
+Default: not set (when HTTP retrieval is enabled, all hosts are allowed)
+
+### `RAINBOW_HTTP_RETRIEVAL_WORKERS`
+
+The number of concurrent worker threads to use for HTTP retrievals.
+
+This setting controls the level of parallelism for HTTP-based block retrieval operations. Higher values can improve performance when retrieving many blocks but may increase resource usage.
+
+Default: `32`
+
 ## Experiments
 
 ### `RAINBOW_SEED_PEERING`
@@ -275,6 +313,7 @@ For example, to log structured JSON (for easier parsing):
 ```bash
 export GOLOG_LOG_FMT="json"
 ```
+
 The logging format defaults to `color` when the output is a terminal, and
 `nocolor` otherwise.
 
