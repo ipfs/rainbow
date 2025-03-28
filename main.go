@@ -413,11 +413,23 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_ENABLE"},
 			Usage:   "Enable HTTP-retrieval of blocks.",
 		},
+		&cli.BoolFlag{
+			Name:    "http-retrieval-http2-only",
+			Value:   true,
+			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_HTTP2_ONLY"},
+			Usage:   "Only allow HTTP/2 connections for retrieval",
+		},
 		&cli.StringSliceFlag{
 			Name:    "http-retrieval-allowlist",
 			Value:   cli.NewStringSlice(),
 			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_ALLOWLIST"},
 			Usage:   "When HTTP retrieval is enabled, allow it only to the given hosts. Empty means 'everyone'",
+		},
+		&cli.StringSliceFlag{
+			Name:    "http-retrieval-denylist",
+			Value:   cli.NewStringSlice(),
+			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_DENYLIST"},
+			Usage:   "When HTTP retrieval is enabled, the given hosts are never contacted.",
 		},
 		&cli.IntFlag{
 			Name:    "http-retrieval-workers",
@@ -425,7 +437,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_WORKERS"},
 			Usage:   "Number of workers to use for HTTP retrieval",
 		},
-
+		&cli.IntFlag{
+			Name:    "http-retrieval-max-conns-per-host",
+			Value:   16,
+			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_MAX_CONNS_PER_HOST"},
+			Usage:   "Maximum number of HTTP connections per host",
+		},
 		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
 			Value:   cli.NewStringSlice(extraDNSLinkResolvers...),
@@ -563,8 +580,11 @@ share the same seed as long as the indexes are different.
 
 		routerFilterProtocols := cctx.StringSlice("http-routers-filter-protocols")
 		httpRetrievalEnable := cctx.Bool("http-retrieval-enable")
+		httpRetrievalHTTP2Only := cctx.Bool("http-retrieval-http2-only")
 		httpRetrievalWorkers := cctx.Int("http-retrieval-workers")
 		httpRetrievalAllowlist := cctx.StringSlice("http-retrieval-allowlist")
+		httpRetrievalDenylist := cctx.StringSlice("http-retrieval-denylist")
+		httpRetrievalMaxConnsPerHost := cctx.Int("http-retrieval-max-conns-per-host")
 		if httpRetrievalEnable {
 			routerFilterProtocols = append(routerFilterProtocols, httpRouterGatewayProtocol)
 			fmt.Printf("HTTP block-retrievals enabled. Workers: %d. Allowlist set: %t\n",
@@ -627,9 +647,12 @@ share the same seed as long as the indexes are different.
 			RoutingIgnoreProviders: routingIgnoreProviders,
 
 			// HTTP Retrieval config
-			HTTPRetrievalEnable:    httpRetrievalEnable,
-			HTTPRetrievalAllowlist: httpRetrievalAllowlist,
-			HTTPRetrievalWorkers:   httpRetrievalWorkers,
+			HTTPRetrievalEnable:          httpRetrievalEnable,
+			HTTPRetrievalHTTP2Only:       httpRetrievalHTTP2Only,
+			HTTPRetrievalAllowlist:       httpRetrievalAllowlist,
+			HTTPRetrievalDenylist:        httpRetrievalDenylist,
+			HTTPRetrievalWorkers:         httpRetrievalWorkers,
+			HTTPRetrievalMaxConnsPerHost: httpRetrievalMaxConnsPerHost,
 		}
 		var gnd *Node
 
