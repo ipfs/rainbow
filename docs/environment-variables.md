@@ -19,6 +19,7 @@
   - [`ROUTING_IGNORE_PROVIDERS`](#routing_ignore_providers)
   - [`RAINBOW_HTTP_RETRIEVAL_ENABLE`](#rainbow_http_retrieval_enable)
   - [`RAINBOW_HTTP_RETRIEVAL_ALLOWLIST`](#rainbow_http_retrieval_allowlist)
+  - [`RAINBOW_HTTP_RETRIEVAL_DENYLIST`](#rainbow_http_retrieval_denylist)
   - [`RAINBOW_HTTP_RETRIEVAL_WORKERS`](#rainbow_http_retrieval_workers)
 - [Experiments](#experiments)
   - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
@@ -186,7 +187,20 @@ Comma-separated list of hostnames that are allowed for HTTP retrievals.
 
 When HTTP retrieval is enabled, this setting limits HTTP retrievals to only the specified hostnames. This provides a way to restrict which gateways Rainbow will attempt to retrieve blocks from.
 
+Example: `example.com,ipfs.example.com`
+
 Default: not set (when HTTP retrieval is enabled, all hosts are allowed)
+
+### `RAINBOW_HTTP_RETRIEVAL_DENYLIST`
+
+Comma-separated list of hostnames that are allowed for HTTP retrievals.
+
+When HTTP retrieval is enabled, this setting disables retrieval from the specified hostnames. This provides a way to restrict specific hostnames that should not be used for retrieval.
+
+Example: `example.com,ipfs.example.com`
+
+Default: not set (when HTTP retrieval is enabled, all no hosts are disabled)
+
 
 ### `RAINBOW_HTTP_RETRIEVAL_WORKERS`
 
