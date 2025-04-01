@@ -170,6 +170,7 @@ type Config struct {
 	// HTTP Retrieval configuration
 	HTTPRetrievalEnable    bool
 	HTTPRetrievalAllowlist []string
+	HTTPRetrievalDenylist  []string
 	HTTPRetrievalWorkers   int
 }
 

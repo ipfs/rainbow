@@ -417,7 +417,13 @@ Generate an identity seed and launch a gateway:
 			Name:    "http-retrieval-allowlist",
 			Value:   cli.NewStringSlice(),
 			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_ALLOWLIST"},
-			Usage:   "When HTTP retrieval is enabled, allow it only to the given hosts. Empty means 'everyone'",
+			Usage:   "Allow HTTP retrieval only from given hosts. Empty means 'everyone'. Ex: 'example.com,ipfs.example.com'",
+		},
+		&cli.StringSliceFlag{
+			Name:    "http-retrieval-denylist",
+			Value:   cli.NewStringSlice(),
+			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_DENYLIST"},
+			Usage:   "Disable HTTP retrieval from given hosts. Ex: 'example.com,ipfs.example.com'",
 		},
 		&cli.IntFlag{
 			Name:    "http-retrieval-workers",
@@ -425,7 +431,6 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_WORKERS"},
 			Usage:   "Number of workers to use for HTTP retrieval",
 		},
-
 		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
 			Value:   cli.NewStringSlice(extraDNSLinkResolvers...),
@@ -565,6 +570,8 @@ share the same seed as long as the indexes are different.
 		httpRetrievalEnable := cctx.Bool("http-retrieval-enable")
 		httpRetrievalWorkers := cctx.Int("http-retrieval-workers")
 		httpRetrievalAllowlist := cctx.StringSlice("http-retrieval-allowlist")
+		httpRetrievalDenylist := cctx.StringSlice("http-retrieval-denylist")
+
 		if httpRetrievalEnable {
 			routerFilterProtocols = append(routerFilterProtocols, httpRouterGatewayProtocol)
 			fmt.Printf("HTTP block-retrievals enabled. Workers: %d. Allowlist set: %t\n",
@@ -629,6 +636,7 @@ share the same seed as long as the indexes are different.
 			// HTTP Retrieval config
 			HTTPRetrievalEnable:    httpRetrievalEnable,
 			HTTPRetrievalAllowlist: httpRetrievalAllowlist,
+			HTTPRetrievalDenylist:  httpRetrievalDenylist,
 			HTTPRetrievalWorkers:   httpRetrievalWorkers,
 		}
 		var gnd *Node
