@@ -417,13 +417,13 @@ Generate an identity seed and launch a gateway:
 			Name:    "http-retrieval-allowlist",
 			Value:   cli.NewStringSlice(),
 			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_ALLOWLIST"},
-			Usage:   "When HTTP retrieval is enabled, allow it only to the given hosts. Empty means 'everyone'",
+			Usage:   "Allow HTTP retrieval only from given hosts. Empty means 'everyone'. Ex: 'example.com,ipfs.example.com'",
 		},
 		&cli.StringSliceFlag{
 			Name:    "http-retrieval-denylist",
 			Value:   cli.NewStringSlice(),
 			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_DENYLIST"},
-			Usage:   "When HTTP retrieval is enabled, the given hosts are never contacted.",
+			Usage:   "Disable HTTP retrieval from given hosts. Ex: 'example.com,ipfs.example.com'",
 		},
 		&cli.IntFlag{
 			Name:    "http-retrieval-workers",
