@@ -17,18 +17,28 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
-- upgrade to Boxo [v0.29.0](https://github.com/ipfs/boxo/releases/tag/v0.29.0)
-- upgrade go-ds-xxx packages to support `go-datastore` [v0.8.2](https://github.com/ipfs/go-datastore/releases/tag/v0.8.2) query API
-- updated go-libp2p to [v0.41.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.41.0)
-
 ### Fixed
 
 ### Removed
 
-### Fixed
+### Security
+
+
+## [1.13.0]
+
+### Added
+
+- New option `--http-retrieval-denylist`. It can be used to avoid connecting to disallowed hosts.
+
+### Changed
+
+- upgrade to Boxo [v0.29.1+](https://github.com/ipfs/boxo/releases/tag/v0.29.1)
+- upgrade go-ds-xxx packages to support `go-datastore` [v0.8.2](https://github.com/ipfs/go-datastore/releases/tag/v0.8.2) query API
+- updated go-libp2p to [v0.41.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.41.0)
 
 ### Security
 
+- This release upgrades quic-go to [v0.50.1](https://github.com/quic-go/quic-go/releases/tag/v0.50.1). It contains a fix for a remote-triggered panic.
 
 ## [1.12.0]
 
