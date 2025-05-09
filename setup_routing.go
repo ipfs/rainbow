@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	ocprom "contrib.go.opencensus.io/exporter/prometheus"
 	"github.com/ipfs/boxo/gateway"
 	"github.com/ipfs/boxo/ipns"
 	routingv1client "github.com/ipfs/boxo/routing/http/client"
@@ -22,9 +23,31 @@ import (
 	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/routing"
+	prometheus "github.com/prometheus/client_golang/prometheus"
 	"go.opencensus.io/stats/view"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
+
+func init() {
+	promRegistry, ok := prometheus.DefaultRegisterer.(*prometheus.Registry)
+	if !ok {
+		goLog.Error("routing metrics: error casting DefaultRegisterer")
+		return
+	}
+	pe, err := ocprom.NewExporter(ocprom.Options{
+		Namespace: "ipfs",
+		Registry:  promRegistry,
+		OnError: func(err error) {
+			goLog.Errorf("ocprom error: %w", err)
+		},
+	})
+	if err != nil {
+		goLog.Errorf("routing metrics: error creating exporter: %w", err)
+		return
+	}
+	view.RegisterExporter(pe)
+	view.SetReportingPeriod(2 * time.Second)
+}
 
 func setupDelegatedRouting(cfg Config, dnsCache *cachedDNS) ([]routing.Routing, error) {
 	// Increase per-host connection pool since we are making lots of concurrent requests.

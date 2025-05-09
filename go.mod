@@ -3,6 +3,7 @@ module github.com/ipfs/rainbow
 go 1.24
 
 require (
+	contrib.go.opencensus.io/exporter/prometheus v0.4.2
 	github.com/cockroachdb/pebble v1.1.4
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dgraph-io/badger/v4 v4.5.1
@@ -83,6 +84,8 @@ require (
 	github.com/gammazero/chanqueue v1.1.0 // indirect
 	github.com/gammazero/deque v1.0.0 // indirect
 	github.com/getsentry/sentry-go v0.27.0 // indirect
+	github.com/go-kit/log v0.2.1 // indirect
+	github.com/go-logfmt/logfmt v0.5.1 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
@@ -183,6 +186,7 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/prometheus/statsd_exporter v0.22.7 // indirect
 	github.com/quic-go/qpack v0.5.1 // indirect
 	github.com/quic-go/quic-go v0.50.1 // indirect
 	github.com/quic-go/webtransport-go v0.8.1-0.20241018022711-4ac2c9250e66 // indirect
@@ -231,6 +235,7 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241007155032-5fefd90f89a9 // indirect
 	google.golang.org/grpc v1.67.1 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.4.0 // indirect
 )
