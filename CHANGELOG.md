@@ -19,6 +19,8 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
+* Fix exporting of routing http client metrics: the endpoint will now include `ipfs_routing_http_client_*` metrics routing clients are used.
+
 ### Removed
 
 ### Security
