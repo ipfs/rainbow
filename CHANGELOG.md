@@ -19,12 +19,9 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
-* Fix exporting of routing http client metrics: the endpoint will now include `ipfs_routing_http_client_*` metrics routing clients are used. See [docs/metrics.md](https://github.com/ipfs/rainbow/blob/main/docs/metrics.md) for more details.
-
 ### Removed
 
 ### Security
-
 
 ## [1.13.0]
 
@@ -34,9 +31,13 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
-- upgrade to Boxo [v0.29.1+](https://github.com/ipfs/boxo/releases/tag/v0.29.1)
+- upgrade to Boxo [v0.30.0](https://github.com/ipfs/boxo/releases/tag/v0.30.0)
 - upgrade go-ds-xxx packages to support `go-datastore` [v0.8.2](https://github.com/ipfs/go-datastore/releases/tag/v0.8.2) query API
-- updated go-libp2p to [v0.41.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.41.0)
+- updated go-libp2p to [v0.41.1](https://github.com/libp2p/go-libp2p/releases/tag/v0.41.1)
+
+### Fixed
+
+- Fix exporting of routing http client metrics: the endpoint will now include `ipfs_routing_http_client_*` metrics routing clients are used. See [docs/metrics.md](https://github.com/ipfs/rainbow/blob/main/docs/metrics.md) for more details.
 
 ### Security
 
