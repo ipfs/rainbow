@@ -17,6 +17,9 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
+- `http-retrieval-enable` is not enabled by default. HTTP Retrieval can be disabled with
+  `RAINBOW_HTTP_RETRIEVAL_ENABLE=false`. [#270](https://github.com/ipfs/rainbow/pull/270)
+
 ### Fixed
 
 ### Removed

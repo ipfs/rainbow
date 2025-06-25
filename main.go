@@ -409,7 +409,7 @@ Generate an identity seed and launch a gateway:
 		},
 		&cli.BoolFlag{
 			Name:    "http-retrieval-enable",
-			Value:   false,
+			Value:   true,
 			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_ENABLE"},
 			Usage:   "Enable HTTP-retrieval of blocks.",
 		},
