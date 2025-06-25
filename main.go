@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -569,9 +570,17 @@ share the same seed as long as the indexes are different.
 		routerFilterProtocols := cctx.StringSlice("http-routers-filter-protocols")
 		httpRetrievalEnable := cctx.Bool("http-retrieval-enable")
 		httpRetrievalWorkers := cctx.Int("http-retrieval-workers")
-		httpRetrievalAllowlist := cctx.StringSlice("http-retrieval-allowlist")
-		httpRetrievalDenylist := cctx.StringSlice("http-retrieval-denylist")
 
+		// Handle the case were the env variable is set without any
+		// values (the slice contains a single "" element).
+		httpRetrievalAllowlist := cctx.StringSlice("http-retrieval-allowlist")
+		httpRetrievalAllowlist = slices.DeleteFunc(httpRetrievalAllowlist, func(s string) bool {
+			return s == ""
+		})
+		httpRetrievalDenylist := cctx.StringSlice("http-retrieval-denylist")
+		httpRetrievalDenylist = slices.DeleteFunc(httpRetrievalDenylist, func(s string) bool {
+			return s == ""
+		})
 		if httpRetrievalEnable {
 			routerFilterProtocols = append(routerFilterProtocols, httpRouterGatewayProtocol)
 			fmt.Printf("HTTP block-retrievals enabled. Workers: %d. Allowlist set: %t\n",
