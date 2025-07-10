@@ -17,6 +17,8 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
+- upgrade to Boxo [v0.33.0](https://github.com/ipfs/boxo/releases/tag/v0.33.0)
+
 ### Fixed
 
 - Setting `export RAINBOW_HTTP_RETRIEVAL_ALLOWLIST=` allowed to enable HTTP
