@@ -752,11 +752,11 @@ share the same seed as long as the indexes are different.
 			}
 		}()
 
-		var gcTicker *time.Ticker
+		var gcTicker *time.Timer
 		var gcTickerDone chan bool
 
 		if cfg.GCInterval > 0 {
-			gcTicker = time.NewTicker(cfg.GCInterval)
+			gcTicker = time.NewTimer(cfg.GCInterval)
 			gcTickerDone = make(chan bool)
 			wg.Add(1)
 
@@ -772,6 +772,7 @@ share the same seed as long as the indexes are different.
 						if err != nil {
 							goLog.Errorf("error when running periodic gc: %w", err)
 						}
+						gcTicker.Reset(cfg.GCInterval)
 					}
 				}
 			}()
