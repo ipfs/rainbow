@@ -17,9 +17,22 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
+### Fixed
+
+### Removed
+
+### Security
+
+
+## [v1.15.0]
+
+### Added
+
+### Changed
+
 - `http-retrieval-enable` is now enabled by default. HTTP Retrieval can be disabled with
   `RAINBOW_HTTP_RETRIEVAL_ENABLE=false`. [#270](https://github.com/ipfs/rainbow/pull/270)
-- upgrade to Boxo [v0.33.0](https://github.com/ipfs/boxo/releases/tag/v0.33.0)
+- upgrade to Boxo [v0.33.1-0.20250716194104-2c5f80a98e46](https://github.com/ipfs/boxo/releases/tag/v0.33.0)
 
 
 ### Fixed
@@ -28,9 +41,10 @@ The following emojis are used to highlight certain changes:
   retrieval with an empty allowlist, so no HTTP requests would be
   performed. This is a footgun, therefore from now on this is interpreted as
   no allowlist being set. HTTP Retrieval can be disabled with
-  `RAINBOW_HTTP_RETRIEVAL_ENABLE=false`.
+  `RAINBOW_HTTP_RETRIEVAL_ENABLE=false` instead. [#269](https://github.com/ipfs/rainbow/pull/269)
 - Fix periodicGC that runs before the previous run has finished if the
-  interval is too short.
+  interval is too short [#273](https://github.com/ipfs/rainbow/pull/273).
+- Fix issue where http retrievals silently stop (https://github.com/ipfs/boxo/issues/979).
 
 ### Removed
 
