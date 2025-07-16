@@ -29,6 +29,8 @@ The following emojis are used to highlight certain changes:
   performed. This is a footgun, therefore from now on this is interpreted as
   no allowlist being set. HTTP Retrieval can be disabled with
   `RAINBOW_HTTP_RETRIEVAL_ENABLE=false`.
+- Fix periodicGC that runs before the previous run has finished if the
+  interval is too short.
 
 ### Removed
 
