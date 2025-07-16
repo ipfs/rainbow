@@ -19,8 +19,16 @@ The following emojis are used to highlight certain changes:
 
 - `http-retrieval-enable` is now enabled by default. HTTP Retrieval can be disabled with
   `RAINBOW_HTTP_RETRIEVAL_ENABLE=false`. [#270](https://github.com/ipfs/rainbow/pull/270)
+- upgrade to Boxo [v0.33.0](https://github.com/ipfs/boxo/releases/tag/v0.33.0)
+
 
 ### Fixed
+
+- Setting `export RAINBOW_HTTP_RETRIEVAL_ALLOWLIST=` allowed to enable HTTP
+  retrieval with an empty allowlist, so no HTTP requests would be
+  performed. This is a footgun, therefore from now on this is interpreted as
+  no allowlist being set. HTTP Retrieval can be disabled with
+  `RAINBOW_HTTP_RETRIEVAL_ENABLE=false`.
 
 ### Removed
 
