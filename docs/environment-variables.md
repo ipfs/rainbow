@@ -179,7 +179,7 @@ When enabled, Rainbow can use [Trustless HTTP Gateways](https://specs.ipfs.tech/
 
 Note that this feature works in the same way as Bitswap: known HTTP-peers receive optimistic block requests even for content that they are not announcing.
 
-Default: `false` (HTTP retrieval disabled)
+Default: `true` (HTTP retrieval enabled)
 
 ### `RAINBOW_HTTP_RETRIEVAL_ALLOWLIST`
 
