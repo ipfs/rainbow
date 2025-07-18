@@ -21,6 +21,7 @@
   - [`RAINBOW_HTTP_RETRIEVAL_ALLOWLIST`](#rainbow_http_retrieval_allowlist)
   - [`RAINBOW_HTTP_RETRIEVAL_DENYLIST`](#rainbow_http_retrieval_denylist)
   - [`RAINBOW_HTTP_RETRIEVAL_WORKERS`](#rainbow_http_retrieval_workers)
+  - [`RAINBOW_HTTP_RETRIEVAL_METRICS_LABELS_FOR_ENDPOINTS`](#rainbow_http_retrieval_metrics_labels_for_endpoints)
 - [Experiments](#experiments)
   - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
   - [`RAINBOW_SEED_PEERING_MAX_INDEX`](#rainbow_seed_peering_max_index)
@@ -209,6 +210,23 @@ The number of concurrent worker threads to use for HTTP retrievals.
 This setting controls the level of parallelism for HTTP-based block retrieval operations. Higher values can improve performance when retrieving many blocks but may increase resource usage.
 
 Default: `32`
+
+### `RAINBOW_HTTP_RETRIEVAL_METRICS_LABELS_FOR_ENDPOINTS`
+
+Request metrics exposed on the metrics endpoint can be labelled with the endpoint the requests were sent to.
+
+Since default behaviour is to send HTTP requests to any endpoints found, doing
+this for all requests by default may cause unwanted metric cardinality growth
+so we just don't do it.
+
+In order to enable for all hosts, use `*`. Otherwise you can enable for
+specific hosts by providing a list.
+
+Using this is useful to track where the HTTP requests are going.
+
+Example: `example.com,ipfs.example.com`
+
+Default: not set
 
 ## Experiments
 

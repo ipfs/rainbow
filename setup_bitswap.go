@@ -35,6 +35,7 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 			httpnet.WithAllowlist(cfg.HTTPRetrievalAllowlist),
 			httpnet.WithDenylist(cfg.HTTPRetrievalDenylist),
 			httpnet.WithUserAgent("rainbow/"+buildVersion()),
+			httpnet.WithMetricsLabelsForEndpoints(cfg.HTTPRetrievalMetricsLabelsForEndpoints),
 		)
 		exnet = network.New(h.Peerstore(), bn, htnet)
 	} else {
