@@ -23,6 +23,27 @@ The following emojis are used to highlight certain changes:
 
 ### Security
 
+## [v1.16.0]
+
+### Added
+
+- Support for `RAINBOW_HTTP_RETRIEVAL_METRICS_LABELS_FOR_ENDPOINTS` which
+  brings back the possiblity of tagging requests metrics with the endpoint the
+  request is sent to. See the Envirionment variables documentation for more
+  details.
+
+### Changed
+
+### Fixed
+
+- Second attempt to fix issue with retrievals silently stopping, as the fix in
+  the previous release does not work. This is done via upgrade to Boxo
+  `v0.33.1-0.20250718090124-2cf77c4c3ebf`
+
+### Removed
+
+### Security
+
 
 ## [v1.15.0]
 
