@@ -433,6 +433,12 @@ Generate an identity seed and launch a gateway:
 			Usage:   "Number of workers to use for HTTP retrieval",
 		},
 		&cli.StringSliceFlag{
+			Name:    "http-retrieval-metrics-labels-for-endpoints",
+			Value:   cli.NewStringSlice(),
+			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_METRICS_LABELS_FOR_ENDPOINTS"},
+			Usage:   "Label requests metrics for the given hosts. Ex: 'example.com,ipfs.example.com'",
+		},
+		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
 			Value:   cli.NewStringSlice(extraDNSLinkResolvers...),
 			EnvVars: []string{"RAINBOW_DNSLINK_RESOLVERS"},
@@ -581,11 +587,17 @@ share the same seed as long as the indexes are different.
 		httpRetrievalDenylist = slices.DeleteFunc(httpRetrievalDenylist, func(s string) bool {
 			return s == ""
 		})
+
+		httpRetrievalMetricsLabelsForEndpoints := cctx.StringSlice("http-retrieval-metrics-labels-for-endpoints")
+		httpRetrievalMetricsLabelsForEndpoints = slices.DeleteFunc(httpRetrievalMetricsLabelsForEndpoints, func(s string) bool {
+			return s == ""
+		})
 		if httpRetrievalEnable {
 			routerFilterProtocols = append(routerFilterProtocols, httpRouterGatewayProtocol)
-			fmt.Printf("HTTP block-retrievals enabled. Workers: %d. Allowlist set: %t\n",
+			fmt.Printf("HTTP block-retrievals enabled. Workers: %d. Allowlist set: %t. Metric-labelled endpoints: %d\n",
 				httpRetrievalWorkers,
 				len(httpRetrievalAllowlist) != 0,
+				len(httpRetrievalMetricsLabelsForEndpoints),
 			)
 		}
 
@@ -643,10 +655,11 @@ share the same seed as long as the indexes are different.
 			RoutingIgnoreProviders: routingIgnoreProviders,
 
 			// HTTP Retrieval config
-			HTTPRetrievalEnable:    httpRetrievalEnable,
-			HTTPRetrievalAllowlist: httpRetrievalAllowlist,
-			HTTPRetrievalDenylist:  httpRetrievalDenylist,
-			HTTPRetrievalWorkers:   httpRetrievalWorkers,
+			HTTPRetrievalEnable:                    httpRetrievalEnable,
+			HTTPRetrievalAllowlist:                 httpRetrievalAllowlist,
+			HTTPRetrievalDenylist:                  httpRetrievalDenylist,
+			HTTPRetrievalWorkers:                   httpRetrievalWorkers,
+			HTTPRetrievalMetricsLabelsForEndpoints: httpRetrievalMetricsLabelsForEndpoints,
 		}
 		var gnd *Node
 

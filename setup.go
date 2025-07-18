@@ -168,10 +168,11 @@ type Config struct {
 	RoutingMaxTimeout   time.Duration
 
 	// HTTP Retrieval configuration
-	HTTPRetrievalEnable    bool
-	HTTPRetrievalAllowlist []string
-	HTTPRetrievalDenylist  []string
-	HTTPRetrievalWorkers   int
+	HTTPRetrievalEnable                    bool
+	HTTPRetrievalAllowlist                 []string
+	HTTPRetrievalDenylist                  []string
+	HTTPRetrievalWorkers                   int
+	HTTPRetrievalMetricsLabelsForEndpoints []string
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {
