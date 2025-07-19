@@ -172,6 +172,7 @@ type Config struct {
 	HTTPRetrievalAllowlist                 []string
 	HTTPRetrievalDenylist                  []string
 	HTTPRetrievalWorkers                   int
+	HTTPRetrievalMaxDontHaveErrors         int
 	HTTPRetrievalMetricsLabelsForEndpoints []string
 }
 

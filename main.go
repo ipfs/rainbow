@@ -438,6 +438,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_METRICS_LABELS_FOR_ENDPOINTS"},
 			Usage:   "Label requests metrics for the given hosts. Ex: 'example.com,ipfs.example.com'",
 		},
+		&cli.IntFlag{
+			Name:    "http-retrieval-max-dont-have-errors",
+			Value:   100,
+			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_MAX_DONT_HAVE_ERRORS"},
+			Usage:   "Number of client-errors in optimistic requests before disconnecting from HTTP endpoint.",
+		},
 		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
 			Value:   cli.NewStringSlice(extraDNSLinkResolvers...),
@@ -576,6 +582,10 @@ share the same seed as long as the indexes are different.
 		routerFilterProtocols := cctx.StringSlice("http-routers-filter-protocols")
 		httpRetrievalEnable := cctx.Bool("http-retrieval-enable")
 		httpRetrievalWorkers := cctx.Int("http-retrieval-workers")
+		httpRetrievalMaxDontHaveErrors := cctx.Int("http-retrieval-max-dont-have-errors")
+		if httpRetrievalMaxDontHaveErrors == 0 {
+			httpRetrievalMaxDontHaveErrors = 100
+		}
 
 		// Handle the case were the env variable is set without any
 		// values (the slice contains a single "" element).
@@ -659,6 +669,7 @@ share the same seed as long as the indexes are different.
 			HTTPRetrievalAllowlist:                 httpRetrievalAllowlist,
 			HTTPRetrievalDenylist:                  httpRetrievalDenylist,
 			HTTPRetrievalWorkers:                   httpRetrievalWorkers,
+			HTTPRetrievalMaxDontHaveErrors:         httpRetrievalMaxDontHaveErrors,
 			HTTPRetrievalMetricsLabelsForEndpoints: httpRetrievalMetricsLabelsForEndpoints,
 		}
 		var gnd *Node
