@@ -15,9 +15,17 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+- Support for `RAINBOW_HTTP_RETRIEVAL_MAX_DONT_HAVE_ERRORS`, allows limiting
+  the number of optimistic block requests performed against endpoints that
+  fail to provide any of those blocks. See the Envirionment variables
+  documentation for more details.
+
 ### Changed
 
 ### Fixed
+
+- Third attempt to fix issue with retrievals by upgrading to the latest boxo.
+- Fix goroutine leak present in the previous release ([#278](https://github.com/ipfs/rainbow/issues/278)).
 
 ### Removed
 
