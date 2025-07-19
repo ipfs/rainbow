@@ -32,6 +32,7 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 	if cfg.HTTPRetrievalEnable {
 		htnet := httpnet.New(h,
 			httpnet.WithHTTPWorkers(cfg.HTTPRetrievalWorkers),
+			httpnet.WithMaxDontHaveErrors(cfg.HTTPRetrievalMaxDontHaveErrors),
 			httpnet.WithAllowlist(cfg.HTTPRetrievalAllowlist),
 			httpnet.WithDenylist(cfg.HTTPRetrievalDenylist),
 			httpnet.WithUserAgent("rainbow/"+buildVersion()),

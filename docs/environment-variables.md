@@ -211,6 +211,14 @@ This setting controls the level of parallelism for HTTP-based block retrieval op
 
 Default: `32`
 
+### `RAINBOW_HTTP_RETRIEVAL_MAX_DONT_HAVE_ERRORS`
+
+The number of errors (usually 404s) that can happen in a row before we disconnect from and endpoint and stop making optimistic requests for blocks.
+
+We do not want to requests random blocks from HTTP endpoints forever after having discovered them, so if an endpoint is returning 404s to a number of requests in a row (100 by default), we will "disconnect". We can always reconnect later if a provide records points us again to that endpoint.
+
+Default: `100`
+
 ### `RAINBOW_HTTP_RETRIEVAL_METRICS_LABELS_FOR_ENDPOINTS`
 
 Request metrics exposed on the metrics endpoint can be labelled with the endpoint the requests were sent to.
