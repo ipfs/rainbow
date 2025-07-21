@@ -15,10 +15,27 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+### Security
+
+
+## [v1.17.0]
+
+### Added
+
 - Support for `RAINBOW_HTTP_RETRIEVAL_MAX_DONT_HAVE_ERRORS`, allows limiting
   the number of optimistic block requests performed against endpoints that
-  fail to provide any of those blocks. See the Envirionment variables
-  documentation for more details.
+  fail to provide any of those blocks. See the [Envirionment variables
+  documentation](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_http_retrieval_max_dont_have_errors) for more details.
+- Support for `RAINBOW_HTTP_RETRIEVAL_METRICS_LABELS_FOR_ENDPOINTS` which
+  brings back the possiblity of tagging requests metrics with the endpoint the
+  request is sent to. See the [Envirionment variables documentation](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_http_retrieval_metrics_labels_for_endpoints) for more
+  details.
 
 ### Changed
 
@@ -26,8 +43,8 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
-- Third attempt to fix issue with retrievals by upgrading to the latest boxo.
-- Fix goroutine leak present in the previous release ([#278](https://github.com/ipfs/rainbow/issues/278)).
+- Fix an issue in HTTP retrievals: [#283](https://github.com/ipfs/rainbow/issues/283).
+- Fix goroutine leak present in v1.16.0 (withdrawn) ([#278](https://github.com/ipfs/rainbow/issues/278)).
 
 ### Removed
 
@@ -35,20 +52,7 @@ The following emojis are used to highlight certain changes:
 
 ## [v1.16.0]
 
-### Added
-
-- Support for `RAINBOW_HTTP_RETRIEVAL_METRICS_LABELS_FOR_ENDPOINTS` which
-  brings back the possiblity of tagging requests metrics with the endpoint the
-  request is sent to. See the Envirionment variables documentation for more
-  details.
-
-### Changed
-
-### Fixed
-
-- Second attempt to fix issue with retrievals silently stopping, as the fix in
-  the previous release does not work. This is done via upgrade to Boxo
-  `v0.33.1-0.20250718090124-2cf77c4c3ebf`
+This release has been withdrawn.
 
 ### Removed
 
