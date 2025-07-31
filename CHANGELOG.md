@@ -22,6 +22,8 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
+- upgrade to Boxo [v0.33.1](https://github.com/ipfs/boxo/releases/tag/v0.33.1)
+
 ### Fixed
 
 - Third attempt to fix issue with retrievals by upgrading to the latest boxo.
