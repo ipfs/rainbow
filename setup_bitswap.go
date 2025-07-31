@@ -26,10 +26,12 @@ import (
 func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routing.ContentRouting, bstore blockstore.Blockstore) exchange.Interface {
 	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
 
+	connEvtMgr := network.NewConnectEventManager()
 	var exnet network.BitSwapNetwork
-	bn := bsnet.NewFromIpfsHost(h)
+	bn := bsnet.NewFromIpfsHost(h, bsnet.WithConnectEventManager(connEvtMgr))
 
 	if cfg.HTTPRetrievalEnable {
+
 		htnet := httpnet.New(h,
 			httpnet.WithHTTPWorkers(cfg.HTTPRetrievalWorkers),
 			httpnet.WithMaxDontHaveErrors(cfg.HTTPRetrievalMaxDontHaveErrors),
@@ -37,6 +39,7 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 			httpnet.WithDenylist(cfg.HTTPRetrievalDenylist),
 			httpnet.WithUserAgent("rainbow/"+buildVersion()),
 			httpnet.WithMetricsLabelsForEndpoints(cfg.HTTPRetrievalMetricsLabelsForEndpoints),
+			httpnet.WithConnectEventManager(connEvtMgr),
 		)
 		exnet = network.New(h.Peerstore(), bn, htnet)
 	} else {
