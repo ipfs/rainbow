@@ -444,6 +444,18 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_HTTP_RETRIEVAL_MAX_DONT_HAVE_ERRORS"},
 			Usage:   "Number of client-errors in optimistic requests before disconnecting from HTTP endpoint.",
 		},
+		&cli.IntFlag{
+			Name:    "max-concurrent-requests",
+			Value:   1024,
+			EnvVars: []string{"RAINBOW_MAX_CONCURRENT_REQUESTS"},
+			Usage:   "Maximum number of concurrent HTTP requests (rate limiting). Set 0 to disable",
+		},
+		&cli.DurationFlag{
+			Name:    "retrieval-timeout",
+			Value:   time.Second * 30,
+			EnvVars: []string{"RAINBOW_RETRIEVAL_TIMEOUT"},
+			Usage:   "Maximum duration for initial content retrieval and time between writes",
+		},
 		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
 			Value:   cli.NewStringSlice(extraDNSLinkResolvers...),
@@ -671,6 +683,9 @@ share the same seed as long as the indexes are different.
 			HTTPRetrievalWorkers:                   httpRetrievalWorkers,
 			HTTPRetrievalMaxDontHaveErrors:         httpRetrievalMaxDontHaveErrors,
 			HTTPRetrievalMetricsLabelsForEndpoints: httpRetrievalMetricsLabelsForEndpoints,
+			// Gateway rate limiting and timeout configuration
+			MaxConcurrentRequests: cctx.Int("max-concurrent-requests"),
+			RetrievalTimeout:      cctx.Duration("retrieval-timeout"),
 		}
 		var gnd *Node
 

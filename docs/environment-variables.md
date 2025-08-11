@@ -22,6 +22,8 @@
   - [`RAINBOW_HTTP_RETRIEVAL_DENYLIST`](#rainbow_http_retrieval_denylist)
   - [`RAINBOW_HTTP_RETRIEVAL_WORKERS`](#rainbow_http_retrieval_workers)
   - [`RAINBOW_HTTP_RETRIEVAL_METRICS_LABELS_FOR_ENDPOINTS`](#rainbow_http_retrieval_metrics_labels_for_endpoints)
+  - [`RAINBOW_MAX_CONCURRENT_REQUESTS`](#rainbow_max_concurrent_requests)
+  - [`RAINBOW_RETRIEVAL_TIMEOUT`](#rainbow_retrieval_timeout)
 - [Experiments](#experiments)
   - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
   - [`RAINBOW_SEED_PEERING_MAX_INDEX`](#rainbow_seed_peering_max_index)
@@ -235,6 +237,28 @@ Using this is useful to track where the HTTP requests are going.
 Example: `example.com,ipfs.example.com`
 
 Default: not set
+
+### `RAINBOW_MAX_CONCURRENT_REQUESTS`
+
+Maximum number of concurrent HTTP requests that the gateway will process.
+
+This setting provides rate limiting to protect the gateway from resource exhaustion during high load scenarios. When the limit is reached, new requests will receive a `429 Too Many Requests` response with a `Retry-After` header indicating when the client should retry.
+
+Setting this to `0` disables the concurrent request limit.
+
+Default: `1024`
+
+### `RAINBOW_RETRIEVAL_TIMEOUT`
+
+Maximum duration for content retrieval operations.
+
+This timeout applies to both:
+- Initial content retrieval (time to first byte)
+- Time between subsequent writes during streaming
+
+If content cannot be retrieved within this period, the gateway returns a `504 Gateway Timeout` error. For responses that have already started streaming, the connection will be terminated with a truncation message if no data is written within the timeout period.
+
+Default: `30s`
 
 ## Experiments
 
