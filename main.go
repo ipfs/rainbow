@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"net/http"
 	_ "net/http/pprof"
-	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
