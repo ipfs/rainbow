@@ -452,7 +452,7 @@ Generate an identity seed and launch a gateway:
 		},
 		&cli.DurationFlag{
 			Name:    "retrieval-timeout",
-			Value:   time.Second * 30,
+			Value:   30 * time.Second,
 			EnvVars: []string{"RAINBOW_RETRIEVAL_TIMEOUT"},
 			Usage:   "Maximum duration for initial content retrieval and time between writes",
 		},
