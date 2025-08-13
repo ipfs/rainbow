@@ -16,6 +16,10 @@
   - [`RAINBOW_DHT_ROUTING`](#rainbow_dht_routing)
   - [`RAINBOW_HTTP_ROUTERS`](#rainbow_http_routers)
   - [`RAINBOW_DNSLINK_RESOLVERS`](#rainbow_dnslink_resolvers)
+  - [`RAINBOW_BOOTSTRAP`](#rainbow_bootstrap)
+  - [`RAINBOW_AUTOCONF`](#rainbow_autoconf)
+  - [`RAINBOW_AUTOCONF_URL`](#rainbow_autoconf_url)
+  - [`RAINBOW_AUTOCONF_REFRESH`](#rainbow_autoconf_refresh)
   - [`ROUTING_IGNORE_PROVIDERS`](#routing_ignore_providers)
   - [`RAINBOW_HTTP_RETRIEVAL_ENABLE`](#rainbow_http_retrieval_enable)
   - [`RAINBOW_HTTP_RETRIEVAL_ALLOWLIST`](#rainbow_http_retrieval_allowlist)
@@ -154,7 +158,9 @@ Default: `accelerated`
 
 HTTP servers with /routing/v1 endpoints to use for delegated routing (comma-separated).
 
-Default: `https://cid.contact`
+The special value `auto` expands to network-appropriate defaults from autoconf when [`RAINBOW_AUTOCONF`](#rainbow_autoconf) is enabled.
+
+Default: `auto`
 
 ### `RAINBOW_DNSLINK_RESOLVERS`
 
@@ -162,7 +168,37 @@ DNS-over-HTTPS servers to use for resolving DNSLink on specified TLDs (comma-sep
 
 It is possible to override OS resolver by passing root:  `. : catch-URL`.
 
-Default: `eth. : https://dns.eth.limo/dns-query, crypto. : https://resolver.unstoppable.io/dns-query`
+The special value `auto` expands to network-appropriate defaults from autoconf when [`RAINBOW_AUTOCONF`](#rainbow_autoconf) is enabled.
+
+Default: `. : auto`
+
+### `RAINBOW_BOOTSTRAP`
+
+Comma-separated list of bootstrap peer multiaddrs for libp2p connections.
+
+The special value `auto` expands to network-appropriate defaults from autoconf when [`RAINBOW_AUTOCONF`](#rainbow_autoconf) is enabled.
+
+Default: `auto`
+
+### `RAINBOW_AUTOCONF`
+
+Enable autoconf for automatic expansion of `auto` placeholder values in bootstrap peers, DNS resolvers, and HTTP routers.
+
+When enabled, Rainbow will fetch configuration from [`RAINBOW_AUTOCONF_URL`](#rainbow_autoconf_url) and replace `auto` placeholders with network-appropriate defaults.
+
+Default: `true`
+
+### `RAINBOW_AUTOCONF_URL`
+
+URL to fetch autoconf data from. Must be an HTTPS URL returning a valid autoconf.json file.
+
+Default: `https://conf.ipfs-mainnet.org/autoconf.json`
+
+### `RAINBOW_AUTOCONF_REFRESH`
+
+How often to refresh autoconf data from the configured URL.
+
+Default: `24h`
 
 ### `ROUTING_IGNORE_PROVIDERS`
 

@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/v2"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
 	nopfs "github.com/ipfs-shipyard/nopfs"
@@ -50,16 +50,9 @@ func init() {
 	}
 }
 
-const cidContactEndpoint = "https://cid.contact"
-
 const httpRouterGatewayProtocol = "transport-ipfs-gateway-http"
 
 var httpRoutersFilterProtocols = []string{"unknown", "transport-bitswap"} // IPIP-484
-
-var extraDNSLinkResolvers = []string{
-	"eth. : https://dns.eth.limo/dns-query",
-	"crypto. : https://resolver.unstoppable.io/dns-query",
-}
 
 type DHTRouting string
 
@@ -174,6 +167,12 @@ type Config struct {
 	HTTPRetrievalWorkers                   int
 	HTTPRetrievalMaxDontHaveErrors         int
 	HTTPRetrievalMetricsLabelsForEndpoints []string
+
+	// AutoConf configuration
+	AutoConf AutoConfConfig
+
+	// Bootstrap peers configuration (with "auto" support)
+	Bootstrap []string
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	sddaemon "github.com/coreos/go-systemd/v22/daemon"
+	autoconf "github.com/ipfs/boxo/autoconf"
 	"github.com/ipfs/boxo/gateway"
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p/core/crypto"
@@ -204,9 +205,9 @@ Generate an identity seed and launch a gateway:
 		},
 		&cli.StringSliceFlag{
 			Name:    "http-routers",
-			Value:   cli.NewStringSlice(cidContactEndpoint),
+			Value:   cli.NewStringSlice("auto"),
 			EnvVars: []string{"RAINBOW_HTTP_ROUTERS"},
-			Usage:   "HTTP servers with /routing/v1 endpoints to use for delegated routing (comma-separated)",
+			Usage:   "HTTP servers with /routing/v1 endpoints to use for delegated routing (comma-separated). Use 'auto' to use network-appropriate defaults from autoconf",
 		},
 		&cli.StringSliceFlag{
 			Name:    "http-routers-filter-protocols",
@@ -233,6 +234,12 @@ Generate an identity seed and launch a gateway:
 			Value:   false,
 			EnvVars: []string{"RAINBOW_DHT_SHARED_HOST"},
 			Usage:   "If false, DHT operations are run using an ephemeral peer, separate from the main one",
+		},
+		&cli.StringFlag{
+			Name:    "bootstrap",
+			Value:   "auto",
+			EnvVars: []string{"RAINBOW_BOOTSTRAP"},
+			Usage:   "Comma-separated list of bootstrap peer multiaddrs. Use 'auto' to use network-appropriate defaults from autoconf",
 		},
 		&cli.StringSliceFlag{
 			Name:    "denylists",
@@ -446,9 +453,27 @@ Generate an identity seed and launch a gateway:
 		},
 		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
-			Value:   cli.NewStringSlice(extraDNSLinkResolvers...),
+			Value:   cli.NewStringSlice(". : auto"),
 			EnvVars: []string{"RAINBOW_DNSLINK_RESOLVERS"},
-			Usage:   "The DNSLink resolvers to use (comma-separated tuples that each look like `eth. : https://dns.eth.limo/dns-query`)",
+			Usage:   "The DNSLink resolvers to use (comma-separated tuples that each look like `eth. : https://dns.eth.limo/dns-query`). Use 'auto' as value to use network-appropriate defaults from autoconf",
+		},
+		&cli.BoolFlag{
+			Name:    "autoconf",
+			Value:   true,
+			EnvVars: []string{"RAINBOW_AUTOCONF"},
+			Usage:   "Enable autoconf for 'auto' placeholder expansion in bootstrap, DNS resolvers, and HTTP routers",
+		},
+		&cli.StringFlag{
+			Name:    "autoconf-url",
+			Value:   "https://conf.ipfs-mainnet.org/autoconf.json",
+			EnvVars: []string{"RAINBOW_AUTOCONF_URL"},
+			Usage:   "URL to fetch autoconf data from",
+		},
+		&cli.DurationFlag{
+			Name:    "autoconf-refresh",
+			Value:   24 * time.Hour,
+			EnvVars: []string{"RAINBOW_AUTOCONF_REFRESH"},
+			Usage:   "How often to refresh autoconf data",
 		},
 	}
 
@@ -565,10 +590,6 @@ share the same seed as long as the indexes are different.
 		}
 
 		customDNSResolvers := cctx.StringSlice("dnslink-resolvers")
-		dns, err := parseCustomDNSLinkResolvers(customDNSResolvers)
-		if err != nil {
-			return err
-		}
 
 		var routingIgnoreProviders []peer.ID
 		for _, pstr := range cctx.StringSlice("routing-ignore-providers") {
@@ -644,7 +665,14 @@ share the same seed as long as the indexes are different.
 			GCThreshold:                cctx.Float64("gc-threshold"),
 			ListenAddrs:                cctx.StringSlice("libp2p-listen-addrs"),
 			TracingAuthToken:           cctx.String("tracing-auth"),
-			DNSLinkResolver:            dns,
+			Bootstrap:                  []string{cctx.String("bootstrap")},
+
+			AutoConf: AutoConfConfig{
+				Enabled:         cctx.Bool("autoconf"),
+				URL:             cctx.String("autoconf-url"),
+				RefreshInterval: cctx.Duration("autoconf-refresh"),
+				CacheDir:        filepath.Join(ddir, ".autoconf-cache"),
+			},
 
 			// Pebble config
 			BytesPerSync:                cctx.Int("pebble-bytes-per-sync"),
@@ -672,6 +700,63 @@ share the same seed as long as the indexes are different.
 			HTTPRetrievalMaxDontHaveErrors:         httpRetrievalMaxDontHaveErrors,
 			HTTPRetrievalMetricsLabelsForEndpoints: httpRetrievalMetricsLabelsForEndpoints,
 		}
+
+		// Store original values for display
+		originalHTTPRouters := make([]string, len(cfg.RoutingV1Endpoints))
+		copy(originalHTTPRouters, cfg.RoutingV1Endpoints)
+		originalDNSResolvers := make([]string, len(customDNSResolvers))
+		copy(originalDNSResolvers, customDNSResolvers)
+		originalBootstrap := make([]string, len(cfg.Bootstrap))
+		copy(originalBootstrap, cfg.Bootstrap)
+
+		// Setup autoconf
+		var autoConfData *autoconf.Config
+		if cfg.AutoConf.Enabled && cfg.AutoConf.URL != "" {
+			client, err := createAutoConfClient(cfg.AutoConf)
+			if err != nil {
+				goLog.Errorf("Failed to create autoconf client: %v", err)
+			} else {
+				// Start primes cache and starts background updater
+				autoConfData, err = client.Start(cctx.Context)
+				if err != nil {
+					goLog.Errorf("Failed to start autoconf updater: %v", err)
+				}
+			}
+		}
+
+		// Process bootstrap, routers, and DNS (either expand or strip "auto")
+		cfg.Bootstrap = expandAutoBootstrap(cfg.Bootstrap[0], cfg, autoConfData)
+		cfg.RoutingV1Endpoints = expandAutoHTTPRouters(cfg.RoutingV1Endpoints, cfg, autoConfData)
+		expandedDNS := expandAutoDNSResolvers(customDNSResolvers, cfg, autoConfData)
+		dns, err := parseDNSResolversMap(expandedDNS)
+		if err != nil {
+			return err
+		}
+		// If no custom DNS resolver, use default
+		if dns == nil {
+			dns = madns.DefaultResolver
+		}
+		cfg.DNSLinkResolver = dns
+		// Store expanded DNS resolvers for display
+		customDNSResolvers = []string{}
+		for domain, resolver := range expandedDNS {
+			customDNSResolvers = append(customDNSResolvers, fmt.Sprintf("%s : %s", domain, resolver))
+		}
+
+		// Check bootstrap peers if DHT is enabled
+		if cfg.DHTRouting != DHTOff && libp2p {
+			hasValidBootstrap := false
+			for _, peer := range cfg.Bootstrap {
+				if peer != "" && peer != autoconf.AutoPlaceholder {
+					hasValidBootstrap = true
+					break
+				}
+			}
+			if !hasValidBootstrap {
+				return fmt.Errorf("no valid bootstrap peers configured - provide bootstrap peers with --bootstrap or enable autoconf")
+			}
+		}
+
 		var gnd *Node
 
 		goLog.Infof("Rainbow config: %+v", cfg)
@@ -743,12 +828,22 @@ share the same seed as long as the indexes are different.
 
 		fmt.Printf("IPFS Gateway listening at %s\n\n", gatewayListen)
 
-		printIfListConfigured("  RAINBOW_GATEWAY_DOMAINS           = ", cfg.GatewayDomains)
-		printIfListConfigured("  RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS = ", cfg.SubdomainGatewayDomains)
-		printIfListConfigured("  RAINBOW_TRUSTLESS_GATEWAY_DOMAINS = ", cfg.TrustlessGatewayDomains)
-		printIfListConfigured("  RAINBOW_HTTP_ROUTERS              = ", cfg.RoutingV1Endpoints)
-		printIfListConfigured("  RAINBOW_DNSLINK_RESOLVERS         = ", customDNSResolvers)
-		printIfListConfigured("  RAINBOW_REMOTE_BACKENDS           = ", cfg.RemoteBackends)
+		printIfListConfigured(fmt.Sprintf("  %-40s = ", "RAINBOW_GATEWAY_DOMAINS"), cfg.GatewayDomains)
+		printIfListConfigured(fmt.Sprintf("  %-40s = ", "RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS"), cfg.SubdomainGatewayDomains)
+		printIfListConfigured(fmt.Sprintf("  %-40s = ", "RAINBOW_TRUSTLESS_GATEWAY_DOMAINS"), cfg.TrustlessGatewayDomains)
+
+		// Show autoconf status
+		if cfg.AutoConf.Enabled {
+			fmt.Printf("  %-40s = %s\n", "RAINBOW_AUTOCONF_URL", cfg.AutoConf.URL)
+		} else {
+			fmt.Printf("  %-40s = false\n", "RAINBOW_AUTOCONF")
+		}
+
+		// Show configurations with autoconf awareness
+		printAutoconfAwareConfig("RAINBOW_HTTP_ROUTERS", originalHTTPRouters, cfg.RoutingV1Endpoints, cfg.AutoConf.Enabled)
+		printAutoconfAwareConfig("RAINBOW_DNSLINK_RESOLVERS", originalDNSResolvers, customDNSResolvers, cfg.AutoConf.Enabled)
+		printIfListConfigured(fmt.Sprintf("  %-40s = ", "RAINBOW_REMOTE_BACKENDS"), cfg.RemoteBackends)
+		printAutoconfAwareConfig("RAINBOW_BOOTSTRAP", originalBootstrap, cfg.Bootstrap, cfg.AutoConf.Enabled)
 
 		fmt.Printf("\n")
 		fmt.Printf("CTL endpoint listening at http://%s\n", ctlListen)
@@ -851,6 +946,37 @@ func printIfListConfigured(message string, list []string) {
 	}
 }
 
+// printAutoconfAwareConfig displays configuration with autoconf awareness
+// Shows original/autoconf pairs when autoconf is enabled and "auto" is present
+// Shows only filtered version when autoconf is disabled
+func printAutoconfAwareConfig(name string, original, resolved []string, autoconfEnabled bool) {
+	if autoconfEnabled && len(original) > 0 && slices.Contains(original, autoconf.AutoPlaceholder) {
+		// Show both original and autoconf versions
+		// Left-align name, right-align (original) and (autoconf) labels before "="
+		nameLen := len(name)
+		totalWidth := 40
+		labelOriginal := "(original)"
+		labelAutoconf := "(autoconf)"
+
+		// Calculate padding between name and label
+		// We want: name + space + padding + label = totalWidth
+		// So padding width = totalWidth - nameLen - 1 (for space)
+		paddingOriginal := totalWidth - nameLen - 1
+		paddingAutoconf := totalWidth - nameLen - 1
+
+		printIfListConfigured(fmt.Sprintf("  %s %*s = ", name, paddingOriginal, labelOriginal), original)
+
+		if len(resolved) > 0 {
+			printIfListConfigured(fmt.Sprintf("  %s %*s = ", name, paddingAutoconf, labelAutoconf), resolved)
+		} else {
+			fmt.Printf("  %s %*s = \n", name, paddingAutoconf, labelAutoconf) // Show empty when stripped
+		}
+	} else {
+		// Show only the resolved/filtered version
+		printIfListConfigured(fmt.Sprintf("  %-40s = ", name), resolved)
+	}
+}
+
 var rainbowSeedRegex = regexp.MustCompile(`/p2p/rainbow-seed/(\d+)`)
 
 func replaceRainbowSeedWithPeer(addr string, seed string) (string, error) {
@@ -875,6 +1001,17 @@ func replaceRainbowSeedWithPeer(addr string, seed string) (string, error) {
 	}
 
 	return strings.Replace(addr, match[0], "/p2p/"+pid.String(), 1), nil
+}
+
+func parseDNSResolversMap(customDNSResolverMap map[string]string) (madns.BasicResolver, error) {
+	if len(customDNSResolverMap) == 0 {
+		return nil, nil
+	}
+	dns, err := gateway.NewDNSResolver(customDNSResolverMap)
+	if err != nil {
+		return nil, err
+	}
+	return dns, nil
 }
 
 func parseCustomDNSLinkResolvers(customDNSResolvers []string) (madns.BasicResolver, error) {
