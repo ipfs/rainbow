@@ -242,7 +242,7 @@ Default: not set
 
 Maximum number of concurrent HTTP requests that the gateway will process.
 
-This setting provides rate limiting to protect the gateway from resource exhaustion during high load scenarios. When the limit is reached, new requests will receive a `429 Too Many Requests` response with a `Retry-After` header indicating when the client should retry.
+This setting provides rate limiting to protect the gateway from resource exhaustion during high load scenarios. When the limit is reached, new requests will receive a `429 Too Many Requests` response with a `Retry-After` header set to 60 seconds (hardcoded value).
 
 Setting this to `0` disables the concurrent request limit.
 

@@ -448,7 +448,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "max-concurrent-requests",
 			Value:   1024,
 			EnvVars: []string{"RAINBOW_MAX_CONCURRENT_REQUESTS"},
-			Usage:   "Maximum number of concurrent HTTP requests (rate limiting). Set 0 to disable",
+			Usage:   "Maximum number of concurrent HTTP requests (rate limiting). When exceeded, returns 429 with Retry-After: 60. Set 0 to disable",
 		},
 		&cli.DurationFlag{
 			Name:    "retrieval-timeout",
