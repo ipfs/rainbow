@@ -268,7 +268,7 @@ func TestDNSResolverWildcardBehavior(t *testing.T) {
 				}
 
 				// For non-wildcard cases, check that only expected keys exist
-				if tt.input != nil && len(tt.input) > 0 && tt.input[0] != ". : auto" {
+				if len(tt.input) > 0 && tt.input[0] != ". : auto" {
 					// Count non-auto entries
 					expectedCount := 0
 					for _, expectedURL := range tt.expectedValues {

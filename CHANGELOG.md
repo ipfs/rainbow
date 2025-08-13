@@ -15,7 +15,11 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+- AutoConf support with `auto` placeholders for bootstrap peers, DNS resolvers, and HTTP routers ([ipfs/boxo#997](https://github.com/ipfs/boxo/pull/997))
+
 ### Changed
+
+- 🛠 Default bootstrap peers, HTTP routers, and DNS resolvers now use `auto` placeholder that expands to IPFS Mainnet configuration
 
 ### Fixed
 

@@ -1013,24 +1013,3 @@ func parseDNSResolversMap(customDNSResolverMap map[string]string) (madns.BasicRe
 	}
 	return dns, nil
 }
-
-func parseCustomDNSLinkResolvers(customDNSResolvers []string) (madns.BasicResolver, error) {
-	customDNSResolverMap := make(map[string]string)
-	for _, s := range customDNSResolvers {
-		split := strings.SplitN(s, ":", 2)
-		if len(split) != 2 {
-			return nil, fmt.Errorf("invalid DNS resolver: %s", s)
-		}
-		domain := strings.TrimSpace(split[0])
-		resolverURL, err := url.Parse(strings.TrimSpace(split[1]))
-		if err != nil {
-			return nil, err
-		}
-		customDNSResolverMap[domain] = resolverURL.String()
-	}
-	dns, err := gateway.NewDNSResolver(customDNSResolverMap)
-	if err != nil {
-		return nil, err
-	}
-	return dns, nil
-}

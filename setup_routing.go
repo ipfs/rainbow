@@ -366,33 +366,6 @@ func (b *bundledDHT) Bootstrap(ctx context.Context) error {
 
 var _ routing.Routing = (*bundledDHT)(nil)
 
-func delegatedHTTPContentRouter(endpoint string, rv1Opts ...routingv1client.Option) (routing.Routing, error) {
-	cli, err := routingv1client.New(
-		endpoint,
-		append([]routingv1client.Option{
-			routingv1client.WithUserAgent("rainbow/" + buildVersion()),
-		}, rv1Opts...)...,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	cr := httpcontentrouter.NewContentRoutingClient(
-		cli,
-	)
-
-	err = view.Register(routingv1client.OpenCensusViews...)
-	if err != nil {
-		return nil, fmt.Errorf("registering HTTP delegated routing views: %w", err)
-	}
-
-	return &routinghelpers.Compose{
-		ValueStore:     cr,
-		PeerRouting:    cr,
-		ContentRouting: cr,
-	}, nil
-}
-
 // delegatedHTTPContentRouterWithCapabilities creates a routing client with selective capabilities
 func delegatedHTTPContentRouterWithCapabilities(baseURL string, capabilities autoconf.EndpointCapabilities, rv1Opts ...routingv1client.Option) (routing.Routing, error) {
 	// Create the HTTP routing client with base URL
