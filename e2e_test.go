@@ -36,7 +36,7 @@ func TestEndToEndTrustlessGatewayDomains(t *testing.T) {
 
 	args := testcmd.Args(rainbow, "--trustless-gateway-domains", "example.org")
 	ready := testcmd.NewStdoutWatcher("IPFS Gateway listening")
-	domain := testcmd.NewStdoutWatcher("RAINBOW_TRUSTLESS_GATEWAY_DOMAINS = example.org")
+	domain := testcmd.NewStdoutWatcher("RAINBOW_TRUSTLESS_GATEWAY_DOMAINS        = example.org")
 
 	ctx, cancel = context.WithTimeout(context.Background(), testTimeout)
 	defer cancel()
@@ -58,7 +58,7 @@ func TestEndToEndTrustlessGatewayDomains(t *testing.T) {
 	t.Log("Rainbow stopped")
 
 	runner.Env = append(runner.Env, fmt.Sprintf("%s=%s", "RAINBOW_TRUSTLESS_GATEWAY_DOMAINS", "example.com"))
-	domain = testcmd.NewStdoutWatcher("RAINBOW_TRUSTLESS_GATEWAY_DOMAINS = example.com")
+	domain = testcmd.NewStdoutWatcher("RAINBOW_TRUSTLESS_GATEWAY_DOMAINS        = example.com")
 	cmdRainbow = runner.Start(ctx, testcmd.Args(rainbow), ready, domain)
 
 	startCancel()

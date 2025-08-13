@@ -716,9 +716,11 @@ share the same seed as long as the indexes are different.
 				goLog.Errorf("Failed to create autoconf client: %v", err)
 			} else {
 				// Start primes cache and starts background updater
+				// Note: Start() always returns a config (using fallback if needed)
 				autoConfData, err = client.Start(cctx.Context)
 				if err != nil {
 					goLog.Errorf("Failed to start autoconf updater: %v", err)
+					// Continue with the config we got (likely fallback)
 				}
 			}
 		}
