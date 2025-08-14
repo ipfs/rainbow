@@ -174,6 +174,10 @@ type Config struct {
 	HTTPRetrievalWorkers                   int
 	HTTPRetrievalMaxDontHaveErrors         int
 	HTTPRetrievalMetricsLabelsForEndpoints []string
+
+	// Gateway rate limiting and timeout configuration
+	MaxConcurrentRequests int
+	RetrievalTimeout      time.Duration
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {
