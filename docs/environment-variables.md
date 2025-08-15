@@ -282,7 +282,7 @@ This setting provides rate limiting to protect the gateway from resource exhaust
 
 Setting this to `0` disables the concurrent request limit.
 
-Default: `1024`
+Default: `4096`
 
 ### `RAINBOW_RETRIEVAL_TIMEOUT`
 

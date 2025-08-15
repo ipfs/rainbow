@@ -452,7 +452,7 @@ Generate an identity seed and launch a gateway:
 		},
 		&cli.IntFlag{
 			Name:    "max-concurrent-requests",
-			Value:   1024,
+			Value:   4096,
 			EnvVars: []string{"RAINBOW_MAX_CONCURRENT_REQUESTS"},
 			Usage:   "Maximum number of concurrent HTTP requests (rate limiting). When exceeded, returns 429 with Retry-After: 60. Set 0 to disable",
 		},
