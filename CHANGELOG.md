@@ -16,6 +16,9 @@ The following emojis are used to highlight certain changes:
 ### Added
 
 - AutoConf support with `auto` placeholders for bootstrap peers, DNS resolvers, and HTTP routers ([ipfs/boxo#997](https://github.com/ipfs/boxo/pull/997))
+- Added configurable gateway rate limiting and timeout controls via new CLI flags:
+  - `--max-concurrent-requests` (env: `RAINBOW_MAX_CONCURRENT_REQUESTS`): Limits concurrent HTTP requests to protect against resource exhaustion (default: 1024). Returns 429 Too Many Requests with Retry-After header when exceeded.
+  - `--retrieval-timeout` (env: `RAINBOW_RETRIEVAL_TIMEOUT`): Enforces maximum duration for content retrieval (default: 30s). Returns 504 Gateway Timeout when content cannot be retrieved within this period - both for initial retrieval (time to first byte) and between subsequent writes.
 
 ### Changed
 

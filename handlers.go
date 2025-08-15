@@ -317,6 +317,8 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 		DeserializedResponses: true,
 		PublicGateways:        publicGateways,
 		NoDNSLink:             noDNSLink,
+		MaxConcurrentRequests: cfg.MaxConcurrentRequests, // When exceeded, returns 429 with Retry-After: 60 (hardcoded in boxo)
+		RetrievalTimeout:      cfg.RetrievalTimeout,
 	}
 	gwHandler := gateway.NewHandler(gwConf, backend)
 
