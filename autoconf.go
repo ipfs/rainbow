@@ -1,6 +1,7 @@
 package main
 
 import (
+	"maps"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -91,11 +92,9 @@ func expandAutoDNSResolvers(resolversList []string, cfg Config, autoConfData *au
 	}
 
 	if !cfg.AutoConf.Enabled {
-		for domain, url := range resolversMap {
-			if url == autoconf.AutoPlaceholder {
-				delete(resolversMap, domain)
-			}
-		}
+		maps.DeleteFunc(resolversMap, func(domain, url string) bool {
+			return url == autoconf.AutoPlaceholder
+		})
 		return resolversMap
 	}
 
