@@ -21,6 +21,14 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
+- Always upgrade pebble data format to latest [#288](https://github.com/ipfs/rainbow/pull/288)
+  - This ensures:
+    - Get all the latest features and improvements offered by the latest data format
+    - The next pebble update is compatible with, and can upgrade, you data format
+  - Possible issues:
+    - Startup of new pebble version may take longer the first time.
+    - Unable to revert to the previous version of pebble if the newest data format is not supported by the previous pebble. Reverting will require removing the datastore and reinitializing.
+
 ### Fixed
 
 ### Removed
