@@ -4,21 +4,21 @@ go 1.24.0
 
 require (
 	contrib.go.opencensus.io/exporter/prometheus v0.4.2
-	github.com/cockroachdb/pebble/v2 v2.0.6
+	github.com/cockroachdb/pebble v1.1.4
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dgraph-io/badger/v4 v4.5.1
 	github.com/dustin/go-humanize v1.0.1
 	github.com/felixge/httpsnoop v1.0.4
 	github.com/ipfs-shipyard/nopfs v0.0.14
 	github.com/ipfs-shipyard/nopfs/ipfs v0.25.0
-	github.com/ipfs/boxo v0.33.2-0.20250814210825-54b62d4eccbf
+	github.com/ipfs/boxo v0.33.2-0.20250815025641-fe649ee3959f
 	github.com/ipfs/go-block-format v0.2.2
 	github.com/ipfs/go-cid v0.5.0
 	github.com/ipfs/go-datastore v0.8.3
 	github.com/ipfs/go-ds-badger4 v0.1.8
 	github.com/ipfs/go-ds-flatfs v0.5.5
 	github.com/ipfs/go-ds-leveldb v0.5.2
-	github.com/ipfs/go-ds-pebble v0.5.1
+	github.com/ipfs/go-ds-pebble v0.4.4
 	github.com/ipfs/go-ipfs-delay v0.0.1
 	github.com/ipfs/go-log/v2 v2.8.1
 	github.com/ipfs/go-metrics-interface v0.3.0
@@ -61,12 +61,11 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
-	github.com/cockroachdb/crlib v0.0.0-20241015224233-894974b3ad94 // indirect
+	github.com/cockroachdb/datadriven v1.0.3-0.20240530155848-7682d40af056 // indirect
 	github.com/cockroachdb/errors v1.11.3 // indirect
 	github.com/cockroachdb/fifo v0.0.0-20240606204812-0bbfbd93a7ce // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
-	github.com/cockroachdb/swiss v0.0.0-20250624142022-d6e517c1d961 // indirect
 	github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/crackcomm/go-gitignore v0.0.0-20241020182519-7843d2ba8fdf // indirect
