@@ -145,12 +145,11 @@ func setupDHTRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.
 
 	// If no bootstrap peers provided, use defaults for seed peering or error otherwise
 	if len(bootstrapPeers) == 0 {
-		if cfg.SeedPeering {
-			// Use default bootstrap peers for seed peering
-			bootstrapPeers = dht.GetDefaultBootstrapPeerAddrInfos()
-		} else {
+		if !cfg.SeedPeering {
 			return nil, fmt.Errorf("no valid bootstrap peers configured - provide bootstrap peers or enable autoconf")
 		}
+		// Use default bootstrap peers for seed peering
+		bootstrapPeers = dht.GetDefaultBootstrapPeerAddrInfos()
 	}
 
 	var dhtHost host.Host
