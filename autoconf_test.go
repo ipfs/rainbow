@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestGetNativeSystems verifies that routing types are correctly mapped to native systems
 func TestGetNativeSystems(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -48,27 +49,19 @@ func TestGetNativeSystems(t *testing.T) {
 		{
 			name:            "Unknown routing type",
 			routingType:     "custom",
-			expectedSystems: []string{}, // Now returns empty for unknown types
+			expectedSystems: []string{},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			systems := getNativeSystems(tt.routingType)
-			if len(systems) != len(tt.expectedSystems) {
-				t.Errorf("getNativeSystems(%q) returned %d systems, expected %d",
-					tt.routingType, len(systems), len(tt.expectedSystems))
-			}
-			for i, sys := range systems {
-				if i < len(tt.expectedSystems) && sys != tt.expectedSystems[i] {
-					t.Errorf("getNativeSystems(%q)[%d] = %q, expected %q",
-						tt.routingType, i, sys, tt.expectedSystems[i])
-				}
-			}
+			assert.Equal(t, tt.expectedSystems, systems)
 		})
 	}
 }
 
+// TestExpandAutoBootstrap verifies bootstrap peer expansion behavior when autoconf is disabled
 func TestExpandAutoBootstrap(t *testing.T) {
 	cfg := Config{
 		AutoConf: AutoConfConfig{
@@ -77,23 +70,26 @@ func TestExpandAutoBootstrap(t *testing.T) {
 		DHTRouting: DHTStandard,
 	}
 
-	// Test auto placeholder with autoconf disabled - should error
-	_, err := expandAutoBootstrap(autoconf.AutoPlaceholder, cfg, nil)
-	require.Error(t, err, "Expected error when 'auto' is used with autoconf disabled")
-	assert.Contains(t, err.Error(), "'auto' placeholder found in bootstrap peers but autoconf is disabled")
-	assert.Contains(t, err.Error(), "RAINBOW_BOOTSTRAP")
+	t.Run("auto placeholder errors when autoconf disabled", func(t *testing.T) {
+		_, err := expandAutoBootstrap(autoconf.AutoPlaceholder, cfg, nil)
+		require.Error(t, err, "should error when 'auto' is used with autoconf disabled")
+		assert.Contains(t, err.Error(), "'auto' placeholder found in bootstrap peers", "error should mention bootstrap peers")
+		assert.Contains(t, err.Error(), "RAINBOW_BOOTSTRAP", "error should mention how to fix")
+	})
 
-	// Test custom bootstrap with autoconf disabled
-	result, err := expandAutoBootstrap("/ip4/127.0.0.1/tcp/4001/p2p/QmTest", cfg, nil)
-	require.NoError(t, err)
-	assert.Len(t, result, 1)
-	assert.Equal(t, "/ip4/127.0.0.1/tcp/4001/p2p/QmTest", result[0])
+	t.Run("custom bootstrap preserved when autoconf disabled", func(t *testing.T) {
+		result, err := expandAutoBootstrap("/ip4/127.0.0.1/tcp/4001/p2p/QmTest", cfg, nil)
+		require.NoError(t, err, "custom bootstrap should not error")
+		assert.Equal(t, []string{"/ip4/127.0.0.1/tcp/4001/p2p/QmTest"}, result, "custom bootstrap should be preserved")
+	})
 
-	// Test comma-separated values - auto should cause error
-	_, err = expandAutoBootstrap(autoconf.AutoPlaceholder+",/ip4/127.0.0.1/tcp/4001/p2p/QmTest", cfg, nil)
-	require.Error(t, err, "Expected error when 'auto' is mixed with custom bootstrap")
+	t.Run("mixed auto and custom errors when autoconf disabled", func(t *testing.T) {
+		_, err := expandAutoBootstrap(autoconf.AutoPlaceholder+",/ip4/127.0.0.1/tcp/4001/p2p/QmTest", cfg, nil)
+		require.Error(t, err, "should error when 'auto' is mixed with custom values")
+	})
 }
 
+// TestExpandAutoDNSResolvers verifies DNS resolver expansion behavior when autoconf is disabled
 func TestExpandAutoDNSResolvers(t *testing.T) {
 	cfg := Config{
 		AutoConf: AutoConfConfig{
@@ -101,21 +97,24 @@ func TestExpandAutoDNSResolvers(t *testing.T) {
 		},
 	}
 
-	// Test auto placeholder with autoconf disabled - should error
-	resolvers := []string{"eth.:" + autoconf.AutoPlaceholder}
-	_, err := expandAutoDNSResolvers(resolvers, cfg, nil)
-	require.Error(t, err, "Expected error when 'auto' is used with autoconf disabled")
-	assert.Contains(t, err.Error(), "'auto' placeholder found in DNS resolvers but autoconf is disabled")
-	assert.Contains(t, err.Error(), "RAINBOW_DNSLINK_RESOLVERS")
+	t.Run("auto placeholder errors when autoconf disabled", func(t *testing.T) {
+		resolvers := []string{"eth.:" + autoconf.AutoPlaceholder}
+		_, err := expandAutoDNSResolvers(resolvers, cfg, nil)
+		require.Error(t, err, "should error when 'auto' is used with autoconf disabled")
+		assert.Contains(t, err.Error(), "'auto' placeholder found in DNS resolvers", "error should mention DNS resolvers")
+		assert.Contains(t, err.Error(), "RAINBOW_DNSLINK_RESOLVERS", "error should mention how to fix")
+	})
 
-	// Test custom resolver
-	resolvers = []string{"example.com:https://dns.example.com/dns-query"}
-	result, err := expandAutoDNSResolvers(resolvers, cfg, nil)
-	require.NoError(t, err)
-	assert.Len(t, result, 1)
-	assert.Equal(t, "https://dns.example.com/dns-query", result["example.com"])
+	t.Run("custom resolver preserved when autoconf disabled", func(t *testing.T) {
+		resolvers := []string{"example.com:https://dns.example.com/dns-query"}
+		result, err := expandAutoDNSResolvers(resolvers, cfg, nil)
+		require.NoError(t, err, "custom resolver should not error")
+		expected := map[string]string{"example.com": "https://dns.example.com/dns-query"}
+		assert.Equal(t, expected, result, "custom resolver should be preserved")
+	})
 }
 
+// TestExpandAutoHTTPRouters verifies HTTP router expansion behavior when autoconf is disabled
 func TestExpandAutoHTTPRouters(t *testing.T) {
 	cfg := Config{
 		AutoConf: AutoConfConfig{
@@ -124,28 +123,30 @@ func TestExpandAutoHTTPRouters(t *testing.T) {
 		DHTRouting: DHTStandard,
 	}
 
-	// Test auto placeholder with autoconf disabled - should error
-	routers := []string{autoconf.AutoPlaceholder}
-	_, err := expandAutoHTTPRouters(routers, cfg, nil)
-	require.Error(t, err, "Expected error when 'auto' is used with autoconf disabled")
-	assert.Contains(t, err.Error(), "'auto' placeholder found in HTTP routers but autoconf is disabled")
-	assert.Contains(t, err.Error(), "RAINBOW_HTTP_ROUTERS")
+	t.Run("auto placeholder errors when autoconf disabled", func(t *testing.T) {
+		routers := []string{autoconf.AutoPlaceholder}
+		_, err := expandAutoHTTPRouters(routers, cfg, nil)
+		require.Error(t, err, "should error when 'auto' is used with autoconf disabled")
+		assert.Contains(t, err.Error(), "'auto' placeholder found in HTTP routers", "error should mention HTTP routers")
+		assert.Contains(t, err.Error(), "RAINBOW_HTTP_ROUTERS", "error should mention how to fix")
+	})
 
-	// Test custom router
-	routers = []string{"https://custom-router.com/routing/v1"}
-	result, err := expandAutoHTTPRouters(routers, cfg, nil)
-	require.NoError(t, err)
-	assert.Len(t, result, 1)
-	assert.Equal(t, "https://custom-router.com/routing/v1", result[0])
+	t.Run("custom router preserved when autoconf disabled", func(t *testing.T) {
+		routers := []string{"https://custom-router.com/routing/v1"}
+		result, err := expandAutoHTTPRouters(routers, cfg, nil)
+		require.NoError(t, err, "custom router should not error")
+		assert.Equal(t, []string{"https://custom-router.com/routing/v1"}, result, "custom router should be preserved")
+	})
 
-	// Test mixed auto and custom - auto should error
-	routers = []string{autoconf.AutoPlaceholder, "https://custom-router.com/routing/v1"}
-	_, err = expandAutoHTTPRouters(routers, cfg, nil)
-	require.Error(t, err, "Expected error when 'auto' is mixed with custom router")
+	t.Run("mixed auto and custom errors when autoconf disabled", func(t *testing.T) {
+		routers := []string{autoconf.AutoPlaceholder, "https://custom-router.com/routing/v1"}
+		_, err := expandAutoHTTPRouters(routers, cfg, nil)
+		require.Error(t, err, "should error when 'auto' is mixed with custom values")
+	})
 }
 
+// TestDNSResolverWildcardBehavior verifies DNS resolver wildcard and auto placeholder handling
 func TestDNSResolverWildcardBehavior(t *testing.T) {
-	// Test cases for DNS resolver wildcard behavior
 	tests := []struct {
 		name            string
 		input           []string
@@ -243,9 +244,8 @@ func TestDNSResolverWildcardBehavior(t *testing.T) {
 
 			result, err := expandAutoDNSResolvers(tt.input, cfg, nil)
 
-			// When autoconf is disabled, check exact match
 			if !tt.autoconfEnabled {
-				// Special case: if input contains "auto", expect an error
+				// Check if input contains "auto" placeholder
 				hasAuto := false
 				for _, input := range tt.input {
 					if strings.Contains(input, autoconf.AutoPlaceholder) {
@@ -253,48 +253,19 @@ func TestDNSResolverWildcardBehavior(t *testing.T) {
 						break
 					}
 				}
+
 				if hasAuto {
-					if err == nil {
-						t.Errorf("%s: expected error when 'auto' is used with autoconf disabled", tt.description)
-					}
-					return // Skip further checks if we expect an error
-				}
-				if err != nil {
-					t.Errorf("%s: unexpected error: %v", tt.description, err)
+					require.Error(t, err, tt.description+": should error with auto placeholder")
 					return
 				}
-				if len(result) != len(tt.expectedValues) {
-					t.Errorf("%s: expected %d resolvers, got %d", tt.description, len(tt.expectedValues), len(result))
-				}
-				for domain, expectedURL := range tt.expectedValues {
-					if actualURL, exists := result[domain]; !exists || actualURL != expectedURL {
-						t.Errorf("%s: expected %s -> %s, got %v (exists: %v)", tt.description, domain, expectedURL, actualURL, exists)
-					}
-				}
+
+				require.NoError(t, err, tt.description)
+				assert.Equal(t, tt.expectedValues, result, "parsing should produce expected result")
 			} else {
-				// When autoconf is enabled, check specific expectations
-				// For wildcard cases, we can't predict all keys without actual autoconf data
-				// But we can check that user overrides are respected
+				// When autoconf is enabled, check that custom values are preserved
 				for domain, expectedURL := range tt.expectedValues {
 					if domain != "." && expectedURL != "auto" {
-						// Check that custom values are preserved
-						if actualURL, exists := result[domain]; !exists || actualURL != expectedURL {
-							t.Errorf("%s: expected custom %s -> %s, got %s", tt.description, domain, expectedURL, actualURL)
-						}
-					}
-				}
-
-				// For non-wildcard cases, check that only expected keys exist
-				if len(tt.input) > 0 && tt.input[0] != ". : auto" {
-					// Count non-auto entries
-					expectedCount := 0
-					for _, expectedURL := range tt.expectedValues {
-						if expectedURL != "auto" {
-							expectedCount++
-						}
-					}
-					if expectedCount > 0 && len(result) > expectedCount {
-						t.Errorf("%s: without wildcard, should only have explicit resolvers", tt.description)
+						assert.Equal(t, expectedURL, result[domain], tt.description+": custom value for "+domain)
 					}
 				}
 			}
@@ -302,6 +273,7 @@ func TestDNSResolverWildcardBehavior(t *testing.T) {
 	}
 }
 
+// TestDNSResolverParsing verifies DNS resolver string parsing
 func TestDNSResolverParsing(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -313,7 +285,6 @@ func TestDNSResolverParsing(t *testing.T) {
 			input:    []string{"example.com : https://dns.example.com/dns-query"},
 			expected: map[string]string{"example.com": "https://dns.example.com/dns-query"},
 		},
-		// Note: "auto" placeholder test is covered in TestExpandAutoDNSResolvers
 		{
 			name: "multiple_domains",
 			input: []string{
@@ -356,20 +327,45 @@ func TestDNSResolverParsing(t *testing.T) {
 			}
 
 			result, err := expandAutoDNSResolvers(tt.input, cfg, nil)
-			if err != nil {
-				t.Errorf("Unexpected error: %v", err)
-				return
-			}
+			require.NoError(t, err, "parsing should not error")
+			assert.Equal(t, tt.expected, result, "should parse to expected map")
+		})
+	}
+}
 
-			if len(result) != len(tt.expected) {
-				t.Errorf("Expected %d resolvers, got %d", len(tt.expected), len(result))
-			}
+// TestGetRoutingType verifies DHTRouting enum to string conversion
+func TestGetRoutingType(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    DHTRouting
+		expected string
+	}{
+		{
+			name:     "DHT Off",
+			input:    DHTOff,
+			expected: "off",
+		},
+		{
+			name:     "DHT Standard",
+			input:    DHTStandard,
+			expected: "standard",
+		},
+		{
+			name:     "DHT Accelerated",
+			input:    DHTAccelerated,
+			expected: "accelerated",
+		},
+		{
+			name:     "Default case",
+			input:    DHTRouting("unknown"),
+			expected: "auto",
+		},
+	}
 
-			for domain, expectedURL := range tt.expected {
-				if actualURL, exists := result[domain]; !exists || actualURL != expectedURL {
-					t.Errorf("Expected %s -> %s, got %s", domain, expectedURL, actualURL)
-				}
-			}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getRoutingType(tt.input)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
