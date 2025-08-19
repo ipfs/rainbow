@@ -1,7 +1,7 @@
 package main
 
 import (
-	"maps"
+	"fmt"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -57,10 +57,16 @@ func getRoutingType(dhtRouting DHTRouting) string {
 	}
 }
 
+// autoconfDisabledError returns a consistent error message when auto placeholder is found but autoconf is disabled
+func autoconfDisabledError(configType, envVar, flag string) error {
+	return fmt.Errorf("'auto' placeholder found in %s but autoconf is disabled. Set explicit %s with %s or %s, or re-enable autoconf",
+		configType, configType, envVar, flag)
+}
+
 // expandAutoBootstrap expands "auto" placeholders in bootstrap peers
-func expandAutoBootstrap(bootstrapStr string, cfg Config, autoConfData *autoconf.Config) []string {
+func expandAutoBootstrap(bootstrapStr string, cfg Config, autoConfData *autoconf.Config) ([]string, error) {
 	if bootstrapStr == "" {
-		return []string{}
+		return []string{}, nil
 	}
 
 	bootstrapList := strings.Split(bootstrapStr, ",")
@@ -69,18 +75,19 @@ func expandAutoBootstrap(bootstrapStr string, cfg Config, autoConfData *autoconf
 	}
 
 	if !cfg.AutoConf.Enabled {
-		return slices.DeleteFunc(bootstrapList, func(s string) bool {
-			return s == autoconf.AutoPlaceholder
-		})
+		if slices.Contains(bootstrapList, autoconf.AutoPlaceholder) {
+			return nil, autoconfDisabledError("bootstrap peers", "RAINBOW_BOOTSTRAP", "--bootstrap")
+		}
+		return bootstrapList, nil
 	}
 
 	routingType := getRoutingType(cfg.DHTRouting)
 	nativeSystems := getNativeSystems(routingType)
-	return autoconf.ExpandBootstrapPeers(bootstrapList, autoConfData, nativeSystems)
+	return autoconf.ExpandBootstrapPeers(bootstrapList, autoConfData, nativeSystems), nil
 }
 
 // expandAutoDNSResolvers expands "auto" placeholders in DNS resolvers
-func expandAutoDNSResolvers(resolversList []string, cfg Config, autoConfData *autoconf.Config) map[string]string {
+func expandAutoDNSResolvers(resolversList []string, cfg Config, autoConfData *autoconf.Config) (map[string]string, error) {
 	resolversMap := make(map[string]string, len(resolversList))
 	for _, resolver := range resolversList {
 		parts := strings.SplitN(resolver, ":", 2)
@@ -92,21 +99,24 @@ func expandAutoDNSResolvers(resolversList []string, cfg Config, autoConfData *au
 	}
 
 	if !cfg.AutoConf.Enabled {
-		maps.DeleteFunc(resolversMap, func(domain, url string) bool {
-			return url == autoconf.AutoPlaceholder
-		})
-		return resolversMap
+		for _, url := range resolversMap {
+			if url == autoconf.AutoPlaceholder {
+				return nil, autoconfDisabledError("DNS resolvers", "RAINBOW_DNSLINK_RESOLVERS", "--dnslink-resolvers")
+			}
+		}
+		return resolversMap, nil
 	}
 
-	return autoconf.ExpandDNSResolvers(resolversMap, autoConfData)
+	return autoconf.ExpandDNSResolvers(resolversMap, autoConfData), nil
 }
 
 // expandAutoHTTPRouters expands "auto" placeholders in HTTP routers
-func expandAutoHTTPRouters(routers []string, cfg Config, autoConfData *autoconf.Config) []string {
+func expandAutoHTTPRouters(routers []string, cfg Config, autoConfData *autoconf.Config) ([]string, error) {
 	if !cfg.AutoConf.Enabled {
-		return slices.DeleteFunc(routers, func(s string) bool {
-			return s == autoconf.AutoPlaceholder
-		})
+		if slices.Contains(routers, autoconf.AutoPlaceholder) {
+			return nil, autoconfDisabledError("HTTP routers", "RAINBOW_HTTP_ROUTERS", "--http-routers")
+		}
+		return routers, nil
 	}
 
 	routingType := getRoutingType(cfg.DHTRouting)
@@ -116,7 +126,7 @@ func expandAutoHTTPRouters(routers []string, cfg Config, autoConfData *autoconf.
 	return autoconf.ExpandDelegatedEndpoints(routers, autoConfData, nativeSystems,
 		autoconf.RoutingV1ProvidersPath,
 		autoconf.RoutingV1PeersPath,
-		autoconf.RoutingV1IPNSPath)
+		autoconf.RoutingV1IPNSPath), nil
 }
 
 // createAutoConfClient creates an autoconf client with the given configuration

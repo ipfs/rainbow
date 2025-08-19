@@ -740,10 +740,23 @@ share the same seed as long as the indexes are different.
 			}
 		}
 
-		// Process bootstrap, routers, and DNS (either expand or strip "auto")
-		cfg.Bootstrap = expandAutoBootstrap(cfg.Bootstrap[0], cfg, autoConfData)
-		cfg.RoutingV1Endpoints = expandAutoHTTPRouters(cfg.RoutingV1Endpoints, cfg, autoConfData)
-		expandedDNS := expandAutoDNSResolvers(customDNSResolvers, cfg, autoConfData)
+		// Process bootstrap, routers, and DNS (either expand or error on "auto")
+		bootstrapPeers, err := expandAutoBootstrap(cfg.Bootstrap[0], cfg, autoConfData)
+		if err != nil {
+			return err
+		}
+		cfg.Bootstrap = bootstrapPeers
+
+		httpRouters, err := expandAutoHTTPRouters(cfg.RoutingV1Endpoints, cfg, autoConfData)
+		if err != nil {
+			return err
+		}
+		cfg.RoutingV1Endpoints = httpRouters
+
+		expandedDNS, err := expandAutoDNSResolvers(customDNSResolvers, cfg, autoConfData)
+		if err != nil {
+			return err
+		}
 		dns, err := parseDNSResolversMap(expandedDNS)
 		if err != nil {
 			return err

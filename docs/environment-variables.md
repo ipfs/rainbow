@@ -188,6 +188,8 @@ Enable autoconf for automatic expansion of `auto` placeholder values in bootstra
 
 When enabled, Rainbow will fetch configuration from [`RAINBOW_AUTOCONF_URL`](#rainbow_autoconf_url) and replace `auto` placeholders with network-appropriate defaults.
 
+When disabled, using the `auto` placeholder in any configuration will cause an error. You must provide explicit values for bootstrap peers, DNS resolvers, and HTTP routers when autoconf is disabled.
+
 Default: `true`
 
 ### `RAINBOW_AUTOCONF_URL`

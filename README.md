@@ -122,6 +122,8 @@ The `auto` placeholder can be used in:
 - `--http-routers` / `RAINBOW_HTTP_ROUTERS`: HTTP routing endpoints
 - `--dnslink-resolvers` / `RAINBOW_DNSLINK_RESOLVERS`: DNS-over-HTTPS resolvers
 
+**Note:** When autoconf is disabled (`--autoconf=false`), using the `auto` placeholder will cause an error. You must provide explicit values for these configurations when autoconf is disabled.
+
 ### Denylists
 
 Rainbow can subscribe to append-only denylists using the `--denylists` flag. The value is a comma-separated list of URLs to subscribe to, for example: `https://denyli.st/badbits.deny`. This will download and update the denylist automatically when it is updated with new entries.
