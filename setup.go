@@ -607,6 +607,7 @@ func getPebbleOpts(cfg Config) *pebble.Options {
 	opts := &pebble.Options{
 		BytesPerSync:                cfg.BytesPerSync,
 		DisableWAL:                  cfg.DisableWAL,
+		FormatMajorVersion:          pebble.FormatNewest,
 		L0CompactionThreshold:       cfg.L0CompactionThreshold,
 		L0StopWritesThreshold:       cfg.L0StopWritesThreshold,
 		LBaseMaxBytes:               cfg.LBaseMaxBytes,
