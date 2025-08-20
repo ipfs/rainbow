@@ -83,6 +83,24 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_DATADIR"},
 			Usage:   "Directory for persistent data (keys, blocks, denylists)",
 		},
+		&cli.BoolFlag{
+			Name:    "autoconf",
+			Value:   true,
+			EnvVars: []string{"RAINBOW_AUTOCONF"},
+			Usage:   "Enable autoconf for 'auto' placeholder expansion in bootstrap, DNS resolvers, and HTTP routers",
+		},
+		&cli.StringFlag{
+			Name:    "autoconf-url",
+			Value:   "https://conf.ipfs-mainnet.org/autoconf.json",
+			EnvVars: []string{"RAINBOW_AUTOCONF_URL"},
+			Usage:   "URL to fetch autoconf data from",
+		},
+		&cli.DurationFlag{
+			Name:    "autoconf-refresh",
+			Value:   24 * time.Hour,
+			EnvVars: []string{"RAINBOW_AUTOCONF_REFRESH"},
+			Usage:   "How often to refresh autoconf data",
+		},
 		&cli.StringFlag{
 			Name:    "seed",
 			Value:   "",
@@ -467,24 +485,6 @@ Generate an identity seed and launch a gateway:
 			Value:   cli.NewStringSlice(". : auto"),
 			EnvVars: []string{"RAINBOW_DNSLINK_RESOLVERS"},
 			Usage:   "The DNSLink resolvers to use (comma-separated tuples that each look like `eth. : https://dns.eth.limo/dns-query`). Use 'auto' as value to use network-appropriate defaults from autoconf",
-		},
-		&cli.BoolFlag{
-			Name:    "autoconf",
-			Value:   true,
-			EnvVars: []string{"RAINBOW_AUTOCONF"},
-			Usage:   "Enable autoconf for 'auto' placeholder expansion in bootstrap, DNS resolvers, and HTTP routers",
-		},
-		&cli.StringFlag{
-			Name:    "autoconf-url",
-			Value:   "https://conf.ipfs-mainnet.org/autoconf.json",
-			EnvVars: []string{"RAINBOW_AUTOCONF_URL"},
-			Usage:   "URL to fetch autoconf data from",
-		},
-		&cli.DurationFlag{
-			Name:    "autoconf-refresh",
-			Value:   24 * time.Hour,
-			EnvVars: []string{"RAINBOW_AUTOCONF_REFRESH"},
-			Usage:   "How often to refresh autoconf data",
 		},
 	}
 
