@@ -597,10 +597,6 @@ func (s *switchingBlockstore) AllKeysChan(ctx context.Context) (<-chan cid.Cid, 
 	return s.getBlockstore(ctx).AllKeysChan(ctx)
 }
 
-func (s *switchingBlockstore) HashOnRead(enabled bool) {
-	s.baseBlockstore.HashOnRead(enabled)
-}
-
 var _ blockstore.Blockstore = (*switchingBlockstore)(nil)
 
 func getPebbleOpts(cfg Config) *pebble.Options {
