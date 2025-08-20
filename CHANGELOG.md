@@ -15,6 +15,19 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+### Security
+
+
+## v1.18.0
+
+### Added
+
 - `--bootstrap` / `RAINBOW_BOOTSTRAP`: Configure bootstrap peer multiaddrs (default: `auto`)
 - AutoConf support with `auto` placeholders for bootstrap peers, DNS resolvers, and HTTP routers ([ipfs/boxo#997](https://github.com/ipfs/boxo/pull/997))
   - Configuration flags:
@@ -39,6 +52,7 @@ The following emojis are used to highlight certain changes:
   - Possible issues:
     - Startup of new pebble version may take longer the first time.
     - Unable to revert to the previous version of pebble if the newest data format is not supported by the previous pebble. Reverting will require removing the datastore and reinitializing.
+- Update to boxo/v0.34.0
 
 ### Fixed
 
