@@ -108,6 +108,22 @@ To facilitate the use of rainbow with systemd
 directive, we look for both `libp2p.key` and `seed` in
 `$CREDENTIALS_DIRECTORY` first.
 
+### AutoConf
+
+Rainbow supports automatic configuration of bootstrap peers, DNS resolvers, and HTTP routing endpoints through the autoconf feature. When enabled (default), Rainbow will fetch configuration from a remote URL and automatically expand the special `auto` placeholder value with network-appropriate defaults.
+
+This feature can be configured via:
+- `--autoconf` / `RAINBOW_AUTOCONF`: Enable/disable autoconf (default: `true`)
+- `--autoconf-url` / `RAINBOW_AUTOCONF_URL`: URL to fetch configuration from (default: `https://conf.ipfs-mainnet.org/autoconf.json`)
+- `--autoconf-refresh` / `RAINBOW_AUTOCONF_REFRESH`: How often to refresh configuration (default: `24h`)
+
+The `auto` placeholder can be used in:
+- `--bootstrap` / `RAINBOW_BOOTSTRAP`: Bootstrap peer multiaddrs
+- `--http-routers` / `RAINBOW_HTTP_ROUTERS`: HTTP routing endpoints
+- `--dnslink-resolvers` / `RAINBOW_DNSLINK_RESOLVERS`: DNS-over-HTTPS resolvers
+
+**Note:** When autoconf is disabled (`--autoconf=false`), using the `auto` placeholder will cause an error. You must provide explicit values for these configurations when autoconf is disabled.
+
 ### Denylists
 
 Rainbow can subscribe to append-only denylists using the `--denylists` flag. The value is a comma-separated list of URLs to subscribe to, for example: `https://denyli.st/badbits.deny`. This will download and update the denylist automatically when it is updated with new entries.

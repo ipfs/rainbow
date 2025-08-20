@@ -176,12 +176,18 @@ func testSeedPeering(t *testing.T, n int, dhtRouting DHTRouting, dhtSharedHost b
 	for i := 0; i < n; i++ {
 		dnslinkResolver, err := gateway.NewDNSResolver(nil)
 		require.NoError(t, err)
+
+		// For seed peering tests, we don't need bootstrap peers
+		// The peers can find each other deterministically
+		var bootstrapPeers []string
+
 		cfgs[i] = Config{
 			DataDir:             t.TempDir(),
 			BlockstoreType:      "flatfs",
 			DHTRouting:          dhtRouting,
 			DHTSharedHost:       dhtSharedHost,
 			Bitswap:             true,
+			Bootstrap:           bootstrapPeers,
 			Seed:                seed,
 			SeedIndex:           i,
 			SeedPeering:         true,

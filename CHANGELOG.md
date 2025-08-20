@@ -15,12 +15,23 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+- `--bootstrap` / `RAINBOW_BOOTSTRAP`: Configure bootstrap peer multiaddrs (default: `auto`)
+- AutoConf support with `auto` placeholders for bootstrap peers, DNS resolvers, and HTTP routers ([ipfs/boxo#997](https://github.com/ipfs/boxo/pull/997))
+  - Configuration flags:
+    - `--autoconf` / `RAINBOW_AUTOCONF`: Enable/disable automatic configuration expansion (default: `true`)
+    - `--autoconf-url` / `RAINBOW_AUTOCONF_URL`: URL to fetch autoconf data from (default: `https://conf.ipfs-mainnet.org/autoconf.json`)
+    - `--autoconf-refresh` / `RAINBOW_AUTOCONF_REFRESH`: Interval for refreshing autoconf data (default: `24h`)
+  - When autoconf is disabled, `auto` placeholders will cause an error, requiring explicit values
 - Added configurable gateway rate limiting and timeout controls via new CLI flags:
-  - `--max-concurrent-requests` (env: `RAINBOW_MAX_CONCURRENT_REQUESTS`): Limits concurrent HTTP requests to protect against resource exhaustion (default: 1024). Returns 429 Too Many Requests with Retry-After header when exceeded.
+  - `--max-concurrent-requests` (env: `RAINBOW_MAX_CONCURRENT_REQUESTS`): Limits concurrent HTTP requests to protect against resource exhaustion (default: 4096). Returns 429 Too Many Requests with Retry-After header when exceeded.
   - `--retrieval-timeout` (env: `RAINBOW_RETRIEVAL_TIMEOUT`): Enforces maximum duration for content retrieval (default: 30s). Returns 504 Gateway Timeout when content cannot be retrieved within this period - both for initial retrieval (time to first byte) and between subsequent writes.
 
 ### Changed
 
+- Default values now use `auto` placeholder that expands to IPFS Mainnet configuration via autoconf:
+  - `--http-routers` default changed to `auto` (was `https://cid.contact`)
+  - `--dnslink-resolvers` default changed to `. : auto` (was specific resolver list)
+  - `--bootstrap` default is `auto` (new flag)
 - Always upgrade pebble data format to latest [#288](https://github.com/ipfs/rainbow/pull/288)
   - This ensures:
     - Get all the latest features and improvements offered by the latest data format

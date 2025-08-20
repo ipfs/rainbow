@@ -3,6 +3,7 @@ libp2p.key
 blockstore
 datastore
 flatfs
+.autoconf-cache
 
 # Binaries for programs and plugins
 *.exe

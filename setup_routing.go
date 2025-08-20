@@ -7,6 +7,7 @@ import (
 	"time"
 
 	ocprom "contrib.go.opencensus.io/exporter/prometheus"
+	autoconf "github.com/ipfs/boxo/autoconf"
 	"github.com/ipfs/boxo/gateway"
 	"github.com/ipfs/boxo/ipns"
 	routingv1client "github.com/ipfs/boxo/routing/http/client"
@@ -70,12 +71,29 @@ func setupDelegatedRouting(cfg Config, dnsCache *cachedDNS) ([]routing.Routing, 
 			}),
 	}
 
-	var (
-		delegatedRouters []routing.Routing
-	)
+	var delegatedRouters []routing.Routing
 
-	for _, endpoint := range cfg.RoutingV1Endpoints {
-		delegatedRouter, err := delegatedHTTPContentRouter(endpoint,
+	// Group endpoints by base URL and merge capabilities
+	// Rainbow only supports read operations (no IPNS publishing)
+	goLog.Debugf("Input endpoints: %v", cfg.RoutingV1Endpoints)
+	groupedEndpoints, err := autoconf.GroupByKnownCapabilities(cfg.RoutingV1Endpoints, true, false)
+	if err != nil {
+		return nil, err
+	}
+	goLog.Debugf("Grouped endpoints: %v", groupedEndpoints)
+
+	// Create a routing client for each unique base URL with appropriate capabilities
+	for baseURL, capabilities := range groupedEndpoints {
+		if capabilities.IsEmpty() {
+			goLog.Warnf("Skipping endpoint %s with no capabilities", baseURL)
+			continue
+		}
+
+		goLog.Debugf("Creating routing client for base URL %q with capabilities: Providers=%v, Peers=%v, IPNSGet=%v",
+			baseURL, capabilities.Providers, capabilities.Peers, capabilities.IPNSGet)
+
+		// Create HTTP routing client with base URL
+		delegatedRouter, err := delegatedHTTPContentRouterWithCapabilities(baseURL, capabilities,
 			routingv1client.WithHTTPClient(httpClient),
 			routingv1client.WithProtocolFilter(cfg.RoutingV1FilterProtocols), // IPIP-484
 			routingv1client.WithStreamResultsRequired(),                      // https://specs.ipfs.tech/routing/http-routing-v1/#streaming
@@ -90,12 +108,49 @@ func setupDelegatedRouting(cfg Config, dnsCache *cachedDNS) ([]routing.Routing, 
 	return delegatedRouters, nil
 }
 
+// parseBootstrapPeers parses a list of bootstrap peer strings into AddrInfo structs
+// It skips empty strings and "auto" placeholders, and logs warnings for invalid peers
+func parseBootstrapPeers(peers []string, warnOnAuto bool) ([]peer.AddrInfo, error) {
+	bootstrapPeers := make([]peer.AddrInfo, 0, len(peers))
+	for _, peerStr := range peers {
+		if peerStr == "" {
+			continue
+		}
+		if peerStr == autoconf.AutoPlaceholder {
+			if warnOnAuto {
+				goLog.Warnf("Bootstrap peer 'auto' placeholder not expanded - is autoconf enabled?")
+			}
+			continue
+		}
+		ai, err := peer.AddrInfoFromString(peerStr)
+		if err != nil {
+			goLog.Warnf("Failed to parse bootstrap peer %q: %v", peerStr, err)
+			continue
+		}
+		bootstrapPeers = append(bootstrapPeers, *ai)
+	}
+	return bootstrapPeers, nil
+}
+
 func setupDHTRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Batching, dhtRcMgr network.ResourceManager, bwc metrics.Reporter) (routing.Routing, error) {
 	if cfg.DHTRouting == DHTOff {
 		return nil, nil
 	}
 
-	var err error
+	// Parse bootstrap peers
+	bootstrapPeers, err := parseBootstrapPeers(cfg.Bootstrap, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// If no bootstrap peers provided, use defaults for seed peering or error otherwise
+	if len(bootstrapPeers) == 0 {
+		if !cfg.SeedPeering {
+			return nil, fmt.Errorf("no valid bootstrap peers configured - provide bootstrap peers or enable autoconf")
+		}
+		// Use default bootstrap peers for seed peering
+		bootstrapPeers = dht.GetDefaultBootstrapPeerAddrInfos()
+	}
 
 	var dhtHost host.Host
 	if cfg.DHTSharedHost {
@@ -116,7 +171,7 @@ func setupDHTRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.
 
 	standardClient, err := dht.New(ctx, dhtHost,
 		dht.Datastore(ds),
-		dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
+		dht.BootstrapPeers(bootstrapPeers...),
 		dht.Mode(dht.ModeClient),
 	)
 	if err != nil {
@@ -135,7 +190,7 @@ func setupDHTRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.
 					"ipns": ipns.Validator{KeyBook: h.Peerstore()},
 				}),
 				dht.Datastore(ds),
-				dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
+				dht.BootstrapPeers(bootstrapPeers...),
 				dht.BucketSize(20),
 			))
 		if err != nil {
@@ -222,11 +277,25 @@ func setupRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Bat
 	// peering routing. We need to run a separate DHT with the main host if
 	//  the shared host is disabled, or if we're not running any DHT at all.
 	if cfg.SeedPeering && (!cfg.DHTSharedHost || dhtRouter == nil) {
-		pr, err = dht.New(ctx, h,
+		// Parse bootstrap peers for seed peering DHT (don't warn on auto since it's expected)
+		seedBootstrapPeers, err := parseBootstrapPeers(cfg.Bootstrap, false)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		// Use provided bootstrap peers or fall back to defaults
+		dhtOpts := []dht.Option{
 			dht.Datastore(ds),
-			dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...),
 			dht.Mode(dht.ModeClient),
-		)
+		}
+		if len(seedBootstrapPeers) > 0 {
+			dhtOpts = append(dhtOpts, dht.BootstrapPeers(seedBootstrapPeers...))
+		} else {
+			// Use default bootstrap peers if none provided
+			dhtOpts = append(dhtOpts, dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...))
+		}
+
+		pr, err = dht.New(ctx, h, dhtOpts...)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -296,9 +365,11 @@ func (b *bundledDHT) Bootstrap(ctx context.Context) error {
 
 var _ routing.Routing = (*bundledDHT)(nil)
 
-func delegatedHTTPContentRouter(endpoint string, rv1Opts ...routingv1client.Option) (routing.Routing, error) {
+// delegatedHTTPContentRouterWithCapabilities creates a routing client with selective capabilities
+func delegatedHTTPContentRouterWithCapabilities(baseURL string, capabilities autoconf.EndpointCapabilities, rv1Opts ...routingv1client.Option) (routing.Routing, error) {
+	// Create the HTTP routing client with base URL
 	cli, err := routingv1client.New(
-		endpoint,
+		baseURL,
 		append([]routingv1client.Option{
 			routingv1client.WithUserAgent("rainbow/" + buildVersion()),
 		}, rv1Opts...)...,
@@ -307,18 +378,31 @@ func delegatedHTTPContentRouter(endpoint string, rv1Opts ...routingv1client.Opti
 		return nil, err
 	}
 
-	cr := httpcontentrouter.NewContentRoutingClient(
-		cli,
-	)
+	cr := httpcontentrouter.NewContentRoutingClient(cli)
 
 	err = view.Register(routingv1client.OpenCensusViews...)
 	if err != nil {
 		return nil, fmt.Errorf("registering HTTP delegated routing views: %w", err)
 	}
 
-	return &routinghelpers.Compose{
-		ValueStore:     cr,
-		PeerRouting:    cr,
-		ContentRouting: cr,
-	}, nil
+	// Create a composed router with selective capabilities
+	composer := &routinghelpers.Compose{}
+
+	// Enable operations based on capabilities
+	if capabilities.IPNSGet {
+		composer.ValueStore = cr
+	}
+
+	if capabilities.Peers {
+		composer.PeerRouting = cr
+	}
+
+	if capabilities.Providers {
+		composer.ContentRouting = cr
+	}
+
+	// Note: Rainbow doesn't support IPNS publishing (IPNSPut)
+	// so we don't need to handle that capability here
+
+	return composer, nil
 }
