@@ -277,6 +277,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 				return true
 			}
 		}
+		goLog.Debugf("DNSLink blocked for domain %s (not in allowed list)", domain)
 		return false
     }
 
@@ -332,6 +333,20 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 
 		// TODO: revisit the below once we clarify desired behavior in https://specs.ipfs.tech/http-gateways/subdomain-gateway/
 		publicGateways["localhost"].InlineDNSLink = true
+	}
+
+	// After configuring all the standard domains, add DNSLink-only domains
+	for _, domain := range cfg.DNSLinkGatewayDomains {
+		// Only add if not already configured
+		if _, exists := publicGateways[domain]; !exists {
+			publicGateways[domain] = &gateway.PublicGateway{
+				Paths:                 []string{"/ipfs", "/ipns", "/version"},
+				NoDNSLink:             false,
+				InlineDNSLink:         true,
+				DeserializedResponses: true,
+				UseSubdomains:         false,
+			}
+		}
 	}
 
 	gwConf := gateway.Config{
