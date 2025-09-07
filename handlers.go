@@ -257,13 +257,34 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	headers := map[string][]string{}
 
 	// Note: in the future we may want to make this more configurable.
-	noDNSLink := false
+	//noDNSLink := false
+
+	// Helper function to check if a domain should have DNSLink enabled
+    isDNSLinkAllowedForDomain := func(domain string) bool {
+		// If no domains specified, allow all (backward compatibility)
+		if len(cfg.DNSLinkGatewayDomains) == 0 {
+			return true
+		}
+		
+		// Check if the domain matches any allowed domain
+		for _, allowed := range cfg.DNSLinkGatewayDomains {
+			// Exact match
+			if domain == allowed {
+				return true
+			}
+			// Subdomain match (e.g., "sub.example.com" matches "example.com")
+			if strings.HasSuffix(domain, "."+allowed) {
+				return true
+			}
+		}
+		return false
+    }
 
 	// TODO: allow appending hostnames to this list via ENV variable (separate PATH_GATEWAY_HOSTS & SUBDOMAIN_GATEWAY_HOSTS)
 	publicGateways := map[string]*gateway.PublicGateway{
 		"localhost": {
 			Paths:                 []string{"/ipfs", "/ipns", "/version"},
-			NoDNSLink:             noDNSLink,
+			NoDNSLink:             !isDNSLinkAllowedForDomain("localhost"),
 			InlineDNSLink:         false,
 			DeserializedResponses: true,
 			UseSubdomains:         true,
@@ -272,7 +293,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	for _, domain := range cfg.GatewayDomains {
 		publicGateways[domain] = &gateway.PublicGateway{
 			Paths:                 []string{"/ipfs", "/ipns", "/version"},
-			NoDNSLink:             noDNSLink,
+			NoDNSLink:             !isDNSLinkAllowedForDomain(domain),
 			InlineDNSLink:         true,
 			DeserializedResponses: true,
 			UseSubdomains:         false,
@@ -282,7 +303,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	for _, domain := range cfg.SubdomainGatewayDomains {
 		publicGateways[domain] = &gateway.PublicGateway{
 			Paths:                 []string{"/ipfs", "/ipns", "/version"},
-			NoDNSLink:             noDNSLink,
+			NoDNSLink:             !isDNSLinkAllowedForDomain(domain),
 			InlineDNSLink:         true,
 			DeserializedResponses: true,
 			UseSubdomains:         true,
@@ -303,7 +324,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	if os.Getenv("GATEWAY_CONFORMANCE_TEST") == "true" {
 		publicGateways["example.com"] = &gateway.PublicGateway{
 			Paths:                 []string{"/ipfs", "/ipns"},
-			NoDNSLink:             noDNSLink,
+			NoDNSLink:             !isDNSLinkAllowedForDomain("example.com"),
 			InlineDNSLink:         true,
 			DeserializedResponses: true,
 			UseSubdomains:         true,
@@ -316,7 +337,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	gwConf := gateway.Config{
 		DeserializedResponses: true,
 		PublicGateways:        publicGateways,
-		NoDNSLink:             noDNSLink,
+		NoDNSLink:             len(cfg.DNSLinkGatewayDomains) > 0,
 		MaxConcurrentRequests: cfg.MaxConcurrentRequests, // When exceeded, returns 429 with Retry-After: 60 (hardcoded in boxo)
 		RetrievalTimeout:      cfg.RetrievalTimeout,
 	}
