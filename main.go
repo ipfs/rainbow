@@ -300,6 +300,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"BITSWAP_WANTHAVE_REPLACE_SIZE"},
 			Usage:   "Replace WantHave with WantBlock responses for small blocks up to this size, 0 to disable replacement",
 		},
+		&cli.BoolFlag{
+			Name:    "bitswap-enable-duplicate-block-stats",
+			Value:   false,
+			EnvVars: []string{"BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS"},
+			Usage:   "Enable bitswap duplicate block statistics collection (useful for investigation, has performance overhead)",
+        },
 		&cli.StringSliceFlag{
 			Name:    "remote-backends",
 			Value:   cli.NewStringSlice(),
@@ -661,6 +667,7 @@ share the same seed as long as the indexes are different.
 			DHTSharedHost:              cctx.Bool("dht-shared-host"),
 			Bitswap:                    bitswap,
 			BitswapWantHaveReplaceSize: cctx.Int("bitswap-wanthave-replace-size"),
+			BitswapEnableDuplicateBlockStats: cctx.Bool("bitswap-enable-duplicate-block-stats"),
 			IpnsMaxCacheTTL:            cctx.Duration("ipns-max-cache-ttl"),
 			DenylistSubs:               cctx.StringSlice("denylists"),
 			Peering:                    peeringAddrs,

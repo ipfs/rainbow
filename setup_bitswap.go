@@ -73,9 +73,12 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 	clientOpts := []bsclient.Option{
 		bsclient.RebroadcastDelay(rebroadcastDelay),
 		bsclient.ProviderSearchDelay(providerSearchDelay),
-		bsclient.WithoutDuplicatedBlockStats(),
 		bsclient.WithDefaultProviderQueryManager(false), // we pass it in manually
 	}
+
+	if !cfg.BitswapEnableDuplicateBlockStats {
+   	 clientOpts = append(clientOpts, bsclient.WithoutDuplicatedBlockStats())
+    }
 
 	// If peering and shared cache are both enabled, we initialize both a
 	// Client and a Server with custom request filter and custom options.
