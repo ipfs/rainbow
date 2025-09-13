@@ -2,50 +2,53 @@
 
 `rainbow` ships with some implicit defaults that can be adjusted via env variables below.
 
-- [Configuration](#configuration)
-  - [`RAINBOW_GATEWAY_DOMAINS`](#rainbow_gateway_domains)
-  - [`RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS`](#rainbow_subdomain_gateway_domains)
-  - [`RAINBOW_TRUSTLESS_GATEWAY_DOMAINS`](#rainbow_trustless_gateway_domains)
-  - [`RAINBOW_DATADIR`](#rainbow_datadir)
-  - [`RAINBOW_GC_INTERVAL`](#rainbow_gc_interval)
-  - [`RAINBOW_GC_THRESHOLD`](#rainbow_gc_threshold)
-  - [`RAINBOW_IPNS_MAX_CACHE_TTL`](#rainbow_ipns_max_cache_ttl)
-  - [`RAINBOW_PEERING`](#rainbow_peering)
-  - [`RAINBOW_SEED`](#rainbow_seed)
-  - [`RAINBOW_SEED_INDEX`](#rainbow_seed_index)
-  - [`RAINBOW_DHT_ROUTING`](#rainbow_dht_routing)
-  - [`RAINBOW_HTTP_ROUTERS`](#rainbow_http_routers)
-  - [`RAINBOW_DNSLINK_RESOLVERS`](#rainbow_dnslink_resolvers)
-  - [`RAINBOW_BOOTSTRAP`](#rainbow_bootstrap)
-  - [`RAINBOW_AUTOCONF`](#rainbow_autoconf)
-  - [`RAINBOW_AUTOCONF_URL`](#rainbow_autoconf_url)
-  - [`RAINBOW_AUTOCONF_REFRESH`](#rainbow_autoconf_refresh)
-  - [`ROUTING_IGNORE_PROVIDERS`](#routing_ignore_providers)
-  - [`RAINBOW_HTTP_RETRIEVAL_ENABLE`](#rainbow_http_retrieval_enable)
-  - [`RAINBOW_HTTP_RETRIEVAL_ALLOWLIST`](#rainbow_http_retrieval_allowlist)
-  - [`RAINBOW_HTTP_RETRIEVAL_DENYLIST`](#rainbow_http_retrieval_denylist)
-  - [`RAINBOW_HTTP_RETRIEVAL_WORKERS`](#rainbow_http_retrieval_workers)
-  - [`RAINBOW_HTTP_RETRIEVAL_METRICS_LABELS_FOR_ENDPOINTS`](#rainbow_http_retrieval_metrics_labels_for_endpoints)
-  - [`RAINBOW_MAX_CONCURRENT_REQUESTS`](#rainbow_max_concurrent_requests)
-  - [`RAINBOW_RETRIEVAL_TIMEOUT`](#rainbow_retrieval_timeout)
-- [Experiments](#experiments)
-  - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
-  - [`RAINBOW_SEED_PEERING_MAX_INDEX`](#rainbow_seed_peering_max_index)
-  - [`RAINBOW_PEERING_SHARED_CACHE`](#rainbow_peering_shared_cache)
-  - [`RAINBOW_REMOTE_BACKENDS`](#rainbow_remote_backends)
-  - [`RAINBOW_REMOTE_BACKENDS_MODE`](#rainbow_remote_backends_mode)
-  - [`RAINBOW_REMOTE_BACKENDS_IPNS`](#rainbow_remote_backends_ipns)
-- [Logging](#logging)
-  - [`GOLOG_LOG_LEVEL`](#golog_log_level)
-  - [`GOLOG_LOG_FMT`](#golog_log_fmt)
-  - [`GOLOG_FILE`](#golog_file)
-  - [`GOLOG_TRACING_FILE`](#golog_tracing_file)
-- [Testing](#testing)
-  - [`GATEWAY_CONFORMANCE_TEST`](#gateway_conformance_test)
-  - [`IPFS_NS_MAP`](#ipfs_ns_map)
-- [Tracing](#tracing)
-  - [`RAINBOW_TRACING_AUTH`](#rainbow_tracing_auth)
-  - [`RAINBOW_SAMPLING_FRACTION`](#rainbow_sampling_fraction)
+- [Rainbow Environment Variables](#rainbow-environment-variables)
+  - [Configuration](#configuration)
+    - [`RAINBOW_GATEWAY_DOMAINS`](#rainbow_gateway_domains)
+    - [`RAINBOW_SUBDOMAIN_GATEWAY_DOMAINS`](#rainbow_subdomain_gateway_domains)
+    - [`RAINBOW_TRUSTLESS_GATEWAY_DOMAINS`](#rainbow_trustless_gateway_domains)
+    - [`RAINBOW_DATADIR`](#rainbow_datadir)
+    - [`RAINBOW_GC_INTERVAL`](#rainbow_gc_interval)
+    - [`RAINBOW_GC_THRESHOLD`](#rainbow_gc_threshold)
+    - [`RAINBOW_IPNS_MAX_CACHE_TTL`](#rainbow_ipns_max_cache_ttl)
+    - [`RAINBOW_PEERING`](#rainbow_peering)
+    - [`RAINBOW_SEED`](#rainbow_seed)
+    - [`RAINBOW_SEED_INDEX`](#rainbow_seed_index)
+    - [`RAINBOW_DHT_ROUTING`](#rainbow_dht_routing)
+    - [`RAINBOW_HTTP_ROUTERS`](#rainbow_http_routers)
+    - [`RAINBOW_DNSLINK_RESOLVERS`](#rainbow_dnslink_resolvers)
+    - [`RAINBOW_BOOTSTRAP`](#rainbow_bootstrap)
+    - [`RAINBOW_AUTOCONF`](#rainbow_autoconf)
+    - [`RAINBOW_AUTOCONF_URL`](#rainbow_autoconf_url)
+    - [`RAINBOW_AUTOCONF_REFRESH`](#rainbow_autoconf_refresh)
+    - [`ROUTING_IGNORE_PROVIDERS`](#routing_ignore_providers)
+    - [`RAINBOW_HTTP_RETRIEVAL_ENABLE`](#rainbow_http_retrieval_enable)
+    - [`RAINBOW_HTTP_RETRIEVAL_ALLOWLIST`](#rainbow_http_retrieval_allowlist)
+    - [`RAINBOW_HTTP_RETRIEVAL_DENYLIST`](#rainbow_http_retrieval_denylist)
+    - [`RAINBOW_HTTP_RETRIEVAL_WORKERS`](#rainbow_http_retrieval_workers)
+    - [`RAINBOW_HTTP_RETRIEVAL_MAX_DONT_HAVE_ERRORS`](#rainbow_http_retrieval_max_dont_have_errors)
+    - [`RAINBOW_HTTP_RETRIEVAL_METRICS_LABELS_FOR_ENDPOINTS`](#rainbow_http_retrieval_metrics_labels_for_endpoints)
+    - [`RAINBOW_MAX_CONCURRENT_REQUESTS`](#rainbow_max_concurrent_requests)
+    - [`BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS`](#bitswap_enable_duplicate_block_stats)
+    - [`RAINBOW_RETRIEVAL_TIMEOUT`](#rainbow_retrieval_timeout)
+  - [Experiments](#experiments)
+    - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
+    - [`RAINBOW_SEED_PEERING_MAX_INDEX`](#rainbow_seed_peering_max_index)
+    - [`RAINBOW_PEERING_SHARED_CACHE`](#rainbow_peering_shared_cache)
+    - [`RAINBOW_REMOTE_BACKENDS`](#rainbow_remote_backends)
+    - [`RAINBOW_REMOTE_BACKENDS_MODE`](#rainbow_remote_backends_mode)
+    - [`RAINBOW_REMOTE_BACKENDS_IPNS`](#rainbow_remote_backends_ipns)
+  - [Logging](#logging)
+    - [`GOLOG_LOG_LEVEL`](#golog_log_level)
+    - [`GOLOG_LOG_FMT`](#golog_log_fmt)
+    - [`GOLOG_FILE`](#golog_file)
+    - [`GOLOG_TRACING_FILE`](#golog_tracing_file)
+  - [Testing](#testing)
+    - [`GATEWAY_CONFORMANCE_TEST`](#gateway_conformance_test)
+    - [`IPFS_NS_MAP`](#ipfs_ns_map)
+  - [Tracing](#tracing)
+    - [`RAINBOW_TRACING_AUTH`](#rainbow_tracing_auth)
+    - [`RAINBOW_SAMPLING_FRACTION`](#rainbow_sampling_fraction)
 
 ## Configuration
 
@@ -285,6 +288,29 @@ This setting provides rate limiting to protect the gateway from resource exhaust
 Setting this to `0` disables the concurrent request limit.
 
 Default: `4096`
+
+### `BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS`
+
+Controls whether bitswap duplicate block statistics are collected.
+
+When enabled, bitswap will track and report metrics about duplicate blocks received. This is useful for debugging and performance analysis of block duplication issues, but adds memory and CPU overhead during bitswap operations.
+
+**Values:**
+- `true` or `1`: Enable duplicate block statistics collection
+- `false`, `0`, or unset: Disable duplicate block statistics (default)
+
+**Use case:** Enable this on specific investigation boxes when debugging block duplication issues or analyzing bitswap performance patterns.
+
+**Performance impact:** When enabled, additional memory and CPU resources are used to track duplicate block statistics. Only enable when actively investigating bitswap behavior.
+
+Default: `false` (maintains current performance characteristics)
+
+Example:
+```bash
+# Enable duplicate block stats for investigation
+export BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS=true
+./rainbow
+```
 
 ### `RAINBOW_RETRIEVAL_TIMEOUT`
 
