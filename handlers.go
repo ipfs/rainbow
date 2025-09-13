@@ -285,7 +285,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	publicGateways := map[string]*gateway.PublicGateway{
 		"localhost": {
 			Paths:                 []string{"/ipfs", "/ipns", "/version"},
-			NoDNSLink:             !isDNSLinkAllowedForDomain("localhost"),
+			NoDNSLink:             len(DNSLinkGatewayDomains) > 0,
 			InlineDNSLink:         false,
 			DeserializedResponses: true,
 			UseSubdomains:         true,
