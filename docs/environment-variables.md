@@ -15,6 +15,7 @@
   - [`RAINBOW_SEED_INDEX`](#rainbow_seed_index)
   - [`RAINBOW_DHT_ROUTING`](#rainbow_dht_routing)
   - [`RAINBOW_HTTP_ROUTERS`](#rainbow_http_routers)
+  - [`RAINBOW_ROUTING_V1_HTTP_TIMEOUT`](#rainbow_routing_v1_http_timeout) 
   - [`RAINBOW_DNSLINK_RESOLVERS`](#rainbow_dnslink_resolvers)
   - [`RAINBOW_BOOTSTRAP`](#rainbow_bootstrap)
   - [`RAINBOW_AUTOCONF`](#rainbow_autoconf)
@@ -163,6 +164,20 @@ HTTP servers with /routing/v1 endpoints to use for delegated routing (comma-sepa
 The special value `auto` expands to network-appropriate defaults from autoconf when [`RAINBOW_AUTOCONF`](#rainbow_autoconf) is enabled.
 
 Default: `auto`
+
+### `RAINBOW_ROUTING_V1_HTTP_TIMEOUT`
+
+Timeout for HTTP requests to Routing V1 endpoints.
+
+This setting controls how long rainbow will wait for responses from HTTP routing endpoints (such as delegated routers like cid.contact) before timing out the request. This prevents denial of service scenarios where routing responses take too long, which could block gateway operations.
+
+The timeout applies to both:
+> HTTP client requests to routing endpoints
+> Parallel routing operations that query multiple endpoints simultaneously
+
+Setting a longer timeout can reduce timeout errors for slower routing endpoints, while shorter timeouts provide faster failure detection but may increase error rates during network congestion.
+
+Default: 30s 
 
 ### `RAINBOW_DNSLINK_RESOLVERS`
 
