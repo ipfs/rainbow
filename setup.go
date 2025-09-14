@@ -108,6 +108,7 @@ type Config struct {
 	TrustlessGatewayDomains  []string
 	RoutingV1Endpoints       []string
 	RoutingV1FilterProtocols []string
+	RoutingV1HTTPClientTimeout time.Duration
 	RoutingIgnoreProviders   []peer.ID
 	DHTRouting               DHTRouting
 	DHTSharedHost            bool
