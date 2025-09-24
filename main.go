@@ -427,6 +427,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"ROUTING_MAX_TIMEOUT"},
 			Usage:   "Maximum time for routing to find the maximum number of providers",
 		},
+		&cli.DurationFlag{
+			Name:    "routing-v1-http-timeout", 
+			Value:   30 * time.Second,
+			EnvVars: []string{"RAINBOW_ROUTING_V1_HTTP_TIMEOUT"},
+			Usage:   "Timeout for HTTP requests to Routing V1 endpoints (default 30s)",
+		},
 		&cli.StringSliceFlag{
 			Name:    "routing-ignore-providers",
 			EnvVars: []string{"ROUTING_IGNORE_PROVIDERS"},
@@ -657,6 +663,7 @@ share the same seed as long as the indexes are different.
 			InMemBlockCache:            cctx.Int64("inmem-block-cache"),
 			RoutingV1Endpoints:         cctx.StringSlice("http-routers"),
 			RoutingV1FilterProtocols:   routerFilterProtocols,
+			RoutingV1HTTPClientTimeout: cctx.Duration("routing-v1-http-timeout"),
 			DHTRouting:                 dhtRouting,
 			DHTSharedHost:              cctx.Bool("dht-shared-host"),
 			Bitswap:                    bitswap,

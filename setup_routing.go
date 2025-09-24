@@ -51,8 +51,14 @@ func init() {
 }
 
 func setupDelegatedRouting(cfg Config, dnsCache *cachedDNS) ([]routing.Routing, error) {
+	// Set configurable timeout with 30s default
+	timeout := cfg.RoutingV1HTTPClientTimeout
+	if timeout == 0 {
+		timeout = 30 * time.Second
+	}
 	// Increase per-host connection pool since we are making lots of concurrent requests.
 	httpClient := &http.Client{
+		Timeout: timeout,
 		Transport: otelhttp.NewTransport(
 			&routingv1client.ResponseBodyLimitedTransport{
 				RoundTripper: &customTransport{
@@ -205,7 +211,7 @@ func setupDHTRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.
 	return nil, fmt.Errorf("unknown DHTRouting option: %q", cfg.DHTRouting)
 }
 
-func setupCompositeRouting(delegatedRouters []routing.Routing, dht routing.Routing) routing.Routing {
+func setupCompositeRouting(delegatedRouters []routing.Routing, dht routing.Routing, cfg Config) routing.Routing {
 	// Default router is no routing at all: can be especially useful during tests.
 	var router routing.Routing
 	router = &routinghelpers.Null{}
@@ -224,9 +230,14 @@ func setupCompositeRouting(delegatedRouters []routing.Routing, dht routing.Routi
 			})
 		}
 
+		timeout := cfg.RoutingV1HTTPClientTimeout
+		if timeout == 0 {
+			timeout = 30 * time.Second
+		}
+
 		for _, routingV1Router := range delegatedRouters {
 			routers = append(routers, &routinghelpers.ParallelRouter{
-				Timeout:                 15 * time.Second,
+				Timeout:                 timeout,
 				Router:                  routingV1Router,
 				ExecuteAfter:            0,
 				DoNotWaitForSearchValue: true,
@@ -253,7 +264,7 @@ func setupRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Bat
 		return nil, nil, nil, err
 	}
 
-	router := setupCompositeRouting(delegatedRouters, dhtRouter)
+	router := setupCompositeRouting(delegatedRouters, dhtRouter, cfg)
 
 	var (
 		cr routing.ContentRouting = router
@@ -270,7 +281,7 @@ func setupRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Bat
 		}
 		vs = setupCompositeRouting(append(delegatedRouters, &routinghelpers.Compose{
 			ValueStore: remoteValueStore,
-		}), dhtRouter)
+		}), dhtRouter, cfg)
 	}
 
 	// If we're using seed peering, we need to run a lighter Amino DHT for the
@@ -320,7 +331,7 @@ func setupRoutingNoLibp2p(cfg Config, dnsCache *cachedDNS) (routing.ValueStore, 
 		})
 	}
 
-	return setupCompositeRouting(delegatedRouters, nil), nil
+	return setupCompositeRouting(delegatedRouters, nil, cfg), nil
 }
 
 type bundledDHT struct {
