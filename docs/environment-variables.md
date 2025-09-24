@@ -10,7 +10,7 @@
   - [`RAINBOW_GC_INTERVAL`](#rainbow_gc_interval)
   - [`RAINBOW_GC_THRESHOLD`](#rainbow_gc_threshold)
   - [`RAINBOW_IPNS_MAX_CACHE_TTL`](#rainbow_ipns_max_cache_ttl)
-  - [`RAINBOW_PEERING`](#rainbow_peering)̣
+  - [`RAINBOW_PEERING`](#rainbow_peering)
   - [`RAINBOW_SEED`](#rainbow_seed)
   - [`RAINBOW_SEED_INDEX`](#rainbow_seed_index)
   - [`RAINBOW_DHT_ROUTING`](#rainbow_dht_routing)
