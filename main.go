@@ -304,7 +304,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "bitswap-enable-duplicate-block-stats",
 			Value:   false,
 			EnvVars: []string{"BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS"},
-			Usage:   "Enable bitswap duplicate block statistics collection (useful for investigation, has performance overhead)",
+			Usage:   "Enable bitswap duplicate block statistics collection",
         },
 		&cli.StringSliceFlag{
 			Name:    "remote-backends",
