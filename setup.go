@@ -121,6 +121,7 @@ type Config struct {
 	// value. Set to zero to disable replacement and avoid block size lookup
 	// when processing HaveWant requests.
 	BitswapWantHaveReplaceSize int
+	BitswapEnableDuplicateBlockStats bool
 
 	DenylistSubs []string
 

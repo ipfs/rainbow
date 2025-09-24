@@ -25,9 +25,11 @@
   - [`RAINBOW_HTTP_RETRIEVAL_ALLOWLIST`](#rainbow_http_retrieval_allowlist)
   - [`RAINBOW_HTTP_RETRIEVAL_DENYLIST`](#rainbow_http_retrieval_denylist)
   - [`RAINBOW_HTTP_RETRIEVAL_WORKERS`](#rainbow_http_retrieval_workers)
+  - [`RAINBOW_HTTP_RETRIEVAL_MAX_DONT_HAVE_ERRORS`](#rainbow_http_retrieval_max_dont_have_errors)
   - [`RAINBOW_HTTP_RETRIEVAL_METRICS_LABELS_FOR_ENDPOINTS`](#rainbow_http_retrieval_metrics_labels_for_endpoints)
   - [`RAINBOW_MAX_CONCURRENT_REQUESTS`](#rainbow_max_concurrent_requests)
   - [`RAINBOW_RETRIEVAL_TIMEOUT`](#rainbow_retrieval_timeout)
+  - [`BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS`](#bitswap_enable_duplicate_block_stats)
 - [Experiments](#experiments)
   - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
   - [`RAINBOW_SEED_PEERING_MAX_INDEX`](#rainbow_seed_peering_max_index)
@@ -297,6 +299,29 @@ This timeout applies to both:
 If content cannot be retrieved within this period, the gateway returns a `504 Gateway Timeout` error. For responses that have already started streaming, the connection will be terminated with a truncation message if no data is written within the timeout period.
 
 Default: `30s`
+
+### `BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS`
+
+Controls whether bitswap duplicate block statistics are collected.
+
+When enabled, bitswap will track and report metrics about duplicate blocks received. This is useful for debugging and performance analysis of block duplication issues, but adds memory and CPU overhead during bitswap operations.
+
+**Values:**
+- `true` or `1`: Enable duplicate block statistics collection
+- `false`, `0`, or unset: Disable duplicate block statistics (default)
+
+**Use case:** Enable this on specific investigation boxes when debugging block duplication issues or analyzing bitswap performance patterns.
+
+**Performance impact:** When enabled, additional memory and CPU resources are used to track duplicate block statistics. Only enable when actively investigating bitswap behavior.
+
+Default: `false` (maintains current performance characteristics)
+
+Example:
+```bash
+# Enable duplicate block stats for investigation
+export BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS=true
+./rainbow
+```
 
 ## Experiments
 
