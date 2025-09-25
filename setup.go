@@ -174,9 +174,10 @@ type Config struct {
 	// Bootstrap peers configuration (with "auto" support)
 	Bootstrap []string
 
-	// Gateway rate limiting and timeout configuration
-	MaxConcurrentRequests int
-	RetrievalTimeout      time.Duration
+	// Gateway limits
+	MaxConcurrentRequests   int
+	RetrievalTimeout        time.Duration
+	MaxRangeRequestFileSize int64
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {

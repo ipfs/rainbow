@@ -15,9 +15,13 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+- `--max-range-request-file-size` / `RAINBOW_MAX_RANGE_REQUEST_FILE_SIZE`: Configurable limit for HTTP Range requests on large files (default: 5GiB). Range requests for files larger than this limit return HTTP 501 Not Implemented to protect against CDN issues. Specifically addresses Cloudflare's bug where range requests for files over 5GiB are silently ignored, causing the entire file to be returned instead of the requested range, leading to excess bandwidth consumption and billing.
+
 ### Changed
 
 ### Fixed
+
+- Fixed bitswap client initialization to use `time.Duration` instead of `delay.Fixed()` for rebroadcast delay, matching the updated bitswap client API
 
 ### Removed
 
