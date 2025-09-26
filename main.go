@@ -1026,4 +1026,3 @@ func replaceRainbowSeedWithPeer(addr string, seed string) (string, error) {
 
 	return strings.Replace(addr, match[0], "/p2p/"+pid.String(), 1), nil
 }
-
