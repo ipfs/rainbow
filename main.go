@@ -25,7 +25,6 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	peer "github.com/libp2p/go-libp2p/core/peer"
-	madns "github.com/multiformats/go-multiaddr-dns"
 	"github.com/urfave/cli/v2"
 	"go.opentelemetry.io/contrib/propagators/autoprop"
 	"go.opentelemetry.io/otel"
@@ -757,13 +756,9 @@ share the same seed as long as the indexes are different.
 		if err != nil {
 			return err
 		}
-		dns, err := parseDNSResolversMap(expandedDNS)
+		dns, err := gateway.NewDNSResolver(expandedDNS)
 		if err != nil {
 			return err
-		}
-		// If no custom DNS resolver, use default
-		if dns == nil {
-			dns = madns.DefaultResolver
 		}
 		cfg.DNSLinkResolver = dns
 		// Store expanded DNS resolvers for display
@@ -1030,15 +1025,4 @@ func replaceRainbowSeedWithPeer(addr string, seed string) (string, error) {
 	}
 
 	return strings.Replace(addr, match[0], "/p2p/"+pid.String(), 1), nil
-}
-
-func parseDNSResolversMap(customDNSResolverMap map[string]string) (madns.BasicResolver, error) {
-	if len(customDNSResolverMap) == 0 {
-		return nil, nil
-	}
-	dns, err := gateway.NewDNSResolver(customDNSResolverMap)
-	if err != nil {
-		return nil, err
-	}
-	return dns, nil
 }
