@@ -52,7 +52,7 @@ func init() {
 
 func setupDelegatedRouting(cfg Config, dnsCache *cachedDNS) ([]routing.Routing, error) {
 	// Set configurable timeout with 30s default
-	timeout := cfg.RoutingV1HTTPClientTimeout
+	timeout := cfg.HTTPRoutersTimeout
 	if timeout == 0 {
 		timeout = 30 * time.Second
 	}
@@ -230,7 +230,7 @@ func setupCompositeRouting(delegatedRouters []routing.Routing, dht routing.Routi
 			})
 		}
 
-		timeout := cfg.RoutingV1HTTPClientTimeout
+		timeout := cfg.RoutingTimeout
 		if timeout == 0 {
 			timeout = 30 * time.Second
 		}

@@ -15,7 +15,8 @@
   - [`RAINBOW_SEED_INDEX`](#rainbow_seed_index)
   - [`RAINBOW_DHT_ROUTING`](#rainbow_dht_routing)
   - [`RAINBOW_HTTP_ROUTERS`](#rainbow_http_routers)
-  - [`RAINBOW_ROUTING_V1_HTTP_TIMEOUT`](#rainbow_routing_v1_http_timeout) 
+  - [`RAINBOW_HTTP_ROUTERS_TIMEOUT`](#rainbow_http_routers_timeout)
+  - [`RAINBOW_ROUTING_TIMEOUT`](#rainbow_routing_timeout)
   - [`RAINBOW_DNSLINK_RESOLVERS`](#rainbow_dnslink_resolvers)
   - [`RAINBOW_BOOTSTRAP`](#rainbow_bootstrap)
   - [`RAINBOW_AUTOCONF`](#rainbow_autoconf)
@@ -165,19 +166,25 @@ The special value `auto` expands to network-appropriate defaults from autoconf w
 
 Default: `auto`
 
-### `RAINBOW_ROUTING_V1_HTTP_TIMEOUT`
+### `RAINBOW_HTTP_ROUTERS_TIMEOUT`
 
-Timeout for HTTP requests to Routing V1 endpoints.
+Timeout for HTTP requests to routing endpoints.
 
-This setting controls how long rainbow will wait for responses from HTTP routing endpoints (such as delegated routers like cid.contact) before timing out the request. This prevents denial of service scenarios where routing responses take too long, which could block gateway operations.
+This setting controls the network-level timeout for HTTP requests made to delegated HTTP routers (such as cid.contact). This is the maximum time Rainbow will wait for an HTTP response from a routing endpoint before timing out the request.
 
-The timeout applies to both:
-> HTTP client requests to routing endpoints
-> Parallel routing operations that query multiple endpoints simultaneously
+A shorter timeout provides faster failure detection but may increase timeout errors during network congestion. A longer timeout reduces timeout errors but may cause slower responses when routing endpoints are unavailable.
 
-Setting a longer timeout can reduce timeout errors for slower routing endpoints, while shorter timeouts provide faster failure detection but may increase error rates during network congestion.
+Default: 30s
 
-Default: 30s 
+### `RAINBOW_ROUTING_TIMEOUT`
+
+Timeout for parallel routing operations.
+
+This setting controls the application-level timeout for the parallel router when querying multiple routing systems (DHT, delegated routers, etc.) simultaneously. This is separate from the HTTP request timeout and represents the overall time budget for a routing operation.
+
+This should typically be equal to or greater than RAINBOW_HTTP_ROUTERS_TIMEOUT to allow HTTP requests sufficient time to complete within the overall routing operation.
+
+Default: 30s
 
 ### `RAINBOW_DNSLINK_RESOLVERS`
 
