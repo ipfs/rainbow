@@ -19,6 +19,9 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
+- Update to Boxo [v0.35.0](https://github.com/ipfs/boxo/releases/tag/v0.35.0)
+- Update to go-libp2p-kad-dht [v0.35.0](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.35.0)
+
 ### Fixed
 
 - Fixed bitswap client initialization to use `time.Duration` instead of `delay.Fixed()` for rebroadcast delay, matching the updated bitswap client API

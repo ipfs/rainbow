@@ -64,9 +64,9 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 	// bitswap.RebroadcastDelay: default is 1 minute to search for a random
 	// live-want (1 CID).  I think we want to search for random live-wants more
 	// often although probably it overlaps with general rebroadcasts.
-	rebroadcastDelay := 10 * time.Second
+	const rebroadcastDelay = 10 * time.Second
 	// bitswap.ProviderSearchDelay: default is 1 second.
-	providerSearchDelay := 1 * time.Second
+	const providerSearchDelay = 1 * time.Second
 
 	// --- Bitswap Client Options
 	clientOpts := []bsclient.Option{
