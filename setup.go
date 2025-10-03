@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/v2"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
 	nopfs "github.com/ipfs-shipyard/nopfs"
@@ -613,7 +613,7 @@ func getPebbleOpts(cfg Config) *pebble.Options {
 		WALBytesPerSync:             cfg.WALBytesPerSync,
 	}
 	if cfg.MaxConcurrentCompactions != 0 {
-		opts.MaxConcurrentCompactions = func() int { return cfg.MaxConcurrentCompactions }
+		opts.CompactionConcurrencyRange = func() (int, int) { return 1, cfg.MaxConcurrentCompactions }
 	}
 	if cfg.WALMinSyncInterval != 0 {
 		opts.WALMinSyncInterval = func() time.Duration { return cfg.WALMinSyncInterval }
