@@ -29,6 +29,7 @@
   - [`RAINBOW_MAX_CONCURRENT_REQUESTS`](#rainbow_max_concurrent_requests)
   - [`RAINBOW_RETRIEVAL_TIMEOUT`](#rainbow_retrieval_timeout)
   - [`RAINBOW_MAX_RANGE_REQUEST_FILE_SIZE`](#rainbow_max_range_request_file_size)
+  - [`RAINBOW_DIAGNOSTIC_SERVICE_URL`](#rainbow_diagnostic_service_url)
 - [Experiments](#experiments)
   - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
   - [`RAINBOW_SEED_PEERING_MAX_INDEX`](#rainbow_seed_peering_max_index)
@@ -312,6 +313,14 @@ When a range request exceeds the configured limit, the gateway will return an HT
 Set to `0` to disable this limit and allow range requests for files of any size (use with caution if your gateway is behind a CDN or reverse proxy).
 
 Default: `5368709120` (5 GiB - matches Cloudflare's threshold to prevent excess billing)
+
+### `RAINBOW_DIAGNOSTIC_SERVICE_URL`
+
+URL for a service to diagnose CID retrievability issues. When the gateway returns a 504 Gateway Timeout error, an "Inspect retrievability of CID" button will be shown that links to this service with the CID appended as `?cid=<CID-to-diagnose>`.
+
+Set to empty string to disable the button.
+
+Default: `https://check.ipfs.network`
 
 ## Experiments
 

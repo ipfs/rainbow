@@ -178,6 +178,7 @@ type Config struct {
 	MaxConcurrentRequests   int
 	RetrievalTimeout        time.Duration
 	MaxRangeRequestFileSize int64
+	DiagnosticServiceURL    string
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {
