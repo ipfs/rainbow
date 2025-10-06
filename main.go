@@ -486,6 +486,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_MAX_RANGE_REQUEST_FILE_SIZE"},
 			Usage:   "Maximum file size in bytes for which range requests are supported. Range requests for larger files will return 501. Set to 0 to disable limit",
 		},
+		&cli.StringFlag{
+			Name:    "diagnostic-service-url",
+			Value:   "https://check.ipfs.network",
+			EnvVars: []string{"RAINBOW_DIAGNOSTIC_SERVICE_URL"},
+			Usage:   "URL for a service to diagnose CID retrievability issues. When the gateway returns a 504 Gateway Timeout error, an \"Inspect retrievability of CID\" button will be shown. Set to empty string to disable",
+		},
 		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
 			Value:   cli.NewStringSlice(". : auto"),
@@ -720,6 +726,7 @@ share the same seed as long as the indexes are different.
 			MaxConcurrentRequests:   cctx.Int("max-concurrent-requests"),
 			RetrievalTimeout:        cctx.Duration("retrieval-timeout"),
 			MaxRangeRequestFileSize: cctx.Int64("max-range-request-file-size"),
+			DiagnosticServiceURL:    cctx.String("diagnostic-service-url"),
 		}
 
 		// Store original values for display
