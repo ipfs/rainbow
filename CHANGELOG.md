@@ -17,13 +17,22 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
-- Upgrade go-ds-pebble to [v0.5.3](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.3)
-
 ### Fixed
 
 ### Removed
 
 ### Security
+
+
+## v1.20.0
+
+### Added
+
+- `--diagnostic-service-url` / `RAINBOW_DIAGNOSTIC_SERVICE_URL`: Configure URL for CID retrievability diagnostic service (default: `https://check.ipfs.network`). When gateway returns 504 timeout, users see "Inspect retrievability of CID" button linking to diagnostic service. Set to empty string to disable.
+
+### Changed
+
+- Upgrade go-ds-pebble to [v0.5.3](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.3)
 
 
 ## v1.19.0
