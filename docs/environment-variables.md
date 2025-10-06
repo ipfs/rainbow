@@ -318,6 +318,8 @@ Default: `5368709120` (5 GiB - matches Cloudflare's threshold to prevent excess 
 
 URL for a service to diagnose CID retrievability issues. When the gateway returns a 504 Gateway Timeout error, an "Inspect retrievability of CID" button will be shown that links to this service with the CID appended as `?cid=<CID-to-diagnose>`.
 
+The default service is provided by [Shipyard](https://ipshipyard.com) on best-effort basis, but anyone can run their own instance of [ipfs-check](https://github.com/ipfs/ipfs-check) and point this setting to it.
+
 Set to empty string to disable the button.
 
 Default: `https://check.ipfs.network`
