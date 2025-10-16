@@ -16,7 +16,6 @@ import (
 	"github.com/ipfs/boxo/exchange"
 	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
-	delay "github.com/ipfs/go-ipfs-delay"
 	metri "github.com/ipfs/go-metrics-interface"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
@@ -65,9 +64,9 @@ func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routi
 	// bitswap.RebroadcastDelay: default is 1 minute to search for a random
 	// live-want (1 CID).  I think we want to search for random live-wants more
 	// often although probably it overlaps with general rebroadcasts.
-	rebroadcastDelay := delay.Fixed(10 * time.Second)
+	const rebroadcastDelay = 10 * time.Second
 	// bitswap.ProviderSearchDelay: default is 1 second.
-	providerSearchDelay := 1 * time.Second
+	const providerSearchDelay = 1 * time.Second
 
 	// --- Bitswap Client Options
 	clientOpts := []bsclient.Option{

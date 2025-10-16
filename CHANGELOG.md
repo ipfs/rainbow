@@ -24,6 +24,33 @@ The following emojis are used to highlight certain changes:
 ### Security
 
 
+## v1.20.0
+
+### Added
+
+- `--diagnostic-service-url` / `RAINBOW_DIAGNOSTIC_SERVICE_URL`: Configure URL for CID retrievability diagnostic service (default: `https://check.ipfs.network`). When gateway returns 504 timeout, users see "Inspect retrievability of CID" button linking to diagnostic service. Set to empty string to disable.
+
+### Changed
+
+- Upgrade go-ds-pebble to [v0.5.3](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.3)
+
+
+## v1.19.0
+
+### Added
+
+- `--max-range-request-file-size` / `RAINBOW_MAX_RANGE_REQUEST_FILE_SIZE`: Configurable limit for HTTP Range requests on large files (default: 5GiB). Range requests for files larger than this limit return HTTP 501 Not Implemented to protect against CDN issues. Specifically addresses Cloudflare's bug where range requests for files over 5GiB are silently ignored, causing the entire file to be returned instead of the requested range, leading to excess bandwidth consumption and billing.
+
+### Changed
+
+- Update to Boxo [v0.35.0](https://github.com/ipfs/boxo/releases/tag/v0.35.0)
+- Update to go-libp2p-kad-dht [v0.35.0](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.35.0)
+
+### Fixed
+
+- Fixed bitswap client initialization to use `time.Duration` instead of `delay.Fixed()` for rebroadcast delay, matching the updated bitswap client API
+
+
 ## v1.18.0
 
 ### Added

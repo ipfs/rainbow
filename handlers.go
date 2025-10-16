@@ -314,11 +314,13 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	}
 
 	gwConf := gateway.Config{
-		DeserializedResponses: true,
-		PublicGateways:        publicGateways,
-		NoDNSLink:             noDNSLink,
-		MaxConcurrentRequests: cfg.MaxConcurrentRequests, // When exceeded, returns 429 with Retry-After: 60 (hardcoded in boxo)
-		RetrievalTimeout:      cfg.RetrievalTimeout,
+		DeserializedResponses:   true,
+		PublicGateways:          publicGateways,
+		NoDNSLink:               noDNSLink,
+		MaxConcurrentRequests:   cfg.MaxConcurrentRequests, // When exceeded, returns 429 with Retry-After: 60 (hardcoded in boxo)
+		RetrievalTimeout:        cfg.RetrievalTimeout,
+		MaxRangeRequestFileSize: cfg.MaxRangeRequestFileSize,
+		DiagnosticServiceURL:    cfg.DiagnosticServiceURL,
 	}
 	gwHandler := gateway.NewHandler(gwConf, backend)
 
