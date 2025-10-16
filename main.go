@@ -433,6 +433,18 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"ROUTING_MAX_TIMEOUT"},
 			Usage:   "Maximum time for routing to find the maximum number of providers",
 		},
+		&cli.DurationFlag{
+			Name:    "http-routers-timeout",
+			Value:   30 * time.Second,
+			EnvVars: []string{"RAINBOW_HTTP_ROUTERS_TIMEOUT"},
+			Usage:   "Timeout for HTTP requests to routing endpoints",
+		},
+		&cli.DurationFlag{
+			Name:    "routing-timeout",
+			Value:   30 * time.Second,
+			EnvVars: []string{"RAINBOW_ROUTING_TIMEOUT"},
+			Usage:   "Global timeout for routing requests",
+		},
 		&cli.StringSliceFlag{
 			Name:    "routing-ignore-providers",
 			EnvVars: []string{"ROUTING_IGNORE_PROVIDERS"},
@@ -485,6 +497,18 @@ Generate an identity seed and launch a gateway:
 			Value:   30 * time.Second,
 			EnvVars: []string{"RAINBOW_RETRIEVAL_TIMEOUT"},
 			Usage:   "Maximum duration for initial content retrieval and time between writes",
+		},
+		&cli.Int64Flag{
+			Name:    "max-range-request-file-size",
+			Value:   5368709120, // 5 GiB
+			EnvVars: []string{"RAINBOW_MAX_RANGE_REQUEST_FILE_SIZE"},
+			Usage:   "Maximum file size in bytes for which range requests are supported. Range requests for larger files will return 501. Set to 0 to disable limit",
+		},
+		&cli.StringFlag{
+			Name:    "diagnostic-service-url",
+			Value:   "https://check.ipfs.network",
+			EnvVars: []string{"RAINBOW_DIAGNOSTIC_SERVICE_URL"},
+			Usage:   "URL for a service to diagnose CID retrievability issues. When the gateway returns a 504 Gateway Timeout error, an \"Inspect retrievability of CID\" button will be shown. Set to empty string to disable",
 		},
 		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
@@ -663,6 +687,8 @@ share the same seed as long as the indexes are different.
 			InMemBlockCache:            cctx.Int64("inmem-block-cache"),
 			RoutingV1Endpoints:         cctx.StringSlice("http-routers"),
 			RoutingV1FilterProtocols:   routerFilterProtocols,
+			HTTPRoutersTimeout:         cctx.Duration("http-routers-timeout"),
+			RoutingTimeout:             cctx.Duration("routing-timeout"),
 			DHTRouting:                 dhtRouting,
 			DHTSharedHost:              cctx.Bool("dht-shared-host"),
 			Bitswap:                    bitswap,
@@ -717,9 +743,11 @@ share the same seed as long as the indexes are different.
 			HTTPRetrievalWorkers:                   httpRetrievalWorkers,
 			HTTPRetrievalMaxDontHaveErrors:         httpRetrievalMaxDontHaveErrors,
 			HTTPRetrievalMetricsLabelsForEndpoints: httpRetrievalMetricsLabelsForEndpoints,
-			// Gateway rate limiting and timeout configuration
-			MaxConcurrentRequests: cctx.Int("max-concurrent-requests"),
-			RetrievalTimeout:      cctx.Duration("retrieval-timeout"),
+			// Gateway limits
+			MaxConcurrentRequests:   cctx.Int("max-concurrent-requests"),
+			RetrievalTimeout:        cctx.Duration("retrieval-timeout"),
+			MaxRangeRequestFileSize: cctx.Int64("max-range-request-file-size"),
+			DiagnosticServiceURL:    cctx.String("diagnostic-service-url"),
 		}
 
 		// Store original values for display

@@ -15,6 +15,8 @@
   - [`RAINBOW_SEED_INDEX`](#rainbow_seed_index)
   - [`RAINBOW_DHT_ROUTING`](#rainbow_dht_routing)
   - [`RAINBOW_HTTP_ROUTERS`](#rainbow_http_routers)
+  - [`RAINBOW_HTTP_ROUTERS_TIMEOUT`](#rainbow_http_routers_timeout)
+  - [`RAINBOW_ROUTING_TIMEOUT`](#rainbow_routing_timeout)
   - [`RAINBOW_DNSLINK_RESOLVERS`](#rainbow_dnslink_resolvers)
   - [`RAINBOW_BOOTSTRAP`](#rainbow_bootstrap)
   - [`RAINBOW_AUTOCONF`](#rainbow_autoconf)
@@ -30,6 +32,8 @@
   - [`RAINBOW_MAX_CONCURRENT_REQUESTS`](#rainbow_max_concurrent_requests)
   - [`RAINBOW_RETRIEVAL_TIMEOUT`](#rainbow_retrieval_timeout)
   - [`BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS`](#bitswap_enable_duplicate_block_stats)
+  - [`RAINBOW_MAX_RANGE_REQUEST_FILE_SIZE`](#rainbow_max_range_request_file_size)
+  - [`RAINBOW_DIAGNOSTIC_SERVICE_URL`](#rainbow_diagnostic_service_url)
 - [Experiments](#experiments)
   - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
   - [`RAINBOW_SEED_PEERING_MAX_INDEX`](#rainbow_seed_peering_max_index)
@@ -165,6 +169,26 @@ HTTP servers with /routing/v1 endpoints to use for delegated routing (comma-sepa
 The special value `auto` expands to network-appropriate defaults from autoconf when [`RAINBOW_AUTOCONF`](#rainbow_autoconf) is enabled.
 
 Default: `auto`
+
+### `RAINBOW_HTTP_ROUTERS_TIMEOUT`
+
+Timeout for HTTP requests to routing endpoints.
+
+This setting controls the network-level timeout for HTTP requests made to delegated HTTP routers (such as cid.contact). This is the maximum time Rainbow will wait for an HTTP response from a routing endpoint before timing out the request.
+
+A shorter timeout provides faster failure detection but may increase timeout errors during network congestion. A longer timeout reduces timeout errors but may cause slower responses when routing endpoints are unavailable.
+
+Default: 30s
+
+### `RAINBOW_ROUTING_TIMEOUT`
+
+Timeout for parallel routing operations.
+
+This setting controls the application-level timeout for the parallel router when querying multiple routing systems (DHT, delegated routers, etc.) simultaneously. This is separate from the HTTP request timeout and represents the overall time budget for a routing operation.
+
+This should typically be equal to or greater than RAINBOW_HTTP_ROUTERS_TIMEOUT to allow HTTP requests sufficient time to complete within the overall routing operation.
+
+Default: 30s
 
 ### `RAINBOW_DNSLINK_RESOLVERS`
 
@@ -309,6 +333,30 @@ When enabled, bitswap will track and report metrics about duplicate blocks recei
 **Performance impact:** When enabled, additional memory and CPU resources are used to track duplicate block statistics. Only enable when actively investigating bitswap behavior.
 
 Default: `false`
+
+### `RAINBOW_MAX_RANGE_REQUEST_FILE_SIZE`
+
+Maximum file size in bytes for which HTTP Range requests are supported. Range requests for files larger than this limit will return `501 Not Implemented` error with a message suggesting to switch to verifiable block requests (`application/vnd.ipld.raw`).
+
+This setting provides protection against issues with CDN and reverse proxy implementations that have bugs or limitations when handling byte range requests for large files. Cloudflare, in particular, has a [known issue](https://github.com/ipfs/boxo/issues/856#issuecomment-2786431369) where range requests for files over 5 GiB are silently ignored - instead of returning the requested byte range, Cloudflare returns the entire file. This causes serious problems:
+- **Excess bandwidth consumption and billing**: Clients expecting a small range (e.g., web browsers requesting parts of a large SQLite database) will receive and be billed for the entire multi-gigabyte file
+- **Client failures**: Naive clients like JavaScript applications may crash or hang when they receive gigabytes of data instead of the requested range
+
+When a range request exceeds the configured limit, the gateway will return an HTTP 501 error suggesting the client to use verifiable block requests instead, which are more suitable for large file transfers and can be independently verified.
+
+Set to `0` to disable this limit and allow range requests for files of any size (use with caution if your gateway is behind a CDN or reverse proxy).
+
+Default: `5368709120` (5 GiB - matches Cloudflare's threshold to prevent excess billing)
+
+### `RAINBOW_DIAGNOSTIC_SERVICE_URL`
+
+URL for a service to diagnose CID retrievability issues. When the gateway returns a 504 Gateway Timeout error, an "Inspect retrievability of CID" button will be shown that links to this service with the CID appended as `?cid=<CID-to-diagnose>`.
+
+The default service is provided by [Shipyard](https://ipshipyard.com) on best-effort basis, but anyone can run their own instance of [ipfs-check](https://github.com/ipfs/ipfs-check) and point this setting to it.
+
+Set to empty string to disable the button.
+
+Default: `https://check.ipfs.network`
 
 ## Experiments
 
