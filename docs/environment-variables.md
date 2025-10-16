@@ -306,22 +306,9 @@ Controls whether bitswap duplicate block statistics are collected.
 
 When enabled, bitswap will track and report metrics about duplicate blocks received. This is useful for debugging and performance analysis of block duplication issues, but adds memory and CPU overhead during bitswap operations.
 
-**Values:**
-- `true` or `1`: Enable duplicate block statistics collection
-- `false`, `0`, or unset: Disable duplicate block statistics (default)
-
-**Use case:** Enable this on specific investigation boxes when debugging block duplication issues or analyzing bitswap performance patterns.
-
 **Performance impact:** When enabled, additional memory and CPU resources are used to track duplicate block statistics. Only enable when actively investigating bitswap behavior.
 
-Default: `false` (maintains current performance characteristics)
-
-Example:
-```bash
-# Enable duplicate block stats for investigation
-export BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS=true
-./rainbow
-```
+Default: `false`
 
 ## Experiments
 
