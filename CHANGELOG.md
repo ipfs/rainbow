@@ -16,6 +16,7 @@ The following emojis are used to highlight certain changes:
 ### Added
 
 - Configurable routing timeouts: new options `RAINBOW_HTTP_ROUTERS_TIMEOUT` and `RAINBOW_ROUTING_TIMEOUT` (and the similar command-line flags) allow setting timeouts for routing operations. The former does it for delegated http routing requests. The latter specifies a timeout for routing requests.
+- Added `BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS`: Controls whether bitswap duplicate block statistics are collected. This is disabled by default since it has a performance impact.
 
 ### Changed
 
