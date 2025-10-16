@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/v2"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
 	nopfs "github.com/ipfs-shipyard/nopfs"
@@ -109,6 +109,8 @@ type Config struct {
 	DNSLinkGatewayDomains    []string
 	RoutingV1Endpoints       []string
 	RoutingV1FilterProtocols []string
+	HTTPRoutersTimeout       time.Duration
+	RoutingTimeout           time.Duration
 	RoutingIgnoreProviders   []peer.ID
 	DHTRouting               DHTRouting
 	DHTSharedHost            bool
@@ -121,7 +123,8 @@ type Config struct {
 	// with WantBlock responses when the block size less then or equal to this
 	// value. Set to zero to disable replacement and avoid block size lookup
 	// when processing HaveWant requests.
-	BitswapWantHaveReplaceSize int
+	BitswapWantHaveReplaceSize       int
+	BitswapEnableDuplicateBlockStats bool
 
 	DenylistSubs []string
 
@@ -175,9 +178,11 @@ type Config struct {
 	// Bootstrap peers configuration (with "auto" support)
 	Bootstrap []string
 
-	// Gateway rate limiting and timeout configuration
-	MaxConcurrentRequests int
-	RetrievalTimeout      time.Duration
+	// Gateway limits
+	MaxConcurrentRequests   int
+	RetrievalTimeout        time.Duration
+	MaxRangeRequestFileSize int64
+	DiagnosticServiceURL    string
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {
@@ -613,7 +618,7 @@ func getPebbleOpts(cfg Config) *pebble.Options {
 		WALBytesPerSync:             cfg.WALBytesPerSync,
 	}
 	if cfg.MaxConcurrentCompactions != 0 {
-		opts.MaxConcurrentCompactions = func() int { return cfg.MaxConcurrentCompactions }
+		opts.CompactionConcurrencyRange = func() (int, int) { return 1, cfg.MaxConcurrentCompactions }
 	}
 	if cfg.WALMinSyncInterval != 0 {
 		opts.WALMinSyncInterval = func() time.Duration { return cfg.WALMinSyncInterval }

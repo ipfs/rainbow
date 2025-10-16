@@ -260,12 +260,12 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	//noDNSLink := false
 
 	// Helper function to check if a domain should have DNSLink enabled
-    isDNSLinkAllowedForDomain := func(domain string) bool {
+	isDNSLinkAllowedForDomain := func(domain string) bool {
 		// If no domains specified, allow all (backward compatibility)
 		if len(cfg.DNSLinkGatewayDomains) == 0 {
 			return true
 		}
-		
+
 		// Check if the domain matches any allowed domain
 		for _, allowed := range cfg.DNSLinkGatewayDomains {
 			// Exact match
@@ -279,7 +279,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 		}
 		goLog.Debugf("DNSLink blocked for domain %s (not in allowed list)", domain)
 		return false
-    }
+	}
 
 	// TODO: allow appending hostnames to this list via ENV variable (separate PATH_GATEWAY_HOSTS & SUBDOMAIN_GATEWAY_HOSTS)
 	publicGateways := map[string]*gateway.PublicGateway{
@@ -350,11 +350,13 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	}
 
 	gwConf := gateway.Config{
-		DeserializedResponses: true,
-		PublicGateways:        publicGateways,
-		NoDNSLink:             len(cfg.DNSLinkGatewayDomains) > 0,
-		MaxConcurrentRequests: cfg.MaxConcurrentRequests, // When exceeded, returns 429 with Retry-After: 60 (hardcoded in boxo)
-		RetrievalTimeout:      cfg.RetrievalTimeout,
+		DeserializedResponses:   true,
+		PublicGateways:          publicGateways,
+		NoDNSLink:               len(cfg.DNSLinkGatewayDomains) > 0,
+		MaxConcurrentRequests:   cfg.MaxConcurrentRequests, // When exceeded, returns 429 with Retry-After: 60 (hardcoded in boxo)
+		RetrievalTimeout:        cfg.RetrievalTimeout,
+		MaxRangeRequestFileSize: cfg.MaxRangeRequestFileSize,
+		DiagnosticServiceURL:    cfg.DiagnosticServiceURL,
 	}
 	gwHandler := gateway.NewHandler(gwConf, backend)
 

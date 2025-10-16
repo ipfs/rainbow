@@ -300,6 +300,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"BITSWAP_WANTHAVE_REPLACE_SIZE"},
 			Usage:   "Replace WantHave with WantBlock responses for small blocks up to this size, 0 to disable replacement",
 		},
+		&cli.BoolFlag{
+			Name:    "bitswap-enable-duplicate-block-stats",
+			Value:   false,
+			EnvVars: []string{"BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS"},
+			Usage:   "Enable bitswap duplicate block statistics collection",
+		},
 		&cli.StringSliceFlag{
 			Name:    "remote-backends",
 			Value:   cli.NewStringSlice(),
@@ -427,6 +433,18 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"ROUTING_MAX_TIMEOUT"},
 			Usage:   "Maximum time for routing to find the maximum number of providers",
 		},
+		&cli.DurationFlag{
+			Name:    "http-routers-timeout",
+			Value:   30 * time.Second,
+			EnvVars: []string{"RAINBOW_HTTP_ROUTERS_TIMEOUT"},
+			Usage:   "Timeout for HTTP requests to routing endpoints",
+		},
+		&cli.DurationFlag{
+			Name:    "routing-timeout",
+			Value:   30 * time.Second,
+			EnvVars: []string{"RAINBOW_ROUTING_TIMEOUT"},
+			Usage:   "Global timeout for routing requests",
+		},
 		&cli.StringSliceFlag{
 			Name:    "routing-ignore-providers",
 			EnvVars: []string{"ROUTING_IGNORE_PROVIDERS"},
@@ -480,6 +498,18 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_RETRIEVAL_TIMEOUT"},
 			Usage:   "Maximum duration for initial content retrieval and time between writes",
 		},
+		&cli.Int64Flag{
+			Name:    "max-range-request-file-size",
+			Value:   5368709120, // 5 GiB
+			EnvVars: []string{"RAINBOW_MAX_RANGE_REQUEST_FILE_SIZE"},
+			Usage:   "Maximum file size in bytes for which range requests are supported. Range requests for larger files will return 501. Set to 0 to disable limit",
+		},
+		&cli.StringFlag{
+			Name:    "diagnostic-service-url",
+			Value:   "https://check.ipfs.network",
+			EnvVars: []string{"RAINBOW_DIAGNOSTIC_SERVICE_URL"},
+			Usage:   "URL for a service to diagnose CID retrievability issues. When the gateway returns a 504 Gateway Timeout error, an \"Inspect retrievability of CID\" button will be shown. Set to empty string to disable",
+		},
 		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
 			Value:   cli.NewStringSlice(". : auto"),
@@ -491,7 +521,7 @@ Generate an identity seed and launch a gateway:
 			Value:   cli.NewStringSlice(),
 			EnvVars: []string{"RAINBOW_DNSLINK_GATEWAY_DOMAINS"},
 			Usage:   "Domains allowed for DNSLink resolution via Host header (comma-separated)",
-        },
+		},
 	}
 
 	app.Commands = []*cli.Command{
@@ -652,43 +682,46 @@ share the same seed as long as the indexes are different.
 		dnslinkGatewayDomains := cctx.StringSlice("dnslink-gateway-domains")
 		dnslinkGatewayDomains = slices.DeleteFunc(dnslinkGatewayDomains, func(s string) bool {
 			return s == ""
-        })
+		})
 
 		cfg := Config{
-			DataDir:                    ddir,
-			BlockstoreType:             cctx.String("blockstore"),
-			GatewayDomains:             cctx.StringSlice("gateway-domains"),
-			SubdomainGatewayDomains:    cctx.StringSlice("subdomain-gateway-domains"),
-			TrustlessGatewayDomains:    cctx.StringSlice("trustless-gateway-domains"),
-			DNSLinkGatewayDomains:      dnslinkGatewayDomains,
-			ConnMgrLow:                 cctx.Int("libp2p-connmgr-low"),
-			ConnMgrHi:                  cctx.Int("libp2p-connmgr-high"),
-			ConnMgrGrace:               cctx.Duration("libp2p-connmgr-grace"),
-			MaxMemory:                  cctx.Uint64("libp2p-max-memory"),
-			MaxFD:                      cctx.Int("libp2p-max-fd"),
-			InMemBlockCache:            cctx.Int64("inmem-block-cache"),
-			RoutingV1Endpoints:         cctx.StringSlice("http-routers"),
-			RoutingV1FilterProtocols:   routerFilterProtocols,
-			DHTRouting:                 dhtRouting,
-			DHTSharedHost:              cctx.Bool("dht-shared-host"),
-			Bitswap:                    bitswap,
-			BitswapWantHaveReplaceSize: cctx.Int("bitswap-wanthave-replace-size"),
-			IpnsMaxCacheTTL:            cctx.Duration("ipns-max-cache-ttl"),
-			DenylistSubs:               cctx.StringSlice("denylists"),
-			Peering:                    peeringAddrs,
-			PeeringSharedCache:         cctx.Bool("peering-shared-cache"),
-			Seed:                       seed,
-			SeedIndex:                  index,
-			SeedPeering:                seedPeering,
-			SeedPeeringMaxIndex:        cctx.Int("seed-peering-max-index"),
-			RemoteBackends:             remoteBackends,
-			RemoteBackendsIPNS:         cctx.Bool("remote-backends-ipns"),
-			RemoteBackendMode:          RemoteBackendMode(cctx.String("remote-backends-mode")),
-			GCInterval:                 cctx.Duration("gc-interval"),
-			GCThreshold:                cctx.Float64("gc-threshold"),
-			ListenAddrs:                cctx.StringSlice("libp2p-listen-addrs"),
-			TracingAuthToken:           cctx.String("tracing-auth"),
-			Bootstrap:                  []string{cctx.String("bootstrap")},
+			DataDir:                          ddir,
+			BlockstoreType:                   cctx.String("blockstore"),
+			GatewayDomains:                   cctx.StringSlice("gateway-domains"),
+			SubdomainGatewayDomains:          cctx.StringSlice("subdomain-gateway-domains"),
+			TrustlessGatewayDomains:          cctx.StringSlice("trustless-gateway-domains"),
+			DNSLinkGatewayDomains:            dnslinkGatewayDomains,
+			ConnMgrLow:                       cctx.Int("libp2p-connmgr-low"),
+			ConnMgrHi:                        cctx.Int("libp2p-connmgr-high"),
+			ConnMgrGrace:                     cctx.Duration("libp2p-connmgr-grace"),
+			MaxMemory:                        cctx.Uint64("libp2p-max-memory"),
+			MaxFD:                            cctx.Int("libp2p-max-fd"),
+			InMemBlockCache:                  cctx.Int64("inmem-block-cache"),
+			RoutingV1Endpoints:               cctx.StringSlice("http-routers"),
+			RoutingV1FilterProtocols:         routerFilterProtocols,
+			HTTPRoutersTimeout:               cctx.Duration("http-routers-timeout"),
+			RoutingTimeout:                   cctx.Duration("routing-timeout"),
+			DHTRouting:                       dhtRouting,
+			DHTSharedHost:                    cctx.Bool("dht-shared-host"),
+			Bitswap:                          bitswap,
+			BitswapWantHaveReplaceSize:       cctx.Int("bitswap-wanthave-replace-size"),
+			BitswapEnableDuplicateBlockStats: cctx.Bool("bitswap-enable-duplicate-block-stats"),
+			IpnsMaxCacheTTL:                  cctx.Duration("ipns-max-cache-ttl"),
+			DenylistSubs:                     cctx.StringSlice("denylists"),
+			Peering:                          peeringAddrs,
+			PeeringSharedCache:               cctx.Bool("peering-shared-cache"),
+			Seed:                             seed,
+			SeedIndex:                        index,
+			SeedPeering:                      seedPeering,
+			SeedPeeringMaxIndex:              cctx.Int("seed-peering-max-index"),
+			RemoteBackends:                   remoteBackends,
+			RemoteBackendsIPNS:               cctx.Bool("remote-backends-ipns"),
+			RemoteBackendMode:                RemoteBackendMode(cctx.String("remote-backends-mode")),
+			GCInterval:                       cctx.Duration("gc-interval"),
+			GCThreshold:                      cctx.Float64("gc-threshold"),
+			ListenAddrs:                      cctx.StringSlice("libp2p-listen-addrs"),
+			TracingAuthToken:                 cctx.String("tracing-auth"),
+			Bootstrap:                        []string{cctx.String("bootstrap")},
 
 			AutoConf: AutoConfConfig{
 				Enabled:         cctx.Bool("autoconf"),
@@ -722,9 +755,11 @@ share the same seed as long as the indexes are different.
 			HTTPRetrievalWorkers:                   httpRetrievalWorkers,
 			HTTPRetrievalMaxDontHaveErrors:         httpRetrievalMaxDontHaveErrors,
 			HTTPRetrievalMetricsLabelsForEndpoints: httpRetrievalMetricsLabelsForEndpoints,
-			// Gateway rate limiting and timeout configuration
-			MaxConcurrentRequests: cctx.Int("max-concurrent-requests"),
-			RetrievalTimeout:      cctx.Duration("retrieval-timeout"),
+			// Gateway limits
+			MaxConcurrentRequests:   cctx.Int("max-concurrent-requests"),
+			RetrievalTimeout:        cctx.Duration("retrieval-timeout"),
+			MaxRangeRequestFileSize: cctx.Int64("max-range-request-file-size"),
+			DiagnosticServiceURL:    cctx.String("diagnostic-service-url"),
 		}
 
 		// Store original values for display
