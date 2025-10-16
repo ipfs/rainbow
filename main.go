@@ -516,6 +516,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_DNSLINK_RESOLVERS"},
 			Usage:   "The DNSLink resolvers to use (comma-separated tuples that each look like `eth. : https://dns.eth.limo/dns-query`). Use 'auto' as value to use network-appropriate defaults from autoconf",
 		},
+		&cli.StringSliceFlag{
+			Name:    "dnslink-gateway-domains",
+			Value:   cli.NewStringSlice(),
+			EnvVars: []string{"RAINBOW_DNSLINK_GATEWAY_DOMAINS"},
+			Usage:   "Domains allowed for DNSLink resolution via Host header (comma-separated)",
+		},
 	}
 
 	app.Commands = []*cli.Command{
@@ -673,12 +679,18 @@ share the same seed as long as the indexes are different.
 			)
 		}
 
+		dnslinkGatewayDomains := cctx.StringSlice("dnslink-gateway-domains")
+		dnslinkGatewayDomains = slices.DeleteFunc(dnslinkGatewayDomains, func(s string) bool {
+			return s == ""
+		})
+
 		cfg := Config{
 			DataDir:                          ddir,
 			BlockstoreType:                   cctx.String("blockstore"),
 			GatewayDomains:                   cctx.StringSlice("gateway-domains"),
 			SubdomainGatewayDomains:          cctx.StringSlice("subdomain-gateway-domains"),
 			TrustlessGatewayDomains:          cctx.StringSlice("trustless-gateway-domains"),
+			DNSLinkGatewayDomains:            dnslinkGatewayDomains,
 			ConnMgrLow:                       cctx.Int("libp2p-connmgr-low"),
 			ConnMgrHi:                        cctx.Int("libp2p-connmgr-high"),
 			ConnMgrGrace:                     cctx.Duration("libp2p-connmgr-grace"),
@@ -906,6 +918,7 @@ share the same seed as long as the indexes are different.
 		// Show configurations with autoconf awareness
 		printAutoconfAwareConfig("RAINBOW_HTTP_ROUTERS", originalHTTPRouters, cfg.RoutingV1Endpoints, cfg.AutoConf.Enabled)
 		printAutoconfAwareConfig("RAINBOW_DNSLINK_RESOLVERS", originalDNSResolvers, customDNSResolvers, cfg.AutoConf.Enabled)
+		printIfListConfigured(fmt.Sprintf("  %-40s = ", "RAINBOW_DNSLINK_GATEWAY_DOMAINS"), cfg.DNSLinkGatewayDomains)
 		printIfListConfigured(fmt.Sprintf("  %-40s = ", "RAINBOW_REMOTE_BACKENDS"), cfg.RemoteBackends)
 		printAutoconfAwareConfig("RAINBOW_BOOTSTRAP", originalBootstrap, cfg.Bootstrap, cfg.AutoConf.Enabled)
 

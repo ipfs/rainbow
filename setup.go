@@ -106,6 +106,7 @@ type Config struct {
 	GatewayDomains           []string
 	SubdomainGatewayDomains  []string
 	TrustlessGatewayDomains  []string
+	DNSLinkGatewayDomains    []string
 	RoutingV1Endpoints       []string
 	RoutingV1FilterProtocols []string
 	HTTPRoutersTimeout       time.Duration

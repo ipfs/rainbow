@@ -18,6 +18,7 @@
   - [`RAINBOW_HTTP_ROUTERS_TIMEOUT`](#rainbow_http_routers_timeout)
   - [`RAINBOW_ROUTING_TIMEOUT`](#rainbow_routing_timeout)
   - [`RAINBOW_DNSLINK_RESOLVERS`](#rainbow_dnslink_resolvers)
+  - [`RAINBOW_DNSLINK_GATEWAY_DOMAINS`](#rainbow_dnslink_gateway_domains)
   - [`RAINBOW_BOOTSTRAP`](#rainbow_bootstrap)
   - [`RAINBOW_AUTOCONF`](#rainbow_autoconf)
   - [`RAINBOW_AUTOCONF_URL`](#rainbow_autoconf_url)
@@ -199,6 +200,25 @@ It is possible to override OS resolver by passing root:  `. : catch-URL`.
 The special value `auto` expands to network-appropriate defaults from autoconf when [`RAINBOW_AUTOCONF`](#rainbow_autoconf) is enabled.
 
 Default: `. : auto`
+
+### `RAINBOW_DNSLINK_GATEWAY_DOMAINS`
+
+Comma-separated list of domains allowed to use [DNSLink](https://dnslink.dev/) resolution via the `Host` header.
+
+When set, only domains in this list (and their subdomains) can trigger DNSLink resolution. This provides a safelist mechanism for DNSLink on public gateways, preventing arbitrary domains from using the gateway's DNSLink resolution capabilities.
+
+Example: passing `example.com,mysite.org` will allow DNSLink resolution only for:
+- `example.com` (exact match)
+- `sub.example.com` (subdomain match)
+- `mysite.org` (exact match)
+- Any subdomain of `mysite.org`
+
+When a domain not in this list is accessed, the gateway will not attempt DNSLink resolution for that domain.
+
+Default: not set (all domains can use DNSLink - backward compatible)
+
+> [!NOTE]
+> This setting only controls which domains can use DNSLink resolution. It does not affect regular `/ipfs/` or `/ipns/` path access.
 
 ### `RAINBOW_BOOTSTRAP`
 
