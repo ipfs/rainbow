@@ -437,7 +437,7 @@ Generate an identity seed and launch a gateway:
 			Name:    "routing-timeout",
 			Value:   30 * time.Second,
 			EnvVars: []string{"RAINBOW_ROUTING_TIMEOUT"},
-			Usage:   "Timeout for routing operations in parallel router",
+			Usage:   "Global timeout for routing requests",
 		},
 		&cli.StringSliceFlag{
 			Name:    "routing-ignore-providers",
