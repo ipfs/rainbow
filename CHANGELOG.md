@@ -19,12 +19,24 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
-- Upgrade go-ds-pebble to [v0.5.6](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.6) and pebble to [v2.1.1](https://github.com/cockroachdb/pebble/releases/tag/v2.1.1)
-
 ### Removed
 
 ### Security
 
+## [1.21.0]
+
+### Added
+
+### Changed
+
+### Fixed
+
+- Upgrade go-ds-pebble to [v0.5.6](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.6) and pebble to [v2.1.1](https://github.com/cockroachdb/pebble/releases/tag/v2.1.1)
+- Update to boxo [v0.35.1](https://github.com/ipfs/boxo/releases/tag/v0.35.1) with fixes for QUIC, httpnet and block tracing.
+
+### Removed
+
+### Security
 
 ## v1.20.0
 
