@@ -23,7 +23,6 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
-- Fix bitswap tracing with update. See [boxo PR #1059](https://github.com/ipfs/boxo/pull/1059)
 - Upgrade go-ds-pebble to [v0.5.6](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.6) and pebble to [v2.1.1](https://github.com/cockroachdb/pebble/releases/tag/v2.1.1)
 
 ### Removed

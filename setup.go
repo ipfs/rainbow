@@ -38,8 +38,8 @@ import (
 	"github.com/libp2p/go-libp2p/core/metrics"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/routing"
-	"github.com/libp2p/go-libp2p/p2p/host/observedaddrs"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
+	"github.com/libp2p/go-libp2p/p2p/protocol/identify"
 	"github.com/multiformats/go-multiaddr"
 	madns "github.com/multiformats/go-multiaddr-dns"
 )
@@ -71,7 +71,7 @@ const (
 
 func init() {
 	// Lets us discover our own public address with a single observation
-	observedaddrs.ActivationThresh = 1
+	identify.ActivationThresh = 1
 }
 
 type Node struct {
