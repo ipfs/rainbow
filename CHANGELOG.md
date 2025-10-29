@@ -23,8 +23,6 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
-- Fix bitswap tracing with update. See [boxo PR #1059](https://github.com/ipfs/boxo/pull/1059)
-
 ### Removed
 
 ### Security
