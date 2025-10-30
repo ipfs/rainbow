@@ -48,7 +48,6 @@ The following emojis are used to highlight certain changes:
 
 - Upgrade go-ds-pebble to [v0.5.3](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.3)
 
-
 ## v1.19.0
 
 ### Added
