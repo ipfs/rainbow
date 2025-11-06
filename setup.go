@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
@@ -29,6 +30,7 @@ import (
 	badger4 "github.com/ipfs/go-ds-badger4"
 	flatfs "github.com/ipfs/go-ds-flatfs"
 	pebbleds "github.com/ipfs/go-ds-pebble"
+	logging "github.com/ipfs/go-log/v2"
 	mprome "github.com/ipfs/go-metrics-prometheus"
 	"github.com/ipfs/go-unixfsnode"
 	dagpb "github.com/ipld/go-codec-dagpb"
@@ -38,8 +40,9 @@ import (
 	"github.com/libp2p/go-libp2p/core/metrics"
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/routing"
+	"github.com/libp2p/go-libp2p/gologshim"
+	"github.com/libp2p/go-libp2p/p2p/host/observedaddrs"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
-	"github.com/libp2p/go-libp2p/p2p/protocol/identify"
 	"github.com/multiformats/go-multiaddr"
 	madns "github.com/multiformats/go-multiaddr-dns"
 )
@@ -48,6 +51,15 @@ func init() {
 	if err := mprome.Inject(); err != nil {
 		panic(err)
 	}
+
+	// Set go-log's slog handler as the application-wide default.
+	// This ensures all slog-based logging uses go-log's formatting.
+	slog.SetDefault(slog.New(logging.SlogHandler()))
+
+	// Wire go-log's slog bridge to go-libp2p's gologshim.
+	// This provides go-libp2p loggers with the "logger" attribute
+	// for per-subsystem level control (e.g., `ipfs log level libp2p-swarm debug`).
+	gologshim.SetDefaultHandler(logging.SlogHandler())
 }
 
 const httpRouterGatewayProtocol = "transport-ipfs-gateway-http"
@@ -71,7 +83,7 @@ const (
 
 func init() {
 	// Lets us discover our own public address with a single observation
-	identify.ActivationThresh = 1
+	observedaddrs.ActivationThresh = 1
 }
 
 type Node struct {
