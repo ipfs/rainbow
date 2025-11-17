@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ipfs/boxo/blockstore"
 	leveldb "github.com/ipfs/go-ds-leveldb"
@@ -393,6 +394,9 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	// Add tracing.
 	handler = withTracingAndDebug(handler, cfg.TracingAuthToken)
 
+	// Add pin origins support (X-PIN-ORIGINS).
+	handler = withPinOrigins(nd, handler)
+
 	return handler, nil
 }
 
@@ -428,6 +432,51 @@ func withTracingAndDebug(next http.Handler, authToken string) http.Handler {
 const NoBlockcacheHeader = "Rainbow-No-Blockcache"
 
 type NoBlockcache struct{}
+
+const PinOriginsHeader = "X-PIN-ORIGINS"
+
+// withPinOrigins inspects the request for pin origins header(s) and, if present,
+// attempts short, best-effort libp2p connects to the provided multiaddresses.
+// This increases the likelihood that Bitswap can retrieve content directly
+// from the specified origins even if they are not advertising on DHT/IPNI.
+func withPinOrigins(nd *Node, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if nd != nil && nd.host != nil {
+			// Collect all header values and split by comma to support multiple origins.
+			rawValues := append([]string{}, r.Header.Values(PinOriginsHeader)...)
+			if len(rawValues) != 0 {
+				unique := make(map[string]struct{})
+				for _, v := range rawValues {
+					for _, part := range strings.Split(v, ",") {
+						s := strings.TrimSpace(part)
+						if s == "" {
+							continue
+						}
+						unique[s] = struct{}{}
+					}
+				}
+				for maStr := range unique {
+					ai, err := peer.AddrInfoFromString(maStr)
+					if err != nil {
+						goLog.Warnw("Invalid peer origin value", "value", maStr, "err", err)
+						continue
+					}
+					// Fire-and-forget connects to speed up retrieval; don't block the request path.
+					go func(ai peer.AddrInfo) {
+						ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+						defer cancel()
+						if err := nd.host.Connect(ctx, ai); err != nil {
+							goLog.Debugw("Failed to connect to hinted peer", "peer", ai.ID, "err", err)
+							return
+						}
+						goLog.Debugw("Connected to hinted peer", "peer", ai.ID)
+					}(*ai)
+				}
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
 
 // MutexFractionOption allows to set runtime.SetMutexProfileFraction via HTTP
 // using POST request with parameter 'fraction'.
