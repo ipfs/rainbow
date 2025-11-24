@@ -24,6 +24,8 @@ The following emojis are used to highlight certain changes:
 - upgrade to `boxo` [v0.35.2](https://github.com/ipfs/boxo/releases/tag/v0.35.2)
 - upgrade to `go-libp2p` [v0.45.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.45.0)
 - upgrade to `go-log/v2` [v2.9.0](https://github.com/ipfs/go-log/releases/tag/v2.9.0)
+- upgrade to go-ds-pebble [v0.5.7](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.7)
+  - includes upgrade to pebble [v2.1.2](https://github.com/cockroachdb/pebble/releases/tag/v2.1.2)
 
 ### Fixed
 
