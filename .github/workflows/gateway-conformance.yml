@@ -74,7 +74,7 @@ jobs:
           go-version: 1.24.x
 
       - name: Checkout rainbow
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           path: rainbow
       - name: Build rainbow
