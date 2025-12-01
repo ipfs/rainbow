@@ -18,6 +18,7 @@ The following emojis are used to highlight certain changes:
 - Configurable routing timeouts: new options `RAINBOW_HTTP_ROUTERS_TIMEOUT` and `RAINBOW_ROUTING_TIMEOUT` (and the similar command-line flags) allow setting timeouts for routing operations. The former does it for delegated http routing requests. The latter specifies a timeout for routing requests.
 - Added `BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS`: Controls whether bitswap duplicate block statistics are collected. This is disabled by default since it has a performance impact.
 - Allow specifying a DNSLink safelist: `RAINBOW_DNSLINK_GATEWAY_DOMAINS` defines which dnslink domains are allowed to use this gateway.
+- ✨ Add support for pin origins via `X-PIN-ORIGINS` request header. Accepts a comma-separated list of IPFS peer multiaddresses; the gateway attempts short, best-effort libp2p connects to accelerate retrieval when peers don’t advertise via DHT/IPNI.
 
 ### Changed
 
