@@ -3,54 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Rainbow IPFS Gateway</title>
+    <meta name="robots" content="noindex">
+    <meta name="description" content="Default landing page for Rainbow, an IPFS HTTP Gateway implementation.">
+    <meta property="og:title" content="Welcome to Rainbow IPFS Gateway!">
+    <meta property="og:description" content="Default landing page for Rainbow, an IPFS HTTP Gateway implementation.">
+    <meta property="og:type" content="website">
+    <title>Welcome to Rainbow IPFS Gateway!</title>
     <style>
+        html { color-scheme: light dark; }
         body {
-            background: linear-gradient(90deg, red, orange, green, blue, indigo, violet);
-            font-family: Arial, sans-serif;
-            text-align: center;
-            color: white;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            max-width: 40em;
+            margin: 2em auto;
+            padding: 0 1em;
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
         }
         h1 {
-            font-size: 36px;
+            border-bottom: 2px solid;
+            padding-bottom: 0.3em;
         }
-        h2 {
-            font-size: 36px;
-	    margin-bottom: 50px;
-        }	
-        p {
-            font-size: 18px;
-            margin: 20px 0 40px 0;
+        .note {
+            background: rgba(128, 128, 128, 0.1);
+            border-left: 4px solid rgba(128, 128, 128, 0.5);
+            padding: 0.5em 1em;
+            margin: 1.5em 0;
         }
-        a {
-            text-decoration: none;
-            color: #ffffff;
-            border: 1px solid #ffffff;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 16px;
-            margin: 10px;
-            transition: background-color 0.3s, border-color 0.3s;
+        a { color: #0969da; }
+        @media (prefers-color-scheme: dark) {
+            a { color: #58a6ff; }
         }
-        a:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.8);
+        ul { padding-left: 1.5em; }
+        li { margin: 0.3em 0; }
+        .rainbow {
+            background: linear-gradient(90deg, #ff0000, #ff8000, #ffff00, #00ff00, #0080ff, #8000ff, #ff0000);
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: rainbow 3s linear infinite;
+        }
+        @keyframes rainbow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-      <h1>Welcome to Rainbow</h1>
-      <h2>The high performant IPFS Gateway</h2>
-        <p>Your gateway to a colorful world of decentralized content.</p>
-        <a href="https://ipfs.tech" target="_blank">Learn about IPFS</a>
-        <a href="https://github.com/ipfs/rainbow" target="_blank">GitHub Repository</a>
-	<a href="mailto:abuse@ipfs.io" target="_blank">Send abuse reports</a>
+    <h1>Welcome to <span class="rainbow">Rainbow</span>!</h1>
+
+    <p>If you see this page, the <a href="https://github.com/ipfs/rainbow" target="_blank" rel="noopener noreferrer">Rainbow IPFS gateway software</a> has been successfully installed and working. Further configuration is required.</p>
+
+    <p>For configuration options, please refer to the <a href="https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md" target="_blank" rel="noopener noreferrer">documentation</a>.</p>
+
+    <div class="note">
+        <strong>Note to gateway operators:</strong> This is the default landing page.
+        Replace it with content relevant to your deployment.
     </div>
+
+    <h2>Resources</h2>
+    <ul>
+        <li><a href="https://github.com/ipfs/rainbow" target="_blank" rel="noopener noreferrer">Rainbow on GitHub</a></li>
+        <li><a href="https://ipfs.tech" target="_blank" rel="noopener noreferrer">About IPFS</a></li>
+        <li><a href="https://docs.ipfs.tech/concepts/glossary/#gateway" target="_blank" rel="noopener noreferrer">IPFS Gateway Documentation</a></li>
+        <li><a href="https://specs.ipfs.tech/http-gateways/" target="_blank" rel="noopener noreferrer">IPFS HTTP Gateway Specifications</a></li>
+    </ul>
+
+    <h2>Abuse Reports</h2>
+    <p id="abuse-info">
+        This gateway is operated by a third party. To report abuse, contact the operator or owner of
+        <span id="gateway-host"></span>.
+    </p>
+    <script>
+        (function() {
+            var host = document.getElementById('gateway-host');
+            var hostname = window.location.hostname;
+            var link = document.createElement('a');
+            link.href = 'https://whois.domaintools.com/' + hostname;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = hostname;
+            host.appendChild(link);
+        })();
+    </script>
+    <noscript>
+        <p>To report abuse, look up the domain owner using a WHOIS service.</p>
+    </noscript>
 </body>
 </html>
