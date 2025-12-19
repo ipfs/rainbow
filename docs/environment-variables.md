@@ -79,6 +79,60 @@ requests with the `Host` header with subdomain values matching
 
 Default: `localhost`
 
+> [!IMPORTANT]
+> **Reverse Proxy Requirement:** When running Rainbow behind a reverse proxy
+> (such as nginx), the original `Host` header **must** be forwarded to Rainbow
+> for subdomain gateway routing to work. Rainbow uses the `Host` header to
+> detect subdomain patterns like `{cid}.ipfs.example.org`.
+>
+> If the `Host` header is not forwarded correctly, Rainbow will not recognize
+> subdomain requests and will return the default landing page instead of the
+> expected IPFS content.
+>
+> If `X-Forwarded-Proto` is not set, redirects over HTTPS will use wrong protocol
+> and DNSLink names will not be inlined for subdomain gateways.
+>
+> Example: minimal nginx configuration for `example.org`
+>
+> ```nginx
+> server {
+>     listen 80;
+>     listen [::]:80;
+>
+>     # IMPORTANT: Include wildcard to match subdomain gateway requests.
+>     # The dot prefix matches both apex domain and all subdomains.
+>     server_name .example.org;
+>
+>     location / {
+>         proxy_pass http://127.0.0.1:8090;
+>
+>         # IMPORTANT: Forward the original Host header to Rainbow.
+>         # Without this, subdomain gateway routing will not work.
+>         proxy_set_header Host $host;
+>
+>         # IMPORTANT: X-Forwarded-Proto is required for correct behavior:
+>         # - Redirects will use https:// URLs when set to "https"
+>         # - DNSLink names will be inlined for subdomain gateways
+>         #   (e.g., /ipns/en.wikipedia-on-ipfs.org → en-wikipedia--on--ipfs-org.ipns.example.org)
+>         proxy_set_header X-Forwarded-Proto $scheme;
+>         proxy_set_header X-Forwarded-Host  $host;
+>     }
+> }
+> ```
+>
+> Common mistakes to avoid:
+>
+> - **Missing wildcard in `server_name`:** Using only `server_name example.org;`
+>   will not match subdomain requests like `{cid}.ipfs.example.org`. Always
+>   include `*.example.org` or use the dot prefix `.example.org`.
+>
+> - **Wrong `Host` header value:** Using `proxy_set_header Host $proxy_host;`
+>   sends the backend's hostname (e.g., `127.0.0.1:8090`) instead of the
+>   original `Host` header. Always use `$host` or `$http_host`.
+>
+> - **Missing `Host` header entirely:** If `proxy_set_header Host` is not
+>   specified, nginx defaults to `$proxy_host`, which breaks subdomain routing.
+
 ### `RAINBOW_TRUSTLESS_GATEWAY_DOMAINS`
 
 Specifies trustless-only hostnames.
