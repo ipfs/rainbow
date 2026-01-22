@@ -17,6 +17,12 @@
             padding: 0 1em;
             font-family: system-ui, -apple-system, sans-serif;
             line-height: 1.6;
+            background: linear-gradient(90deg, red, orange, green, blue, indigo, violet);
+        }
+        #body {
+            background: white;
+            padding: 10px 20px 10px 20px;
+            border-radius: 20px 20px 20px 20px;
         }
         h1 {
             border-bottom: 2px solid;
@@ -49,6 +55,7 @@
     </style>
 </head>
 <body>
+  <div id="body">
     <h1>Welcome to <span class="rainbow">Rainbow</span>!</h1>
 
     <p>If you see this page, the <a href="https://github.com/ipfs/rainbow" target="_blank" rel="noopener noreferrer">Rainbow IPFS gateway software</a> has been successfully installed and working. Further configuration is required.</p>
@@ -88,5 +95,6 @@
     <noscript>
         <p>To report abuse, look up the domain owner using a WHOIS service.</p>
     </noscript>
+  </div>
 </body>
 </html>
