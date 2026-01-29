@@ -16,7 +16,7 @@ require (
 	github.com/ipfs/go-cid v0.6.0
 	github.com/ipfs/go-datastore v0.9.0
 	github.com/ipfs/go-ds-badger4 v0.1.8
-	github.com/ipfs/go-ds-flatfs v0.5.5
+	github.com/ipfs/go-ds-flatfs v0.6.0
 	github.com/ipfs/go-ds-leveldb v0.5.2
 	github.com/ipfs/go-ds-pebble v0.5.9
 	github.com/ipfs/go-log/v2 v2.9.1
