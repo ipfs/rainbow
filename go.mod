@@ -45,7 +45,7 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0
 	go.opentelemetry.io/contrib/propagators/autoprop v0.58.0
 	go.opentelemetry.io/otel v1.39.0
-	go.opentelemetry.io/otel/sdk v1.38.0
+	go.opentelemetry.io/otel/sdk v1.39.0
 	go.opentelemetry.io/otel/trace v1.39.0
 	golang.org/x/crypto v0.47.0
 	golang.org/x/sys v0.40.0
