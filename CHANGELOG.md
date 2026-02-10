@@ -28,6 +28,7 @@ The following emojis are used to highlight certain changes:
   - include upgrade to go-ds-pebble [v0.5.8](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.8)
   - include upgrade to go-ds-pebble [v0.5.7](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.7)
   - includes upgrade to pebble [v2.1.4](https://github.com/cockroachdb/pebble/releases/tag/v2.1.4)
+- upgrade to `go-ds-flatfs` [v0.6.0](https://github.com/ipfs/go-ds-flatfs/releases/tag/v0.6.0)
 
 ### Fixed
 
