@@ -13,14 +13,23 @@ env:
   GATEWAY_CONFORMANCE_TEST: true  # rainbow preset for conformance testing
   KUBO_VER: 'v0.33.0-rc1'         # kubo daemon used as no-libp2p-remote-* backend
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event_name == 'push' && github.sha || github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
+      fail-fast: false
       matrix:
         backend: ["libp2p-bitswap", "remote-block-gw", "remote-car-gw"]
 
@@ -68,15 +77,17 @@ jobs:
         uses: ipfs/start-ipfs-daemon-action@v1
 
       # 4. Build rainbow
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: 1.26.x
-
       - name: Checkout rainbow
         uses: actions/checkout@v6
         with:
           path: rainbow
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'rainbow/go.mod'
+          cache-dependency-path: 'rainbow/go.sum'
+
       - name: Build rainbow
         run: go build
         working-directory: rainbow
@@ -94,6 +105,14 @@ jobs:
           ./rainbow --peering=$kuboNodeMultiaddr &
         working-directory: rainbow
 
+      - name: Wait for rainbow (libp2p-bitswap)
+        if: ${{ matrix.backend == 'libp2p-bitswap' }}
+        run: |
+          for i in $(seq 1 30); do
+            curl -s http://127.0.0.1:8090 > /dev/null && break
+            sleep 1
+          done
+
       # 5. Start rainbow variant
       - name: Start rainbow (no libp2p, remote block gateway)
         if: ${{ matrix.backend == 'remote-block-gw' }}
@@ -108,7 +127,15 @@ jobs:
         run: |
           ./rainbow &
         working-directory: rainbow
-          #
+
+      - name: Wait for rainbow (remote-block-gw)
+        if: ${{ matrix.backend == 'remote-block-gw' }}
+        run: |
+          for i in $(seq 1 30); do
+            curl -s http://127.0.0.1:8090 > /dev/null && break
+            sleep 1
+          done
+
       # 5. Start rainbow variant
       - name: Start rainbow (no libp2p, remote car gateway)
         if: ${{ matrix.backend == 'remote-car-gw' }}
@@ -123,6 +150,14 @@ jobs:
         run: |
           ./rainbow &
         working-directory: rainbow
+
+      - name: Wait for rainbow (remote-car-gw)
+        if: ${{ matrix.backend == 'remote-car-gw' }}
+        run: |
+          for i in $(seq 1 30); do
+            curl -s http://127.0.0.1:8090 > /dev/null && break
+            sleep 1
+          done
 
       # 6. Run the gateway-conformance tests
       - name: Run gateway-conformance tests
