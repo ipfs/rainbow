@@ -23,6 +23,9 @@ The following emojis are used to highlight certain changes:
 
 - upgrade to `boxo` [v0.37.0](https://github.com/ipfs/boxo/releases/tag/v0.37.0)
   - include upgrade to [v0.36.0](https://github.com/ipfs/boxo/releases/tag/v0.36.0)
+- upgrade to `gateway-conformance` [v0.10](https://github.com/ipfs/gateway-conformance/releases/tag/v0.10.2)
+  - [IPIP-523](https://github.com/ipfs/specs/pull/523): `?format=` URL query parameter now takes precedence over `Accept` HTTP header
+  - [IPIP-524](https://github.com/ipfs/specs/pull/524): codec conversion tests now expect HTTP 406 when requested format does not match native codec
 - upgrade to `go-ipld-prime` [v0.22.0](https://github.com/ipld/go-ipld-prime/releases/tag/v0.22.0)
 - upgrade to `go-libp2p-kad-dht` [v0.38.0](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.38.0)
 - upgrade to `go-libp2p` [v0.47.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.47.0)
