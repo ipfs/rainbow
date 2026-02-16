@@ -42,7 +42,7 @@ jobs:
 
       # 2. Download the gateway-conformance fixtures
       - name: Download gateway-conformance fixtures
-        uses: ipfs/gateway-conformance/.github/actions/extract-fixtures@v0.8
+        uses: ipfs/gateway-conformance/.github/actions/extract-fixtures@v0.10
         with:
           output: fixtures
 
@@ -71,7 +71,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
-          go-version: 1.24.x
+          go-version: 1.26.x
 
       - name: Checkout rainbow
         uses: actions/checkout@v6
@@ -126,7 +126,7 @@ jobs:
 
       # 6. Run the gateway-conformance tests
       - name: Run gateway-conformance tests
-        uses: ipfs/gateway-conformance/.github/actions/test@v0.8
+        uses: ipfs/gateway-conformance/.github/actions/test@v0.10
         with:
           gateway-url: http://127.0.0.1:8090
           subdomain-url: http://example.com:8090

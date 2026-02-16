@@ -21,7 +21,13 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
-- upgrade to `boxo` [v0.36.0](https://github.com/ipfs/boxo/releases/tag/v0.36.0)
+- upgrade to `boxo` [v0.37.0](https://github.com/ipfs/boxo/releases/tag/v0.37.0)
+  - include upgrade to [v0.36.0](https://github.com/ipfs/boxo/releases/tag/v0.36.0)
+- upgrade to `gateway-conformance` [v0.10](https://github.com/ipfs/gateway-conformance/releases/tag/v0.10.2)
+  - [IPIP-523](https://github.com/ipfs/specs/pull/523): `?format=` URL query parameter now takes precedence over `Accept` HTTP header
+  - [IPIP-524](https://github.com/ipfs/specs/pull/524): codec conversion tests now expect HTTP 406 when requested format does not match native codec
+- upgrade to `go-ipld-prime` [v0.22.0](https://github.com/ipld/go-ipld-prime/releases/tag/v0.22.0)
+- upgrade to `go-libp2p-kad-dht` [v0.38.0](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.38.0)
 - upgrade to `go-libp2p` [v0.47.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.47.0)
 - upgrade to `go-log/v2` [v2.9.1](https://github.com/ipfs/go-log/releases/tag/v2.9.1)
 - upgrade to go-ds-pebble [v0.5.9](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.9)
@@ -30,6 +36,7 @@ The following emojis are used to highlight certain changes:
   - includes upgrade to pebble [v2.1.4](https://github.com/cockroachdb/pebble/releases/tag/v2.1.4)
 - upgrade to `go-ds-flatfs` [v0.6.0](https://github.com/ipfs/go-ds-flatfs/releases/tag/v0.6.0)
 - upgrade to badger/v4 [v4.9.1](https://github.com/dgraph-io/badger/releases/tag/v4.9.1)
+- Docker image now builds with [Go 1.26](https://go.dev/doc/go1.26): the Green Tea GC is enabled by default reducing GC overhead, small object allocation is cheaper, and the compiler stack-allocates slice backing stores in more cases
 
 ### Fixed
 
