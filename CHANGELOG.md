@@ -36,6 +36,7 @@ The following emojis are used to highlight certain changes:
   - includes upgrade to pebble [v2.1.4](https://github.com/cockroachdb/pebble/releases/tag/v2.1.4)
 - upgrade to `go-ds-flatfs` [v0.6.0](https://github.com/ipfs/go-ds-flatfs/releases/tag/v0.6.0)
 - upgrade to badger/v4 [v4.9.1](https://github.com/dgraph-io/badger/releases/tag/v4.9.1)
+- Docker image now builds with [Go 1.26](https://go.dev/doc/go1.26): the Green Tea GC is enabled by default reducing GC overhead, small object allocation is cheaper, and the compiler stack-allocates slice backing stores in more cases
 
 ### Fixed
 
