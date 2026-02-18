@@ -15,14 +15,28 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
-- Configurable routing timeouts: new options `RAINBOW_HTTP_ROUTERS_TIMEOUT` and `RAINBOW_ROUTING_TIMEOUT` (and the similar command-line flags) allow setting timeouts for routing operations. The former does it for delegated http routing requests. The latter specifies a timeout for routing requests.
-- Added `BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS`: Controls whether bitswap duplicate block statistics are collected. This is disabled by default since it has a performance impact.
-- Allow specifying a DNSLink safelist: `RAINBOW_DNSLINK_GATEWAY_DOMAINS` defines which dnslink domains are allowed to use this gateway.
+### Changed
+
+### Fixed
+
+### Removed
+
+### Security
+
+## [1.22.0]
+
+### Added
+
+- Configurable routing timeouts: new options [`RAINBOW_HTTP_ROUTERS_TIMEOUT`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_http_routers_timeout) and [`RAINBOW_ROUTING_TIMEOUT`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_routing_timeout) (and the similar command-line flags) allow setting timeouts for routing operations. The former does it for delegated http routing requests. The latter specifies a timeout for routing requests.
+- Added [`BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#bitswap_enable_duplicate_block_stats): Controls whether bitswap duplicate block statistics are collected. This is disabled by default since it has a performance impact.
+- Allow specifying a DNSLink safelist: [`RAINBOW_DNSLINK_GATEWAY_DOMAINS`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_dnslink_gateway_domains) defines which dnslink domains are allowed to use this gateway.
+- Added [reverse proxy documentation](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_subdomain_gateway_domains) with `Host` header forwarding requirements for subdomain gateways behind nginx ([#317](https://github.com/ipfs/rainbow/pull/317)).
 
 ### Changed
 
 - upgrade to `boxo` [v0.37.0](https://github.com/ipfs/boxo/releases/tag/v0.37.0)
   - include upgrade to [v0.36.0](https://github.com/ipfs/boxo/releases/tag/v0.36.0)
+  - max block size raised from 1 MiB to 2 MiB, aligning with the [bitswap spec](https://specs.ipfs.tech/bitswap-protocol/#block-sizes)
 - upgrade to `gateway-conformance` [v0.10](https://github.com/ipfs/gateway-conformance/releases/tag/v0.10.2)
   - [IPIP-523](https://github.com/ipfs/specs/pull/523): `?format=` URL query parameter now takes precedence over `Accept` HTTP header
   - [IPIP-524](https://github.com/ipfs/specs/pull/524): codec conversion tests now expect HTTP 406 when requested format does not match native codec
@@ -30,12 +44,14 @@ The following emojis are used to highlight certain changes:
 - upgrade to `go-libp2p-kad-dht` [v0.38.0](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.38.0)
 - upgrade to `go-libp2p` [v0.47.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.47.0)
 - upgrade to `go-log/v2` [v2.9.1](https://github.com/ipfs/go-log/releases/tag/v2.9.1)
+  - wired slog handler as application-wide default ([see explainer in v2.9.0](https://github.com/ipfs/go-log/releases/tag/v2.9.0)), bridged to go-libp2p for per-subsystem log level control
 - upgrade to go-ds-pebble [v0.5.9](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.9)
   - include upgrade to go-ds-pebble [v0.5.8](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.8)
   - include upgrade to go-ds-pebble [v0.5.7](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.7)
   - includes upgrade to pebble [v2.1.4](https://github.com/cockroachdb/pebble/releases/tag/v2.1.4)
 - upgrade to `go-ds-flatfs` [v0.6.0](https://github.com/ipfs/go-ds-flatfs/releases/tag/v0.6.0)
 - upgrade to badger/v4 [v4.9.1](https://github.com/dgraph-io/badger/releases/tag/v4.9.1)
+- Redesigned default landing page for third-party deployments: added `noindex` meta tag, dynamic WHOIS-based abuse reporting, dark mode support, and operator customization guidance ([#314](https://github.com/ipfs/rainbow/pull/314))
 - Docker image now builds with [Go 1.26](https://go.dev/doc/go1.26): the Green Tea GC is enabled by default reducing GC overhead, small object allocation is cheaper, and the compiler stack-allocates slice backing stores in more cases
 
 ### Fixed
