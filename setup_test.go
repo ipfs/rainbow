@@ -197,6 +197,13 @@ func testSeedPeering(t *testing.T, n int, dhtRouting DHTRouting, dhtSharedHost b
 		nodes[i], err = SetupWithLibp2p(ctx, cfgs[i], keys[i], cdns)
 		require.NoError(t, err)
 	}
+	t.Cleanup(func() {
+		for _, node := range nodes {
+			if node.datastore != nil {
+				node.datastore.Close()
+			}
+		}
+	})
 
 	require.Eventually(t, func() bool {
 		for i, node := range nodes {
