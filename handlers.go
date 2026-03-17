@@ -318,7 +318,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 			NoDNSLink:             true,
 			InlineDNSLink:         true,
 			DeserializedResponses: false,
-			UseSubdomains:         contains(cfg.SubdomainGatewayDomains, domain),
+			UseSubdomains:         slices.Contains(cfg.SubdomainGatewayDomains, domain),
 		}
 	}
 
@@ -491,8 +491,4 @@ func BlockProfileRateOption(path string, mux *http.ServeMux) *http.ServeMux {
 		runtime.SetBlockProfileRate(rate)
 	})
 	return mux
-}
-
-func contains[T comparable](collection []T, element T) bool {
-	return slices.Contains(collection, element)
 }
