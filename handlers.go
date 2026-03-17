@@ -355,6 +355,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 		NoDNSLink:               len(cfg.DNSLinkGatewayDomains) > 0,
 		MaxConcurrentRequests:   cfg.MaxConcurrentRequests, // When exceeded, returns 429 with Retry-After: 60 (hardcoded in boxo)
 		RetrievalTimeout:        cfg.RetrievalTimeout,
+		MaxRequestDuration:      cfg.MaxRequestDuration,
 		MaxRangeRequestFileSize: cfg.MaxRangeRequestFileSize,
 		DiagnosticServiceURL:    cfg.DiagnosticServiceURL,
 	}

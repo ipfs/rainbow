@@ -193,6 +193,7 @@ type Config struct {
 	// Gateway limits
 	MaxConcurrentRequests   int
 	RetrievalTimeout        time.Duration
+	MaxRequestDuration      time.Duration
 	MaxRangeRequestFileSize int64
 	DiagnosticServiceURL    string
 }

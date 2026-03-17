@@ -498,6 +498,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_RETRIEVAL_TIMEOUT"},
 			Usage:   "Maximum duration for initial content retrieval and time between writes",
 		},
+		&cli.DurationFlag{
+			Name:    "max-request-duration",
+			Value:   time.Hour,
+			EnvVars: []string{"RAINBOW_MAX_REQUEST_DURATION"},
+			Usage:   "Maximum total time a request can take. Zero or negative values use the default (1 hour)",
+		},
 		&cli.Int64Flag{
 			Name:    "max-range-request-file-size",
 			Value:   5368709120, // 5 GiB
@@ -758,6 +764,7 @@ share the same seed as long as the indexes are different.
 			// Gateway limits
 			MaxConcurrentRequests:   cctx.Int("max-concurrent-requests"),
 			RetrievalTimeout:        cctx.Duration("retrieval-timeout"),
+			MaxRequestDuration:      cctx.Duration("max-request-duration"),
 			MaxRangeRequestFileSize: cctx.Int64("max-range-request-file-size"),
 			DiagnosticServiceURL:    cctx.String("diagnostic-service-url"),
 		}
