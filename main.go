@@ -906,9 +906,6 @@ share the same seed as long as the indexes are different.
 			syscall.SIGHUP,
 		)
 
-		var wg sync.WaitGroup
-		wg.Add(2)
-
 		fmt.Printf("IPFS Gateway listening at %s\n\n", gatewayListen)
 
 		printIfListConfigured(fmt.Sprintf("  %-40s = ", "RAINBOW_GATEWAY_DOMAINS"), cfg.GatewayDomains)
@@ -933,27 +930,25 @@ share the same seed as long as the indexes are different.
 		fmt.Printf("CTL endpoint listening at http://%s\n", ctlListen)
 		fmt.Printf("  Metrics: http://%s/debug/metrics/prometheus\n\n", ctlListen)
 
-		go func() {
-			defer wg.Done()
+		var wg sync.WaitGroup
 
+		wg.Go(func() {
 			err := gatewaySrv.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				fmt.Fprintf(os.Stderr, "Failed to start gateway: %s\n", err)
 				quit <- os.Interrupt
 			}
-		}()
+		})
 
 		_ = gnd.periodicGC(cctx.Context, cfg.GCThreshold)
 
-		go func() {
-			defer wg.Done()
-
+		wg.Go(func() {
 			err := apiSrv.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				fmt.Fprintf(os.Stderr, "Failed to start metrics: %s\n", err)
 				quit <- os.Interrupt
 			}
-		}()
+		})
 
 		var gcTicker *time.Timer
 		var gcTickerDone chan bool
@@ -961,24 +956,20 @@ share the same seed as long as the indexes are different.
 		if cfg.GCInterval > 0 {
 			gcTicker = time.NewTimer(cfg.GCInterval)
 			gcTickerDone = make(chan bool)
-			wg.Add(1)
 
-			go func() {
-				defer wg.Done()
-
+			wg.Go(func() {
 				for {
 					select {
 					case <-gcTickerDone:
 						return
 					case <-gcTicker.C:
-						err = gnd.periodicGC(cctx.Context, cfg.GCThreshold)
-						if err != nil {
+						if err := gnd.periodicGC(cctx.Context, cfg.GCThreshold); err != nil {
 							goLog.Errorf("error when running periodic gc: %w", err)
 						}
 						gcTicker.Reset(cfg.GCInterval)
 					}
 				}
-			}()
+			})
 		}
 
 		sddaemon.SdNotify(false, sddaemon.SdNotifyReady)

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -493,11 +494,5 @@ func BlockProfileRateOption(path string, mux *http.ServeMux) *http.ServeMux {
 }
 
 func contains[T comparable](collection []T, element T) bool {
-	for _, item := range collection {
-		if item == element {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(collection, element)
 }

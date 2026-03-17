@@ -29,7 +29,7 @@ func mustFreePort(t *testing.T) (int, *net.TCPListener) {
 
 func mustFreePorts(t *testing.T, n int) []int {
 	ports := make([]int, 0)
-	for i := 0; i < n; i++ {
+	for range n {
 		port, listener := mustFreePort(t)
 		defer listener.Close()
 		ports = append(ports, port)
@@ -67,7 +67,7 @@ func mustPeeredNodes(t *testing.T, configuration [][]int, peeringShareCache bool
 	mas := make([]multiaddr.Multiaddr, n)
 	addrInfos := make([]peer.AddrInfo, n)
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		keys[i], pids[i] = mustTestPeer(t)
 		mas[i] = mustListenAddrWithPort(t, ports[i])
 		addrInfos[i] = peer.AddrInfo{
@@ -78,7 +78,7 @@ func mustPeeredNodes(t *testing.T, configuration [][]int, peeringShareCache bool
 
 	cfgs := make([]Config, n)
 	nodes := make([]*Node, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		cfgs[i] = Config{
 			DHTRouting:         DHTOff,
 			RoutingV1Endpoints: []string{},
@@ -129,8 +129,7 @@ func TestPeeringSharedCache(t *testing.T) {
 
 	bl := blocks.NewBlock([]byte(string("peering-cache-test")))
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	checkBitswap := func(i int, success bool) {
 		ctx, cancel := context.WithTimeout(ctx, time.Second*5)
@@ -166,14 +165,14 @@ func testSeedPeering(t *testing.T, n int, dhtRouting DHTRouting, dhtSharedHost b
 	keys := make([]ic.PrivKey, n)
 	pids := make([]peer.ID, n)
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		keys[i], pids[i] = mustTestPeerFromSeed(t, seed, i)
 	}
 
 	cfgs := make([]Config, n)
 	nodes := make([]*Node, n)
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		dnslinkResolver, err := gateway.NewDNSResolver(nil)
 		require.NoError(t, err)
 
