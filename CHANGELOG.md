@@ -15,6 +15,8 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+- Add `--max-request-duration` CLI flag (`RAINBOW_MAX_REQUEST_DURATION` env var) to configure the Boxo gateway `MaxRequestDuration` option. Defaults to 1 hour, matching Boxo's DefaultMaxRequestDuration. ([#350](https://github.com/ipfs/rainbow/pull/350))
+
 ### Changed
 
 ### Fixed
