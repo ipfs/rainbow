@@ -770,12 +770,9 @@ share the same seed as long as the indexes are different.
 		}
 
 		// Store original values for display
-		originalHTTPRouters := make([]string, len(cfg.RoutingV1Endpoints))
-		copy(originalHTTPRouters, cfg.RoutingV1Endpoints)
-		originalDNSResolvers := make([]string, len(customDNSResolvers))
-		copy(originalDNSResolvers, customDNSResolvers)
-		originalBootstrap := make([]string, len(cfg.Bootstrap))
-		copy(originalBootstrap, cfg.Bootstrap)
+		originalHTTPRouters := slices.Clone(cfg.RoutingV1Endpoints)
+		originalDNSResolvers := slices.Clone(customDNSResolvers)
+		originalBootstrap := slices.Clone(cfg.Bootstrap)
 
 		// Setup autoconf
 		var autoConfData *autoconf.Config
@@ -821,21 +818,16 @@ share the same seed as long as the indexes are different.
 		}
 		cfg.DNSLinkResolver = dns
 		// Store expanded DNS resolvers for display
-		customDNSResolvers = []string{}
+		customDNSResolvers = make([]string, 0, len(expandedDNS))
 		for domain, resolver := range expandedDNS {
 			customDNSResolvers = append(customDNSResolvers, fmt.Sprintf("%s : %s", domain, resolver))
 		}
 
 		// Check bootstrap peers if DHT is enabled
 		if cfg.DHTRouting != DHTOff && libp2p {
-			hasValidBootstrap := false
-			for _, peer := range cfg.Bootstrap {
-				if peer != "" && peer != autoconf.AutoPlaceholder {
-					hasValidBootstrap = true
-					break
-				}
-			}
-			if !hasValidBootstrap {
+			if !slices.ContainsFunc(cfg.Bootstrap, func(peer string) bool {
+				return peer != "" && peer != autoconf.AutoPlaceholder
+			}) {
 				return fmt.Errorf("no valid bootstrap peers configured - provide bootstrap peers with --bootstrap or enable autoconf")
 			}
 		}
