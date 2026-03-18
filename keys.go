@@ -73,5 +73,5 @@ func derivePeerIDs(seed string, ourIndex int, maxIndex int) ([]peer.ID, error) {
 }
 
 func deriveKeyInfo(index int) []byte {
-	return []byte(fmt.Sprintf("rainbow-%d", index))
+	return fmt.Appendf(nil, "rainbow-%d", index)
 }

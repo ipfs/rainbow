@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"testing"
 
 	"github.com/ipfs/go-cid"
@@ -16,8 +15,7 @@ func TestPeriodicGC(t *testing.T) {
 		Bitswap: true,
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	cids := []cid.Cid{
 		mustAddFile(t, gnd, []byte("a")),

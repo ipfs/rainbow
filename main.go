@@ -770,12 +770,9 @@ share the same seed as long as the indexes are different.
 		}
 
 		// Store original values for display
-		originalHTTPRouters := make([]string, len(cfg.RoutingV1Endpoints))
-		copy(originalHTTPRouters, cfg.RoutingV1Endpoints)
-		originalDNSResolvers := make([]string, len(customDNSResolvers))
-		copy(originalDNSResolvers, customDNSResolvers)
-		originalBootstrap := make([]string, len(cfg.Bootstrap))
-		copy(originalBootstrap, cfg.Bootstrap)
+		originalHTTPRouters := slices.Clone(cfg.RoutingV1Endpoints)
+		originalDNSResolvers := slices.Clone(customDNSResolvers)
+		originalBootstrap := slices.Clone(cfg.Bootstrap)
 
 		// Setup autoconf
 		var autoConfData *autoconf.Config
@@ -821,21 +818,16 @@ share the same seed as long as the indexes are different.
 		}
 		cfg.DNSLinkResolver = dns
 		// Store expanded DNS resolvers for display
-		customDNSResolvers = []string{}
+		customDNSResolvers = make([]string, 0, len(expandedDNS))
 		for domain, resolver := range expandedDNS {
 			customDNSResolvers = append(customDNSResolvers, fmt.Sprintf("%s : %s", domain, resolver))
 		}
 
 		// Check bootstrap peers if DHT is enabled
 		if cfg.DHTRouting != DHTOff && libp2p {
-			hasValidBootstrap := false
-			for _, peer := range cfg.Bootstrap {
-				if peer != "" && peer != autoconf.AutoPlaceholder {
-					hasValidBootstrap = true
-					break
-				}
-			}
-			if !hasValidBootstrap {
+			if !slices.ContainsFunc(cfg.Bootstrap, func(peer string) bool {
+				return peer != "" && peer != autoconf.AutoPlaceholder
+			}) {
 				return fmt.Errorf("no valid bootstrap peers configured - provide bootstrap peers with --bootstrap or enable autoconf")
 			}
 		}
@@ -906,9 +898,6 @@ share the same seed as long as the indexes are different.
 			syscall.SIGHUP,
 		)
 
-		var wg sync.WaitGroup
-		wg.Add(2)
-
 		fmt.Printf("IPFS Gateway listening at %s\n\n", gatewayListen)
 
 		printIfListConfigured(fmt.Sprintf("  %-40s = ", "RAINBOW_GATEWAY_DOMAINS"), cfg.GatewayDomains)
@@ -933,27 +922,25 @@ share the same seed as long as the indexes are different.
 		fmt.Printf("CTL endpoint listening at http://%s\n", ctlListen)
 		fmt.Printf("  Metrics: http://%s/debug/metrics/prometheus\n\n", ctlListen)
 
-		go func() {
-			defer wg.Done()
+		var wg sync.WaitGroup
 
+		wg.Go(func() {
 			err := gatewaySrv.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				fmt.Fprintf(os.Stderr, "Failed to start gateway: %s\n", err)
 				quit <- os.Interrupt
 			}
-		}()
+		})
 
 		_ = gnd.periodicGC(cctx.Context, cfg.GCThreshold)
 
-		go func() {
-			defer wg.Done()
-
+		wg.Go(func() {
 			err := apiSrv.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				fmt.Fprintf(os.Stderr, "Failed to start metrics: %s\n", err)
 				quit <- os.Interrupt
 			}
-		}()
+		})
 
 		var gcTicker *time.Timer
 		var gcTickerDone chan bool
@@ -961,24 +948,20 @@ share the same seed as long as the indexes are different.
 		if cfg.GCInterval > 0 {
 			gcTicker = time.NewTimer(cfg.GCInterval)
 			gcTickerDone = make(chan bool)
-			wg.Add(1)
 
-			go func() {
-				defer wg.Done()
-
+			wg.Go(func() {
 				for {
 					select {
 					case <-gcTickerDone:
 						return
 					case <-gcTicker.C:
-						err = gnd.periodicGC(cctx.Context, cfg.GCThreshold)
-						if err != nil {
+						if err := gnd.periodicGC(cctx.Context, cfg.GCThreshold); err != nil {
 							goLog.Errorf("error when running periodic gc: %w", err)
 						}
 						gcTicker.Reset(cfg.GCInterval)
 					}
 				}
-			}()
+			})
 		}
 
 		sddaemon.SdNotify(false, sddaemon.SdNotifyReady)
