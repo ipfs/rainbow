@@ -16,6 +16,8 @@ The following emojis are used to highlight certain changes:
 ### Added
 
 - Add `--max-request-duration` CLI flag (`RAINBOW_MAX_REQUEST_DURATION` env var) to configure the Boxo gateway `MaxRequestDuration` option. Defaults to 1 hour, matching Boxo's DefaultMaxRequestDuration. ([#350](https://github.com/ipfs/rainbow/pull/350))
+- Add `--max-deserialized-response-size` (`RAINBOW_MAX_DESERIALIZED_RESPONSE_SIZE`) to limit deserialized responses by content size. Trustless formats (raw, CAR) are not affected. ([#362](https://github.com/ipfs/rainbow/pull/362))
+- Add `--max-unixfs-dag-response-size` (`RAINBOW_MAX_UNIXFS_DAG_RESPONSE_SIZE`) to limit all response formats by UnixFS DAG size, including raw blocks, CAR, and TAR. ([#362](https://github.com/ipfs/rainbow/pull/362))
 
 ### Changed
 

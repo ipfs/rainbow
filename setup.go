@@ -191,11 +191,13 @@ type Config struct {
 	Bootstrap []string
 
 	// Gateway limits
-	MaxConcurrentRequests   int
-	RetrievalTimeout        time.Duration
-	MaxRequestDuration      time.Duration
-	MaxRangeRequestFileSize int64
-	DiagnosticServiceURL    string
+	MaxConcurrentRequests       int
+	RetrievalTimeout            time.Duration
+	MaxRequestDuration          time.Duration
+	MaxRangeRequestFileSize     int64
+	MaxDeserializedResponseSize int64
+	MaxUnixFSDAGResponseSize    int64
+	DiagnosticServiceURL        string
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {
