@@ -514,13 +514,13 @@ Generate an identity seed and launch a gateway:
 			Name:    "max-deserialized-response-size",
 			Value:   0,
 			EnvVars: []string{"RAINBOW_MAX_DESERIALIZED_RESPONSE_SIZE"},
-			Usage:   "Maximum file/directory size in bytes for deserialized (non-trustless) responses. Larger content returns 501. Trustless formats (raw, CAR) are not affected. Set to 0 to disable",
+			Usage:   "Maximum file/directory size in bytes for deserialized (non-trustless) responses. Larger content returns 410 Gone. Trustless formats (raw, CAR) are not affected. Set to 0 to disable",
 		},
 		&cli.Int64Flag{
 			Name:    "max-unixfs-dag-response-size",
 			Value:   0,
 			EnvVars: []string{"RAINBOW_MAX_UNIXFS_DAG_RESPONSE_SIZE"},
-			Usage:   "Maximum UnixFS DAG size in bytes for all response formats (deserialized, raw, CAR, TAR). Larger content returns 501. Set to 0 to disable",
+			Usage:   "Maximum UnixFS DAG size in bytes for all response formats (deserialized, raw, CAR, TAR). Larger content returns 410 Gone. Set to 0 to disable",
 		},
 		&cli.StringFlag{
 			Name:    "diagnostic-service-url",

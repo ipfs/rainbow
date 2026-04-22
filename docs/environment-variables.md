@@ -34,6 +34,8 @@
   - [`RAINBOW_RETRIEVAL_TIMEOUT`](#rainbow_retrieval_timeout)
   - [`BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS`](#bitswap_enable_duplicate_block_stats)
   - [`RAINBOW_MAX_RANGE_REQUEST_FILE_SIZE`](#rainbow_max_range_request_file_size)
+  - [`RAINBOW_MAX_DESERIALIZED_RESPONSE_SIZE`](#rainbow_max_deserialized_response_size)
+  - [`RAINBOW_MAX_UNIXFS_DAG_RESPONSE_SIZE`](#rainbow_max_unixfs_dag_response_size)
   - [`RAINBOW_DIAGNOSTIC_SERVICE_URL`](#rainbow_diagnostic_service_url)
 - [Experiments](#experiments)
   - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
@@ -421,6 +423,30 @@ When a range request exceeds the configured limit, the gateway will return an HT
 Set to `0` to disable this limit and allow range requests for files of any size (use with caution if your gateway is behind a CDN or reverse proxy).
 
 Default: `5368709120` (5 GiB - matches Cloudflare's threshold to prevent excess billing)
+
+### `RAINBOW_MAX_DESERIALIZED_RESPONSE_SIZE`
+
+Maximum file or directory DAG size in bytes for deserialized (non-trustless) responses. When the resolved UnixFS content exceeds this limit, the gateway returns a cacheable `410 Gone` response suggesting operators run their own IPFS node for large content.
+
+This limit only applies to deserialized responses. Trustless formats (`application/vnd.ipld.raw`, `application/vnd.ipld.car`) are **not** affected, so clients can still fetch large content as verifiable blocks or CAR streams.
+
+Typical use: cap bandwidth from browser-facing deserialized traffic while keeping verifiable block and CAR retrieval unrestricted. The limit is enforced using the root UnixFS block's reported size, so no extra block fetches are required. The `410 Gone` response is served with a long-lived `Cache-Control` header so CDNs (Cloudflare, Fastly) cache the rejection and shield the origin from repeat requests.
+
+Set to `0` to disable this limit.
+
+Default: `0` (disabled)
+
+### `RAINBOW_MAX_UNIXFS_DAG_RESPONSE_SIZE`
+
+Maximum UnixFS file or directory DAG size in bytes, applied to **all** response formats: deserialized, raw blocks (`application/vnd.ipld.raw`), CAR (`application/vnd.ipld.car`), and TAR (`application/x-tar`). When the resolved UnixFS DAG size exceeds this limit, the gateway returns a cacheable `410 Gone` response regardless of the requested response format.
+
+Use this when you want a hard ceiling on response size across every format the gateway serves, for example to prevent a single client from pulling a multi-terabyte dataset via CAR. This is independent of `RAINBOW_MAX_DESERIALIZED_RESPONSE_SIZE`; both can be set together.
+
+Most handlers reuse the size already available from normal request processing. The CAR handler performs a lightweight `Head` call to obtain the DAG size upfront (the root block is then cached for the subsequent CAR traversal). The `410 Gone` response is served with a long-lived `Cache-Control` header so CDNs cache the rejection.
+
+Set to `0` to disable this limit.
+
+Default: `0` (disabled)
 
 ### `RAINBOW_DIAGNOSTIC_SERVICE_URL`
 
