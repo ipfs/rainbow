@@ -510,6 +510,18 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_MAX_RANGE_REQUEST_FILE_SIZE"},
 			Usage:   "Maximum file size in bytes for which range requests are supported. Range requests for larger files will return 501. Set to 0 to disable limit",
 		},
+		&cli.Int64Flag{
+			Name:    "max-deserialized-response-size",
+			Value:   0,
+			EnvVars: []string{"RAINBOW_MAX_DESERIALIZED_RESPONSE_SIZE"},
+			Usage:   "Maximum file/directory size in bytes for deserialized (non-trustless) responses. Larger content returns 410 Gone. Trustless formats (raw, CAR) are not affected. Set to 0 to disable",
+		},
+		&cli.Int64Flag{
+			Name:    "max-unixfs-dag-response-size",
+			Value:   0,
+			EnvVars: []string{"RAINBOW_MAX_UNIXFS_DAG_RESPONSE_SIZE"},
+			Usage:   "Maximum UnixFS DAG size in bytes for all response formats (deserialized, raw, CAR, TAR). Larger content returns 410 Gone. Set to 0 to disable",
+		},
 		&cli.StringFlag{
 			Name:    "diagnostic-service-url",
 			Value:   "https://check.ipfs.network",
@@ -762,11 +774,13 @@ share the same seed as long as the indexes are different.
 			HTTPRetrievalMaxDontHaveErrors:         httpRetrievalMaxDontHaveErrors,
 			HTTPRetrievalMetricsLabelsForEndpoints: httpRetrievalMetricsLabelsForEndpoints,
 			// Gateway limits
-			MaxConcurrentRequests:   cctx.Int("max-concurrent-requests"),
-			RetrievalTimeout:        cctx.Duration("retrieval-timeout"),
-			MaxRequestDuration:      cctx.Duration("max-request-duration"),
-			MaxRangeRequestFileSize: cctx.Int64("max-range-request-file-size"),
-			DiagnosticServiceURL:    cctx.String("diagnostic-service-url"),
+			MaxConcurrentRequests:       cctx.Int("max-concurrent-requests"),
+			RetrievalTimeout:            cctx.Duration("retrieval-timeout"),
+			MaxRequestDuration:          cctx.Duration("max-request-duration"),
+			MaxRangeRequestFileSize:     cctx.Int64("max-range-request-file-size"),
+			MaxDeserializedResponseSize: cctx.Int64("max-deserialized-response-size"),
+			MaxUnixFSDAGResponseSize:    cctx.Int64("max-unixfs-dag-response-size"),
+			DiagnosticServiceURL:        cctx.String("diagnostic-service-url"),
 		}
 
 		// Store original values for display
