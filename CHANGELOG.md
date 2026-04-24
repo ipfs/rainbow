@@ -15,6 +15,18 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+### Security
+
+## [1.23.0]
+
+### Added
+
 - Add `--max-request-duration` CLI flag (`RAINBOW_MAX_REQUEST_DURATION` env var) to configure the Boxo gateway `MaxRequestDuration` option. Defaults to 1 hour, matching Boxo's DefaultMaxRequestDuration. ([#350](https://github.com/ipfs/rainbow/pull/350))
 - Add [`RAINBOW_MAX_DESERIALIZED_RESPONSE_SIZE`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_max_deserialized_response_size) (`--max-deserialized-response-size`) to limit deserialized responses by content size. Trustless formats (raw, CAR) are not affected. Oversized responses return `410 Gone`. ([#364](https://github.com/ipfs/rainbow/pull/364))
 - Add [`RAINBOW_MAX_UNIXFS_DAG_RESPONSE_SIZE`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_max_unixfs_dag_response_size) (`--max-unixfs-dag-response-size`) to limit all response formats by UnixFS DAG size, including raw blocks, CAR, and TAR. Oversized responses return `410 Gone`. ([#364](https://github.com/ipfs/rainbow/pull/364))
@@ -25,12 +37,6 @@ The following emojis are used to highlight certain changes:
 - upgrade to `go-libp2p-kad-dht` [v0.39.1](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.39.1)
 - upgrade to `go-libp2p` [v0.48.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.48.0)
 - upgrade to `go-ds-pebble` [v0.5.10](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.10)
-
-### Fixed
-
-### Removed
-
-### Security
 
 ## [1.22.0]
 
