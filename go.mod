@@ -18,7 +18,7 @@ require (
 	github.com/ipfs/go-ds-badger4 v0.1.8
 	github.com/ipfs/go-ds-flatfs v0.6.0
 	github.com/ipfs/go-ds-leveldb v0.5.2
-	github.com/ipfs/go-ds-pebble v0.5.9
+	github.com/ipfs/go-ds-pebble v0.5.10
 	github.com/ipfs/go-log/v2 v2.9.1
 	github.com/ipfs/go-metrics-interface v0.3.0
 	github.com/ipfs/go-metrics-prometheus v0.1.0
