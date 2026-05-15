@@ -21,26 +21,45 @@ import (
 	"github.com/libp2p/go-libp2p/core/peer"
 	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/libp2p/go-libp2p/core/routing"
+	ma "github.com/multiformats/go-multiaddr"
+	manet "github.com/multiformats/go-multiaddr/net"
 )
 
-// peerstoreMergingHost wraps the bitswap host so each Connect also sees
-// addresses the DHT host has learned for the target peer.
+// peerstoreMergingHost wraps the bitswap host so Connect sees addresses
+// the DHT host has learned for a peer.
 //
-// With --dht-shared-host=false the DHT runs on a separate libp2p host
-// whose peerstore captures listen addresses from identify exchanges and
-// Kademlia walks. Without this wrapper, bitswap's Connect on the main
-// host dials only the routing-record addresses, which are often
-// incomplete or stale. Kubo and ipfs-check use one host for both DHT
-// and bitswap, so DHT-learned addresses are visible at dial time; the
-// wrapper restores that property when the hosts are split.
+// BasicHost.Connect runs AddAddrs(pi.Addrs, TempAddrTTL) and then dials
+// every address in the host's peerstore for that peer. Sharing a libp2p
+// host (kubo, ipfs-check) means identify exchanges, DHT response messages,
+// and DCUtR coordination all enrich the same peerstore that bitswap reads
+// at dial time. Rainbow's --dht-shared-host=false default runs the DHT on
+// a separate libp2p host, so that enrichment lands on a peerstore the
+// bitswap host never reads. The wrapper bridges that gap.
+//
+// Only public addresses are copied. The DHT host's peerstore can hold
+// loopback or RFC1918 entries that misconfigured peers stored in their
+// routing tables; forwarding those would just waste resource-manager
+// budget on dials that can never connect.
 type peerstoreMergingHost struct {
 	host.Host
 	dhtAddrs peerstore.AddrBook
 }
 
+// Connect copies public DHT-known addresses for pi.ID into the main host's
+// peerstore at TempAddrTTL (the same TTL BasicHost.Connect uses for the
+// AddrInfo it receives), then delegates to the embedded host. Identify on
+// the resulting connection refreshes the durable set on its own.
 func (h *peerstoreMergingHost) Connect(ctx context.Context, pi peer.AddrInfo) error {
 	if known := h.dhtAddrs.Addrs(pi.ID); len(known) > 0 {
-		h.Host.Peerstore().AddAddrs(pi.ID, known, peerstore.TempAddrTTL)
+		public := make([]ma.Multiaddr, 0, len(known))
+		for _, a := range known {
+			if manet.IsPublicAddr(a) {
+				public = append(public, a)
+			}
+		}
+		if len(public) > 0 {
+			h.Host.Peerstore().AddAddrs(pi.ID, public, peerstore.TempAddrTTL)
+		}
 	}
 	return h.Host.Connect(ctx, pi)
 }
