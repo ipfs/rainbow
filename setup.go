@@ -39,6 +39,7 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/metrics"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/libp2p/go-libp2p/core/routing"
 	"github.com/libp2p/go-libp2p/gologshim"
 	"github.com/libp2p/go-libp2p/p2p/host/observedaddrs"
@@ -362,7 +363,13 @@ func SetupWithLibp2p(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCac
 		blkst = blockstore.NewIdStore(blkst)
 		n.blockstore = blkst
 
-		bsrv = blockservice.New(blkst, setupBitswapExchange(ctx, cfg, h, dhtHost, cr, blkst),
+		// Bridge the DHT host's peerstore into bitswap's view only when the
+		// hosts are split; otherwise the peerstore is already shared.
+		var dhtAddrs peerstore.AddrBook
+		if dhtHost != nil && dhtHost != h {
+			dhtAddrs = dhtHost.Peerstore()
+		}
+		bsrv = blockservice.New(blkst, setupBitswapExchange(ctx, cfg, h, dhtAddrs, cr, blkst),
 			// if we are doing things right, our bitswap wantlists should
 			// not have blocks that we already have (see
 			// https://github.com/ipfs/boxo/blob/e0d4b3e9b91e9904066a10278e366c9a6d9645c7/blockservice/blockservice.go#L272). Thus

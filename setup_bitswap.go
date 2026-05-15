@@ -64,16 +64,17 @@ func (h *peerstoreMergingHost) Connect(ctx context.Context, pi peer.AddrInfo) er
 	return h.Host.Connect(ctx, pi)
 }
 
-func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, dhtHost host.Host, cr routing.ContentRouting, bstore blockstore.Blockstore) exchange.Interface {
+// setupBitswapExchange wires bitswap onto h, the main libp2p host. In the
+// split-host setup (dhtAddrs non-nil), h is wrapped so each bitswap Connect
+// copies DHT-known public addresses into the peerstore before dialing.
+func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, dhtAddrs peerstore.AddrBook, cr routing.ContentRouting, bstore blockstore.Blockstore) exchange.Interface {
 	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
 
 	connEvtMgr := network.NewConnectEventManager()
 
-	// With a split DHT host, bridge its peerstore into bitswap's view of
-	// peer addresses. See peerstoreMergingHost for the why.
 	bitswapHost := h
-	if dhtHost != nil && dhtHost != h {
-		bitswapHost = &peerstoreMergingHost{Host: h, dhtAddrs: dhtHost.Peerstore()}
+	if dhtAddrs != nil {
+		bitswapHost = &peerstoreMergingHost{Host: h, dhtAddrs: dhtAddrs}
 	}
 
 	var exnet network.BitSwapNetwork
