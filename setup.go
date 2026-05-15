@@ -325,13 +325,14 @@ func SetupWithLibp2p(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCac
 	}
 
 	var (
-		vs routing.ValueStore
-		cr routing.ContentRouting
-		pr routing.PeerRouting
+		vs      routing.ValueStore
+		cr      routing.ContentRouting
+		pr      routing.PeerRouting
+		dhtHost host.Host
 	)
 
 	opts = append(opts, libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
-		cr, pr, vs, err = setupRouting(ctx, cfg, h, ds, dhtRcMgr, bwc, dnsCache)
+		cr, pr, vs, dhtHost, err = setupRouting(ctx, cfg, h, ds, dhtRcMgr, bwc, dnsCache)
 		return pr, err
 	}))
 	h, err := libp2p.New(opts...)
@@ -361,7 +362,7 @@ func SetupWithLibp2p(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCac
 		blkst = blockstore.NewIdStore(blkst)
 		n.blockstore = blkst
 
-		bsrv = blockservice.New(blkst, setupBitswapExchange(ctx, cfg, h, cr, blkst),
+		bsrv = blockservice.New(blkst, setupBitswapExchange(ctx, cfg, h, dhtHost, cr, blkst),
 			// if we are doing things right, our bitswap wantlists should
 			// not have blocks that we already have (see
 			// https://github.com/ipfs/boxo/blob/e0d4b3e9b91e9904066a10278e366c9a6d9645c7/blockservice/blockservice.go#L272). Thus

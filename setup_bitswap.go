@@ -19,15 +19,46 @@ import (
 	metri "github.com/ipfs/go-metrics-interface"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/libp2p/go-libp2p/core/routing"
 )
 
-func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routing.ContentRouting, bstore blockstore.Blockstore) exchange.Interface {
+// peerstoreMergingHost wraps the bitswap host so each Connect also sees
+// addresses the DHT host has learned for the target peer.
+//
+// With --dht-shared-host=false the DHT runs on a separate libp2p host
+// whose peerstore captures listen addresses from identify exchanges and
+// Kademlia walks. Without this wrapper, bitswap's Connect on the main
+// host dials only the routing-record addresses, which are often
+// incomplete or stale. Kubo and ipfs-check use one host for both DHT
+// and bitswap, so DHT-learned addresses are visible at dial time; the
+// wrapper restores that property when the hosts are split.
+type peerstoreMergingHost struct {
+	host.Host
+	dhtAddrs peerstore.AddrBook
+}
+
+func (h *peerstoreMergingHost) Connect(ctx context.Context, pi peer.AddrInfo) error {
+	if known := h.dhtAddrs.Addrs(pi.ID); len(known) > 0 {
+		h.Host.Peerstore().AddAddrs(pi.ID, known, peerstore.TempAddrTTL)
+	}
+	return h.Host.Connect(ctx, pi)
+}
+
+func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, dhtHost host.Host, cr routing.ContentRouting, bstore blockstore.Blockstore) exchange.Interface {
 	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
 
 	connEvtMgr := network.NewConnectEventManager()
+
+	// With a split DHT host, bridge its peerstore into bitswap's view of
+	// peer addresses. See peerstoreMergingHost for the why.
+	bitswapHost := h
+	if dhtHost != nil && dhtHost != h {
+		bitswapHost = &peerstoreMergingHost{Host: h, dhtAddrs: dhtHost.Peerstore()}
+	}
+
 	var exnet network.BitSwapNetwork
-	bn := bsnet.NewFromIpfsHost(h, bsnet.WithConnectEventManager(connEvtMgr))
+	bn := bsnet.NewFromIpfsHost(bitswapHost, bsnet.WithConnectEventManager(connEvtMgr))
 
 	if cfg.HTTPRetrievalEnable {
 
