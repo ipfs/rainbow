@@ -19,11 +19,23 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
-- Fix bitswap unable to retrieve content from providers whose advertised addresses are stale or unreachable but whose real listen addresses the DHT host has already learned. With `--dht-shared-host=false` (the default), addresses from the DHT host's peerstore are now merged into the bitswap host's peerstore on each `Connect`, matching kubo and ipfs-check (both of which run DHT and bitswap on the same host). ([#372](https://github.com/ipfs/rainbow/pull/372))
-
 ### Removed
 
 ### Security
+
+## [1.23.1]
+
+### Changed
+
+- update `go-libp2p-kad-dht` to [v0.39.2](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.39.2)
+- update `go-ds-pebble` to [v0.5.11](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.11)
+- update `go-log/v2` to [v2.9.2](https://github.com/ipfs/go-log/releases/tag/v2.9.2)
+- update `go-unixfsnode` to [v1.10.4](https://github.com/ipfs/go-unixfsnode/releases/tag/v1.10.4)
+- update opentelemetry dependencies
+
+### Fixed
+
+- Fix bitswap unable to retrieve content from providers whose advertised addresses are stale or unreachable but whose real listen addresses the DHT host has already learned. With `--dht-shared-host=false` (the default), addresses from the DHT host's peerstore are now merged into the bitswap host's peerstore on each `Connect`, matching kubo and ipfs-check (both of which run DHT and bitswap on the same host). ([#372](https://github.com/ipfs/rainbow/pull/372))
 
 ## [1.23.0]
 
