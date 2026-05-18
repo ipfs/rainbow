@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/ipfs/boxo/routing/providerquerymanager"
@@ -19,15 +20,83 @@ import (
 	metri "github.com/ipfs/go-metrics-interface"
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/libp2p/go-libp2p/core/routing"
+	ma "github.com/multiformats/go-multiaddr"
+	manet "github.com/multiformats/go-multiaddr/net"
 )
 
-func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, cr routing.ContentRouting, bstore blockstore.Blockstore) exchange.Interface {
+// peerstoreMergingHost wraps the bitswap host so Connect sees addresses
+// the DHT host has learned for a peer.
+//
+// BasicHost.Connect runs AddAddrs(pi.Addrs, TempAddrTTL) and then dials
+// every address in the host's peerstore for that peer. Sharing a libp2p
+// host (kubo, ipfs-check) means identify exchanges, DHT response messages,
+// and DCUtR coordination all enrich the same peerstore that bitswap reads
+// at dial time. Rainbow's --dht-shared-host=false default runs the DHT on
+// a separate libp2p host, so that enrichment lands on a peerstore the
+// bitswap host never reads. The wrapper bridges that gap.
+//
+// IP-based addresses are filtered down to publicly routable ones. The DHT
+// host's peerstore can hold loopback or RFC1918 entries that misconfigured
+// peers stored in their routing tables; forwarding those would just waste
+// resource-manager budget on dials that can never connect. Non-IP addresses
+// (relay-only /p2p-circuit hops, DNS-based transports) cannot be classified
+// without resolving them, so they pass through and let the swarm decide.
+type peerstoreMergingHost struct {
+	host.Host
+	dhtAddrs peerstore.AddrBook
+}
+
+// Connect copies dialable DHT-known addresses for pi.ID into the main host's
+// peerstore at TempAddrTTL (the same TTL BasicHost.Connect uses for the
+// AddrInfo it receives), then delegates to the embedded host. Identify on
+// the resulting connection refreshes the durable set on its own.
+func (h *peerstoreMergingHost) Connect(ctx context.Context, pi peer.AddrInfo) error {
+	dialable := slices.DeleteFunc(h.dhtAddrs.Addrs(pi.ID), isUndialableMergedAddr)
+	if len(dialable) > 0 {
+		h.Host.Peerstore().AddAddrs(pi.ID, dialable, peerstore.TempAddrTTL)
+	}
+	return h.Host.Connect(ctx, pi)
+}
+
+// isUndialableMergedAddr reports whether a DHT-learned address should be
+// dropped before forwarding into the bitswap host's peerstore. IP- and
+// DNS-rooted addresses are filtered through manet.IsPublicAddr (which
+// rejects RFC1918, loopback, link-local, and special-use DNS names like
+// .local, .localhost, .invalid, .test). Everything else (relay-only
+// /p2p-circuit hops, unknown transports) cannot be classified locally
+// and is kept so the swarm can attempt it.
+//
+// Mirrors the hasIPOrDNSComponent + IsPublicAddr guard go-libp2p uses
+// in BasicHost.filterPublicAddrs (p2p/host/basic/addrs_manager.go).
+// Phrased as the predicate slices.DeleteFunc wants (true means drop).
+func isUndialableMergedAddr(a ma.Multiaddr) bool {
+	if len(a) == 0 {
+		return true
+	}
+	switch a[0].Protocol().Code {
+	case ma.P_IP4, ma.P_IP6, ma.P_IP6ZONE, ma.P_DNS, ma.P_DNS4, ma.P_DNS6, ma.P_DNSADDR:
+		return !manet.IsPublicAddr(a)
+	}
+	return false
+}
+
+// setupBitswapExchange wires bitswap onto h, the main libp2p host. In the
+// split-host setup (dhtAddrs non-nil), h is wrapped so each bitswap Connect
+// copies DHT-known public addresses into the peerstore before dialing.
+func setupBitswapExchange(ctx context.Context, cfg Config, h host.Host, dhtAddrs peerstore.AddrBook, cr routing.ContentRouting, bstore blockstore.Blockstore) exchange.Interface {
 	bsctx := metri.CtxScope(ctx, "ipfs_bitswap")
 
 	connEvtMgr := network.NewConnectEventManager()
+
+	bitswapHost := h
+	if dhtAddrs != nil {
+		bitswapHost = &peerstoreMergingHost{Host: h, dhtAddrs: dhtAddrs}
+	}
+
 	var exnet network.BitSwapNetwork
-	bn := bsnet.NewFromIpfsHost(h, bsnet.WithConnectEventManager(connEvtMgr))
+	bn := bsnet.NewFromIpfsHost(bitswapHost, bsnet.WithConnectEventManager(connEvtMgr))
 
 	if cfg.HTTPRetrievalEnable {
 

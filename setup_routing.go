@@ -138,21 +138,21 @@ func parseBootstrapPeers(peers []string, warnOnAuto bool) ([]peer.AddrInfo, erro
 	return bootstrapPeers, nil
 }
 
-func setupDHTRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Batching, dhtRcMgr network.ResourceManager, bwc metrics.Reporter) (routing.Routing, error) {
+func setupDHTRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Batching, dhtRcMgr network.ResourceManager, bwc metrics.Reporter) (routing.Routing, host.Host, error) {
 	if cfg.DHTRouting == DHTOff {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	// Parse bootstrap peers
 	bootstrapPeers, err := parseBootstrapPeers(cfg.Bootstrap, true)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// If no bootstrap peers provided, use defaults for seed peering or error otherwise
 	if len(bootstrapPeers) == 0 {
 		if !cfg.SeedPeering {
-			return nil, fmt.Errorf("no valid bootstrap peers configured - provide bootstrap peers or enable autoconf")
+			return nil, nil, fmt.Errorf("no valid bootstrap peers configured - provide bootstrap peers or enable autoconf")
 		}
 		// Use default bootstrap peers for seed peering
 		bootstrapPeers = dht.GetDefaultBootstrapPeerAddrInfos()
@@ -171,7 +171,7 @@ func setupDHTRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.
 			libp2p.ResourceManager(dhtRcMgr),
 		)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -181,11 +181,11 @@ func setupDHTRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.
 		dht.Mode(dht.ModeClient),
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if cfg.DHTRouting == DHTStandard {
-		return standardClient, nil
+		return standardClient, dhtHost, nil
 	}
 
 	if cfg.DHTRouting == DHTAccelerated {
@@ -200,15 +200,15 @@ func setupDHTRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.
 				dht.BucketSize(20),
 			))
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		return &bundledDHT{
 			standard: standardClient,
 			fullRT:   fullRTClient,
-		}, nil
+		}, dhtHost, nil
 	}
 
-	return nil, fmt.Errorf("unknown DHTRouting option: %q", cfg.DHTRouting)
+	return nil, nil, fmt.Errorf("unknown DHTRouting option: %q", cfg.DHTRouting)
 }
 
 func setupCompositeRouting(delegatedRouters []routing.Routing, dht routing.Routing, cfg Config) routing.Routing {
@@ -253,15 +253,15 @@ func setupCompositeRouting(delegatedRouters []routing.Routing, dht routing.Routi
 	return router
 }
 
-func setupRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Batching, dhtRcMgr network.ResourceManager, bwc metrics.Reporter, dnsCache *cachedDNS) (routing.ContentRouting, routing.PeerRouting, routing.ValueStore, error) {
+func setupRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Batching, dhtRcMgr network.ResourceManager, bwc metrics.Reporter, dnsCache *cachedDNS) (routing.ContentRouting, routing.PeerRouting, routing.ValueStore, host.Host, error) {
 	delegatedRouters, err := setupDelegatedRouting(cfg, dnsCache)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
-	dhtRouter, err := setupDHTRouting(ctx, cfg, h, ds, dhtRcMgr, bwc)
+	dhtRouter, dhtHost, err := setupDHTRouting(ctx, cfg, h, ds, dhtRcMgr, bwc)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
 	router := setupCompositeRouting(delegatedRouters, dhtRouter, cfg)
@@ -277,7 +277,7 @@ func setupRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Bat
 	if len(cfg.RemoteBackends) > 0 && cfg.RemoteBackendsIPNS {
 		remoteValueStore, err := gateway.NewRemoteValueStore(cfg.RemoteBackends, nil)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 		vs = setupCompositeRouting(append(delegatedRouters, &routinghelpers.Compose{
 			ValueStore: remoteValueStore,
@@ -291,7 +291,7 @@ func setupRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Bat
 		// Parse bootstrap peers for seed peering DHT (don't warn on auto since it's expected)
 		seedBootstrapPeers, err := parseBootstrapPeers(cfg.Bootstrap, false)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 
 		// Use provided bootstrap peers or fall back to defaults
@@ -308,11 +308,11 @@ func setupRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Bat
 
 		pr, err = dht.New(ctx, h, dhtOpts...)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 	}
 
-	return cr, pr, vs, nil
+	return cr, pr, vs, dhtHost, nil
 }
 
 func setupRoutingNoLibp2p(cfg Config, dnsCache *cachedDNS) (routing.ValueStore, error) {

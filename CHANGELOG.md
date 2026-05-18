@@ -19,6 +19,8 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
+- Fix bitswap unable to retrieve content from providers whose advertised addresses are stale or unreachable but whose real listen addresses the DHT host has already learned. With `--dht-shared-host=false` (the default), addresses from the DHT host's peerstore are now merged into the bitswap host's peerstore on each `Connect`, matching kubo and ipfs-check (both of which run DHT and bitswap on the same host). ([#372](https://github.com/ipfs/rainbow/pull/372))
+
 ### Removed
 
 ### Security
