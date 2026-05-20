@@ -26,7 +26,7 @@ require (
 	github.com/ipfs/go-unixfsnode v1.10.4
 	github.com/ipld/go-codec-dagpb v1.7.0
 	github.com/libp2p/go-libp2p v0.48.0
-	github.com/libp2p/go-libp2p-kad-dht v0.39.2
+	github.com/libp2p/go-libp2p-kad-dht v0.40.0
 	github.com/libp2p/go-libp2p-record v0.3.1
 	github.com/libp2p/go-libp2p-routing-helpers v0.7.5
 	github.com/libp2p/go-libp2p-testing v0.12.0
