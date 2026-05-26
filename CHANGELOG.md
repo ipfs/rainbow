@@ -17,6 +17,9 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
+- upgrade to `boxo` [v0.40.0](https://github.com/ipfs/boxo/releases/tag/v0.40.0)
+- upgrade to `go-libp2p-kad-dht` [v0.40.0](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.40.0)
+
 ### Fixed
 
 ### Removed
