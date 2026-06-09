@@ -18,6 +18,7 @@ The following emojis are used to highlight certain changes:
 ### Changed
 
 - upgrade to `boxo` [v0.41.0](https://github.com/ipfs/boxo/releases/tag/v0.41.0)
+- update `go-ds-pebble` to [v0.5.12](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.12)
 
 ### Fixed
 
