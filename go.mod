@@ -8,7 +8,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/dgraph-io/badger/v4 v4.9.1
 	github.com/dustin/go-humanize v1.0.1
-	github.com/felixge/httpsnoop v1.0.4
+	github.com/felixge/httpsnoop v1.1.0
 	github.com/ipfs-shipyard/nopfs v0.0.14
 	github.com/ipfs-shipyard/nopfs/ipfs v0.25.0
 	github.com/ipfs/boxo v0.41.0
