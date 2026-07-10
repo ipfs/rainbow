@@ -19,6 +19,7 @@ The following emojis are used to highlight certain changes:
 
 - upgrade to `boxo` [v0.41.0](https://github.com/ipfs/boxo/releases/tag/v0.41.0)
 - update `go-ds-pebble` to [v0.5.12](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.12)
+- upgrade to `go-libp2p-kad-dht` [v0.41.0](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.41.0)
 
 ### Fixed
 
