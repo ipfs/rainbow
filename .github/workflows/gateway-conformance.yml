@@ -83,7 +83,7 @@ jobs:
           path: rainbow
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: 'rainbow/go.mod'
           cache-dependency-path: 'rainbow/go.sum'
