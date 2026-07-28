@@ -138,7 +138,7 @@ func parseBootstrapPeers(peers []string, warnOnAuto bool) ([]peer.AddrInfo, erro
 	return bootstrapPeers, nil
 }
 
-func setupDHTRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Batching, dhtRcMgr network.ResourceManager, bwc metrics.Reporter) (routing.Routing, host.Host, error) {
+func setupDHTRouting(cfg Config, h host.Host, ds datastore.Batching, dhtRcMgr network.ResourceManager, bwc metrics.Reporter) (routing.Routing, host.Host, error) {
 	if cfg.DHTRouting == DHTOff {
 		return nil, nil, nil
 	}
@@ -175,7 +175,7 @@ func setupDHTRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.
 		}
 	}
 
-	standardClient, err := dht.New(ctx, dhtHost,
+	standardClient, err := dht.New(dhtHost,
 		dht.Datastore(ds),
 		dht.BootstrapPeers(bootstrapPeers...),
 		dht.Mode(dht.ModeClient),
@@ -253,13 +253,13 @@ func setupCompositeRouting(delegatedRouters []routing.Routing, dht routing.Routi
 	return router
 }
 
-func setupRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Batching, dhtRcMgr network.ResourceManager, bwc metrics.Reporter, dnsCache *cachedDNS) (routing.ContentRouting, routing.PeerRouting, routing.ValueStore, host.Host, error) {
+func setupRouting(cfg Config, h host.Host, ds datastore.Batching, dhtRcMgr network.ResourceManager, bwc metrics.Reporter, dnsCache *cachedDNS) (routing.ContentRouting, routing.PeerRouting, routing.ValueStore, host.Host, error) {
 	delegatedRouters, err := setupDelegatedRouting(cfg, dnsCache)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
 
-	dhtRouter, dhtHost, err := setupDHTRouting(ctx, cfg, h, ds, dhtRcMgr, bwc)
+	dhtRouter, dhtHost, err := setupDHTRouting(cfg, h, ds, dhtRcMgr, bwc)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -306,7 +306,7 @@ func setupRouting(ctx context.Context, cfg Config, h host.Host, ds datastore.Bat
 			dhtOpts = append(dhtOpts, dht.BootstrapPeers(dht.GetDefaultBootstrapPeerAddrInfos()...))
 		}
 
-		pr, err = dht.New(ctx, h, dhtOpts...)
+		pr, err = dht.New(h, dhtOpts...)
 		if err != nil {
 			return nil, nil, nil, nil, err
 		}
