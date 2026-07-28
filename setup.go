@@ -333,7 +333,7 @@ func SetupWithLibp2p(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCac
 	)
 
 	opts = append(opts, libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
-		cr, pr, vs, dhtHost, err = setupRouting(ctx, cfg, h, ds, dhtRcMgr, bwc, dnsCache)
+		cr, pr, vs, dhtHost, err = setupRouting(cfg, h, ds, dhtRcMgr, bwc, dnsCache)
 		return pr, err
 	}))
 	h, err := libp2p.New(opts...)
