@@ -17,15 +17,30 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
-- upgrade to `boxo` [v0.43.1](https://github.com/ipfs/boxo/releases/tag/v0.42.1)
-- update `go-ds-pebble` to [v0.5.12](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.12)
-- upgrade to `go-libp2p-kad-dht` [v0.42.1](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.42.1)
-
 ### Fixed
 
 ### Removed
 
 ### Security
+
+## [1.24.0]
+
+### Changed
+
+- upgrade to `boxo` [v0.43.1](https://github.com/ipfs/boxo/releases/tag/v0.42.1)
+- update `go-ds-pebble` to [v0.5.12](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.12)
+- upgrade to `go-libp2p-kad-dht` [v0.42.1](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.42.1)
+- upgrade to `go-libp2p` [v0.49.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.49.0)
+- upgrade to `go-test` [v0.4.1](https://github.com/ipfs/go-test/releases/tag/v0.4.1) (includes [v0.4.0](https://github.com/ipfs/go-test/releases/tag/v0.4.0)).
+
+### Security
+
+- `go-libp2p` update contains security enhancements for DoS/hardening:
+  - fix for CVE-2026-57497: https://github.com/advisories/GHSA-g35j-m5xg-vh3q
+  - [3501](https://github.com/libp2p/go-libp2p/pull/3501) bounds protocols accepted per peer in identify (a peer could plant 1800+ protocol entries in your peerstore via chunked identify)
+  - [3486](https://github.com/libp2p/go-libp2p/pull/3486) caps unconnected addrs per peer (stops DHT gossip flooding the peerstore with stale addrs; relevant to us)
+  - [3500](https://github.com/libp2p/go-libp2p/pull/3500) caps webrtc remote addrs per ufrag
+  - [3487](https://github.com/libp2p/go-libp2p/pull/3487) evicts stale certified addrs when a newer signed peer record drops them (an address a peer once advertised no longer lingers after removal)
 
 ## [1.23.2]
 
