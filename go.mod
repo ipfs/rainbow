@@ -11,7 +11,7 @@ require (
 	github.com/felixge/httpsnoop v1.1.0
 	github.com/ipfs-shipyard/nopfs v0.0.14
 	github.com/ipfs-shipyard/nopfs/ipfs v0.25.0
-	github.com/ipfs/boxo v0.42.1
+	github.com/ipfs/boxo v0.42.2-0.20260816174724-ac74c81270e1
 	github.com/ipfs/go-block-format v0.2.4
 	github.com/ipfs/go-cid v0.6.2
 	github.com/ipfs/go-datastore v0.9.2
