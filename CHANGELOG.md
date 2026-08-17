@@ -23,6 +23,14 @@ The following emojis are used to highlight certain changes:
 
 ### Security
 
+## [1.24.1]
+
+### Changed
+
+- upgrade to `boxo` [v0.42.2](https://github.com/ipfs/boxo/releases/tag/v0.42.2)
+  - httpnet no longer probes every connected HTTP provider with a `GET /ipfs/bafkqaaa` every 5 seconds; idle HTTP peers generate no background traffic
+  - after a failed endpoint probe, `Connect` backs off per host (honoring `Retry-After`) instead of re-probing on every call
+
 ## [1.24.0]
 
 ### Changed
