@@ -17,6 +17,9 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
+- require go1.26 or later
+- update `go-ds-pebble` to [v0.5.13](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.13)
+
 ### Fixed
 
 ### Removed
