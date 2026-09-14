@@ -19,6 +19,9 @@ The following emojis are used to highlight certain changes:
 
 - require go1.26 or later
 - update `go-ds-pebble` to [v0.5.13](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.13)
+- upgrade go-libp2p-kad-dht to [v0.42.2](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.42.2)
+- upgrade `boxo` to [v0.43.0](https://github.com/ipfs/boxo/releases/tag/v0.43.0)
+- upgrade opentelemetry to v1.46.0
 
 ### Fixed
 
@@ -38,7 +41,7 @@ The following emojis are used to highlight certain changes:
 
 ### Changed
 
-- upgrade to `boxo` [v0.43.1](https://github.com/ipfs/boxo/releases/tag/v0.42.1)
+- upgrade to `boxo` [v0.42.1](https://github.com/ipfs/boxo/releases/tag/v0.42.1)
 - update `go-ds-pebble` to [v0.5.12](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.12)
 - upgrade to `go-libp2p-kad-dht` [v0.42.1](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.42.1)
 - upgrade to `go-libp2p` [v0.49.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.49.0)
