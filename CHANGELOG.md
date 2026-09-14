@@ -15,6 +15,8 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+- [`RAINBOW_DEPRECATED_X_IPFS_PATH`](./docs/environment-variables.md#rainbow_deprecated_x_ipfs_path) restores the deprecated `X-Ipfs-Path` response header for clients that still read it; off by default
+
 ### Changed
 
 - require go1.26 or later
@@ -22,7 +24,7 @@ The following emojis are used to highlight certain changes:
 - upgrade go-libp2p-kad-dht to [v0.42.2](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.42.2)
 - 🛠 upgrade `boxo` to [v0.43.0](https://github.com/ipfs/boxo/releases/tag/v0.43.0)
   - responses carry the new `Ipfs-Uri` header with a canonical `ipfs://` or `ipns://` URI for the requested content path ([IPIP-548](https://specs.ipfs.tech/ipips/ipip-0548/))
-  - the deprecated `X-Ipfs-Path` header is no longer sent by default; clients that read it must switch to `Ipfs-Uri`
+  - the deprecated `X-Ipfs-Path` header is no longer sent by default; clients that read it must switch to `Ipfs-Uri`, or set [`RAINBOW_DEPRECATED_X_IPFS_PATH=true`](./docs/environment-variables.md#rainbow_deprecated_x_ipfs_path) meanwhile
 - CI runs [gateway-conformance v0.14](https://github.com/ipfs/gateway-conformance/releases/tag/v0.14.1), which asserts `Ipfs-Uri` instead of `X-Ipfs-Path`
 - upgrade opentelemetry to v1.46.0
 

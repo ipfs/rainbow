@@ -361,6 +361,7 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 		MaxDeserializedResponseSize: cfg.MaxDeserializedResponseSize,
 		MaxUnixFSDAGResponseSize:    cfg.MaxUnixFSDAGResponseSize,
 		DiagnosticServiceURL:        cfg.DiagnosticServiceURL,
+		DeprecatedXIpfsPath:         cfg.DeprecatedXIpfsPath,
 	}
 	gwHandler := gateway.NewHandler(gwConf, backend)
 
@@ -387,7 +388,11 @@ func setupGatewayHandler(cfg Config, nd *Node) (http.Handler, error) {
 	handler = http.Handler(gateway.NewHostnameHandler(gwConf, backend, handler))
 
 	// Add custom headers and liberal CORS.
-	handler = gateway.NewHeaders(headers).ApplyCors().Wrap(handler)
+	gwHeaders := gateway.NewHeaders(headers)
+	if cfg.DeprecatedXIpfsPath {
+		gwHeaders = gwHeaders.WithDeprecatedXIpfsPath()
+	}
+	handler = gwHeaders.ApplyCors().Wrap(handler)
 
 	handler = servertiming.Middleware(handler, nil)
 
