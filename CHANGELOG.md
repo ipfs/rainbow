@@ -20,7 +20,10 @@ The following emojis are used to highlight certain changes:
 - require go1.26 or later
 - update `go-ds-pebble` to [v0.5.13](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.13)
 - upgrade go-libp2p-kad-dht to [v0.42.2](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.42.2)
-- upgrade `boxo` to [v0.43.0](https://github.com/ipfs/boxo/releases/tag/v0.43.0)
+- 🛠 upgrade `boxo` to [v0.43.0](https://github.com/ipfs/boxo/releases/tag/v0.43.0)
+  - responses carry the new `Ipfs-Uri` header with a canonical `ipfs://` or `ipns://` URI for the requested content path ([IPIP-548](https://specs.ipfs.tech/ipips/ipip-0548/))
+  - the deprecated `X-Ipfs-Path` header is no longer sent by default; clients that read it must switch to `Ipfs-Uri`
+- CI runs [gateway-conformance v0.14](https://github.com/ipfs/gateway-conformance/releases/tag/v0.14.1), which asserts `Ipfs-Uri` instead of `X-Ipfs-Path`
 - upgrade opentelemetry to v1.46.0
 
 ### Fixed
