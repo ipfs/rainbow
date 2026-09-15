@@ -27,6 +27,7 @@ The following emojis are used to highlight certain changes:
   - the deprecated `X-Ipfs-Path` header is no longer sent by default; clients that read it must switch to `Ipfs-Uri`, or set [`RAINBOW_DEPRECATED_X_IPFS_PATH=true`](./docs/environment-variables.md#rainbow_deprecated_x_ipfs_path) meanwhile
 - CI runs [gateway-conformance v0.14](https://github.com/ipfs/gateway-conformance/releases/tag/v0.14.1), which asserts `Ipfs-Uri` instead of `X-Ipfs-Path`
 - upgrade opentelemetry to v1.46.0
+- Docker image now builds with [Go 1.27](https://go.dev/doc/go1.27)
 
 ### Fixed
 
