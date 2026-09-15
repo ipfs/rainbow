@@ -6,11 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/v2"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/dgraph-io/badger/v4/options"
 	nopfs "github.com/ipfs-shipyard/nopfs"
@@ -29,6 +30,7 @@ import (
 	badger4 "github.com/ipfs/go-ds-badger4"
 	flatfs "github.com/ipfs/go-ds-flatfs"
 	pebbleds "github.com/ipfs/go-ds-pebble"
+	logging "github.com/ipfs/go-log/v2"
 	mprome "github.com/ipfs/go-metrics-prometheus"
 	"github.com/ipfs/go-unixfsnode"
 	dagpb "github.com/ipld/go-codec-dagpb"
@@ -37,9 +39,11 @@ import (
 	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/libp2p/go-libp2p/core/metrics"
 	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/peerstore"
 	"github.com/libp2p/go-libp2p/core/routing"
+	"github.com/libp2p/go-libp2p/gologshim"
+	"github.com/libp2p/go-libp2p/p2p/host/observedaddrs"
 	"github.com/libp2p/go-libp2p/p2p/net/connmgr"
-	"github.com/libp2p/go-libp2p/p2p/protocol/identify"
 	"github.com/multiformats/go-multiaddr"
 	madns "github.com/multiformats/go-multiaddr-dns"
 )
@@ -48,6 +52,15 @@ func init() {
 	if err := mprome.Inject(); err != nil {
 		panic(err)
 	}
+
+	// Set go-log's slog handler as the application-wide default.
+	// This ensures all slog-based logging uses go-log's formatting.
+	slog.SetDefault(slog.New(logging.SlogHandler()))
+
+	// Wire go-log's slog bridge to go-libp2p's gologshim.
+	// This provides go-libp2p loggers with the "logger" attribute
+	// for per-subsystem level control (e.g., `ipfs log level libp2p-swarm debug`).
+	gologshim.SetDefaultHandler(logging.SlogHandler())
 }
 
 const httpRouterGatewayProtocol = "transport-ipfs-gateway-http"
@@ -71,7 +84,7 @@ const (
 
 func init() {
 	// Lets us discover our own public address with a single observation
-	identify.ActivationThresh = 1
+	observedaddrs.ActivationThresh = 1
 }
 
 type Node struct {
@@ -106,8 +119,11 @@ type Config struct {
 	GatewayDomains           []string
 	SubdomainGatewayDomains  []string
 	TrustlessGatewayDomains  []string
+	DNSLinkGatewayDomains    []string
 	RoutingV1Endpoints       []string
 	RoutingV1FilterProtocols []string
+	HTTPRoutersTimeout       time.Duration
+	RoutingTimeout           time.Duration
 	RoutingIgnoreProviders   []peer.ID
 	DHTRouting               DHTRouting
 	DHTSharedHost            bool
@@ -120,7 +136,8 @@ type Config struct {
 	// with WantBlock responses when the block size less then or equal to this
 	// value. Set to zero to disable replacement and avoid block size lookup
 	// when processing HaveWant requests.
-	BitswapWantHaveReplaceSize int
+	BitswapWantHaveReplaceSize       int
+	BitswapEnableDuplicateBlockStats bool
 
 	DenylistSubs []string
 
@@ -174,9 +191,15 @@ type Config struct {
 	// Bootstrap peers configuration (with "auto" support)
 	Bootstrap []string
 
-	// Gateway rate limiting and timeout configuration
-	MaxConcurrentRequests int
-	RetrievalTimeout      time.Duration
+	// Gateway limits
+	MaxConcurrentRequests       int
+	RetrievalTimeout            time.Duration
+	MaxRequestDuration          time.Duration
+	MaxRangeRequestFileSize     int64
+	MaxDeserializedResponseSize int64
+	MaxUnixFSDAGResponseSize    int64
+	DiagnosticServiceURL        string
+	DeprecatedXIpfsPath         bool
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {
@@ -304,13 +327,14 @@ func SetupWithLibp2p(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCac
 	}
 
 	var (
-		vs routing.ValueStore
-		cr routing.ContentRouting
-		pr routing.PeerRouting
+		vs      routing.ValueStore
+		cr      routing.ContentRouting
+		pr      routing.PeerRouting
+		dhtHost host.Host
 	)
 
 	opts = append(opts, libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
-		cr, pr, vs, err = setupRouting(ctx, cfg, h, ds, dhtRcMgr, bwc, dnsCache)
+		cr, pr, vs, dhtHost, err = setupRouting(cfg, h, ds, dhtRcMgr, bwc, dnsCache)
 		return pr, err
 	}))
 	h, err := libp2p.New(opts...)
@@ -340,7 +364,13 @@ func SetupWithLibp2p(ctx context.Context, cfg Config, key crypto.PrivKey, dnsCac
 		blkst = blockstore.NewIdStore(blkst)
 		n.blockstore = blkst
 
-		bsrv = blockservice.New(blkst, setupBitswapExchange(ctx, cfg, h, cr, blkst),
+		// Bridge the DHT host's peerstore into bitswap's view only when the
+		// hosts are split; otherwise the peerstore is already shared.
+		var dhtAddrs peerstore.AddrBook
+		if dhtHost != nil && dhtHost != h {
+			dhtAddrs = dhtHost.Peerstore()
+		}
+		bsrv = blockservice.New(blkst, setupBitswapExchange(ctx, cfg, h, dhtAddrs, cr, blkst),
 			// if we are doing things right, our bitswap wantlists should
 			// not have blocks that we already have (see
 			// https://github.com/ipfs/boxo/blob/e0d4b3e9b91e9904066a10278e366c9a6d9645c7/blockservice/blockservice.go#L272). Thus
@@ -612,7 +642,7 @@ func getPebbleOpts(cfg Config) *pebble.Options {
 		WALBytesPerSync:             cfg.WALBytesPerSync,
 	}
 	if cfg.MaxConcurrentCompactions != 0 {
-		opts.MaxConcurrentCompactions = func() int { return cfg.MaxConcurrentCompactions }
+		opts.CompactionConcurrencyRange = func() (int, int) { return 1, cfg.MaxConcurrentCompactions }
 	}
 	if cfg.WALMinSyncInterval != 0 {
 		opts.WALMinSyncInterval = func() time.Duration { return cfg.WALMinSyncInterval }

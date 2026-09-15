@@ -299,6 +299,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"BITSWAP_WANTHAVE_REPLACE_SIZE"},
 			Usage:   "Replace WantHave with WantBlock responses for small blocks up to this size, 0 to disable replacement",
 		},
+		&cli.BoolFlag{
+			Name:    "bitswap-enable-duplicate-block-stats",
+			Value:   false,
+			EnvVars: []string{"BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS"},
+			Usage:   "Enable bitswap duplicate block statistics collection",
+		},
 		&cli.StringSliceFlag{
 			Name:    "remote-backends",
 			Value:   cli.NewStringSlice(),
@@ -426,6 +432,18 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"ROUTING_MAX_TIMEOUT"},
 			Usage:   "Maximum time for routing to find the maximum number of providers",
 		},
+		&cli.DurationFlag{
+			Name:    "http-routers-timeout",
+			Value:   30 * time.Second,
+			EnvVars: []string{"RAINBOW_HTTP_ROUTERS_TIMEOUT"},
+			Usage:   "Timeout for HTTP requests to routing endpoints",
+		},
+		&cli.DurationFlag{
+			Name:    "routing-timeout",
+			Value:   30 * time.Second,
+			EnvVars: []string{"RAINBOW_ROUTING_TIMEOUT"},
+			Usage:   "Global timeout for routing requests",
+		},
 		&cli.StringSliceFlag{
 			Name:    "routing-ignore-providers",
 			EnvVars: []string{"ROUTING_IGNORE_PROVIDERS"},
@@ -479,11 +497,53 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_RETRIEVAL_TIMEOUT"},
 			Usage:   "Maximum duration for initial content retrieval and time between writes",
 		},
+		&cli.DurationFlag{
+			Name:    "max-request-duration",
+			Value:   time.Hour,
+			EnvVars: []string{"RAINBOW_MAX_REQUEST_DURATION"},
+			Usage:   "Maximum total time a request can take. Zero or negative values use the default (1 hour)",
+		},
+		&cli.Int64Flag{
+			Name:    "max-range-request-file-size",
+			Value:   5368709120, // 5 GiB
+			EnvVars: []string{"RAINBOW_MAX_RANGE_REQUEST_FILE_SIZE"},
+			Usage:   "Maximum file size in bytes for which range requests are supported. Range requests for larger files will return 501. Set to 0 to disable limit",
+		},
+		&cli.Int64Flag{
+			Name:    "max-deserialized-response-size",
+			Value:   0,
+			EnvVars: []string{"RAINBOW_MAX_DESERIALIZED_RESPONSE_SIZE"},
+			Usage:   "Maximum file/directory size in bytes for deserialized (non-trustless) responses. Larger content returns 410 Gone. Trustless formats (raw, CAR) are not affected. Set to 0 to disable",
+		},
+		&cli.Int64Flag{
+			Name:    "max-unixfs-dag-response-size",
+			Value:   0,
+			EnvVars: []string{"RAINBOW_MAX_UNIXFS_DAG_RESPONSE_SIZE"},
+			Usage:   "Maximum UnixFS DAG size in bytes for all response formats (deserialized, raw, CAR, TAR). Larger content returns 410 Gone. Set to 0 to disable",
+		},
+		&cli.StringFlag{
+			Name:    "diagnostic-service-url",
+			Value:   "https://check.ipfs.network",
+			EnvVars: []string{"RAINBOW_DIAGNOSTIC_SERVICE_URL"},
+			Usage:   "URL for a service to diagnose CID retrievability issues. When the gateway returns a 504 Gateway Timeout error, an \"Inspect retrievability of CID\" button will be shown. Set to empty string to disable",
+		},
+		&cli.BoolFlag{
+			Name:    "deprecated-x-ipfs-path",
+			Value:   false,
+			EnvVars: []string{"RAINBOW_DEPRECATED_X_IPFS_PATH"},
+			Usage:   "Send the deprecated X-Ipfs-Path response header alongside Ipfs-Uri. Only for clients that still read it",
+		},
 		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
 			Value:   cli.NewStringSlice(". : auto"),
 			EnvVars: []string{"RAINBOW_DNSLINK_RESOLVERS"},
 			Usage:   "The DNSLink resolvers to use (comma-separated tuples that each look like `eth. : https://dns.eth.limo/dns-query`). Use 'auto' as value to use network-appropriate defaults from autoconf",
+		},
+		&cli.StringSliceFlag{
+			Name:    "dnslink-gateway-domains",
+			Value:   cli.NewStringSlice(),
+			EnvVars: []string{"RAINBOW_DNSLINK_GATEWAY_DOMAINS"},
+			Usage:   "Domains allowed for DNSLink resolution via Host header (comma-separated)",
 		},
 	}
 
@@ -642,40 +702,49 @@ share the same seed as long as the indexes are different.
 			)
 		}
 
+		dnslinkGatewayDomains := cctx.StringSlice("dnslink-gateway-domains")
+		dnslinkGatewayDomains = slices.DeleteFunc(dnslinkGatewayDomains, func(s string) bool {
+			return s == ""
+		})
+
 		cfg := Config{
-			DataDir:                    ddir,
-			BlockstoreType:             cctx.String("blockstore"),
-			GatewayDomains:             cctx.StringSlice("gateway-domains"),
-			SubdomainGatewayDomains:    cctx.StringSlice("subdomain-gateway-domains"),
-			TrustlessGatewayDomains:    cctx.StringSlice("trustless-gateway-domains"),
-			ConnMgrLow:                 cctx.Int("libp2p-connmgr-low"),
-			ConnMgrHi:                  cctx.Int("libp2p-connmgr-high"),
-			ConnMgrGrace:               cctx.Duration("libp2p-connmgr-grace"),
-			MaxMemory:                  cctx.Uint64("libp2p-max-memory"),
-			MaxFD:                      cctx.Int("libp2p-max-fd"),
-			InMemBlockCache:            cctx.Int64("inmem-block-cache"),
-			RoutingV1Endpoints:         cctx.StringSlice("http-routers"),
-			RoutingV1FilterProtocols:   routerFilterProtocols,
-			DHTRouting:                 dhtRouting,
-			DHTSharedHost:              cctx.Bool("dht-shared-host"),
-			Bitswap:                    bitswap,
-			BitswapWantHaveReplaceSize: cctx.Int("bitswap-wanthave-replace-size"),
-			IpnsMaxCacheTTL:            cctx.Duration("ipns-max-cache-ttl"),
-			DenylistSubs:               cctx.StringSlice("denylists"),
-			Peering:                    peeringAddrs,
-			PeeringSharedCache:         cctx.Bool("peering-shared-cache"),
-			Seed:                       seed,
-			SeedIndex:                  index,
-			SeedPeering:                seedPeering,
-			SeedPeeringMaxIndex:        cctx.Int("seed-peering-max-index"),
-			RemoteBackends:             remoteBackends,
-			RemoteBackendsIPNS:         cctx.Bool("remote-backends-ipns"),
-			RemoteBackendMode:          RemoteBackendMode(cctx.String("remote-backends-mode")),
-			GCInterval:                 cctx.Duration("gc-interval"),
-			GCThreshold:                cctx.Float64("gc-threshold"),
-			ListenAddrs:                cctx.StringSlice("libp2p-listen-addrs"),
-			TracingAuthToken:           cctx.String("tracing-auth"),
-			Bootstrap:                  []string{cctx.String("bootstrap")},
+			DataDir:                          ddir,
+			BlockstoreType:                   cctx.String("blockstore"),
+			GatewayDomains:                   cctx.StringSlice("gateway-domains"),
+			SubdomainGatewayDomains:          cctx.StringSlice("subdomain-gateway-domains"),
+			TrustlessGatewayDomains:          cctx.StringSlice("trustless-gateway-domains"),
+			DNSLinkGatewayDomains:            dnslinkGatewayDomains,
+			ConnMgrLow:                       cctx.Int("libp2p-connmgr-low"),
+			ConnMgrHi:                        cctx.Int("libp2p-connmgr-high"),
+			ConnMgrGrace:                     cctx.Duration("libp2p-connmgr-grace"),
+			MaxMemory:                        cctx.Uint64("libp2p-max-memory"),
+			MaxFD:                            cctx.Int("libp2p-max-fd"),
+			InMemBlockCache:                  cctx.Int64("inmem-block-cache"),
+			RoutingV1Endpoints:               cctx.StringSlice("http-routers"),
+			RoutingV1FilterProtocols:         routerFilterProtocols,
+			HTTPRoutersTimeout:               cctx.Duration("http-routers-timeout"),
+			RoutingTimeout:                   cctx.Duration("routing-timeout"),
+			DHTRouting:                       dhtRouting,
+			DHTSharedHost:                    cctx.Bool("dht-shared-host"),
+			Bitswap:                          bitswap,
+			BitswapWantHaveReplaceSize:       cctx.Int("bitswap-wanthave-replace-size"),
+			BitswapEnableDuplicateBlockStats: cctx.Bool("bitswap-enable-duplicate-block-stats"),
+			IpnsMaxCacheTTL:                  cctx.Duration("ipns-max-cache-ttl"),
+			DenylistSubs:                     cctx.StringSlice("denylists"),
+			Peering:                          peeringAddrs,
+			PeeringSharedCache:               cctx.Bool("peering-shared-cache"),
+			Seed:                             seed,
+			SeedIndex:                        index,
+			SeedPeering:                      seedPeering,
+			SeedPeeringMaxIndex:              cctx.Int("seed-peering-max-index"),
+			RemoteBackends:                   remoteBackends,
+			RemoteBackendsIPNS:               cctx.Bool("remote-backends-ipns"),
+			RemoteBackendMode:                RemoteBackendMode(cctx.String("remote-backends-mode")),
+			GCInterval:                       cctx.Duration("gc-interval"),
+			GCThreshold:                      cctx.Float64("gc-threshold"),
+			ListenAddrs:                      cctx.StringSlice("libp2p-listen-addrs"),
+			TracingAuthToken:                 cctx.String("tracing-auth"),
+			Bootstrap:                        []string{cctx.String("bootstrap")},
 
 			AutoConf: AutoConfConfig{
 				Enabled:         cctx.Bool("autoconf"),
@@ -709,18 +778,21 @@ share the same seed as long as the indexes are different.
 			HTTPRetrievalWorkers:                   httpRetrievalWorkers,
 			HTTPRetrievalMaxDontHaveErrors:         httpRetrievalMaxDontHaveErrors,
 			HTTPRetrievalMetricsLabelsForEndpoints: httpRetrievalMetricsLabelsForEndpoints,
-			// Gateway rate limiting and timeout configuration
-			MaxConcurrentRequests: cctx.Int("max-concurrent-requests"),
-			RetrievalTimeout:      cctx.Duration("retrieval-timeout"),
+			// Gateway limits
+			MaxConcurrentRequests:       cctx.Int("max-concurrent-requests"),
+			RetrievalTimeout:            cctx.Duration("retrieval-timeout"),
+			MaxRequestDuration:          cctx.Duration("max-request-duration"),
+			MaxRangeRequestFileSize:     cctx.Int64("max-range-request-file-size"),
+			MaxDeserializedResponseSize: cctx.Int64("max-deserialized-response-size"),
+			MaxUnixFSDAGResponseSize:    cctx.Int64("max-unixfs-dag-response-size"),
+			DiagnosticServiceURL:        cctx.String("diagnostic-service-url"),
+			DeprecatedXIpfsPath:         cctx.Bool("deprecated-x-ipfs-path"),
 		}
 
 		// Store original values for display
-		originalHTTPRouters := make([]string, len(cfg.RoutingV1Endpoints))
-		copy(originalHTTPRouters, cfg.RoutingV1Endpoints)
-		originalDNSResolvers := make([]string, len(customDNSResolvers))
-		copy(originalDNSResolvers, customDNSResolvers)
-		originalBootstrap := make([]string, len(cfg.Bootstrap))
-		copy(originalBootstrap, cfg.Bootstrap)
+		originalHTTPRouters := slices.Clone(cfg.RoutingV1Endpoints)
+		originalDNSResolvers := slices.Clone(customDNSResolvers)
+		originalBootstrap := slices.Clone(cfg.Bootstrap)
 
 		// Setup autoconf
 		var autoConfData *autoconf.Config
@@ -762,21 +834,16 @@ share the same seed as long as the indexes are different.
 		}
 		cfg.DNSLinkResolver = dns
 		// Store expanded DNS resolvers for display
-		customDNSResolvers = []string{}
+		customDNSResolvers = make([]string, 0, len(expandedDNS))
 		for domain, resolver := range expandedDNS {
 			customDNSResolvers = append(customDNSResolvers, fmt.Sprintf("%s : %s", domain, resolver))
 		}
 
 		// Check bootstrap peers if DHT is enabled
 		if cfg.DHTRouting != DHTOff && libp2p {
-			hasValidBootstrap := false
-			for _, peer := range cfg.Bootstrap {
-				if peer != "" && peer != autoconf.AutoPlaceholder {
-					hasValidBootstrap = true
-					break
-				}
-			}
-			if !hasValidBootstrap {
+			if !slices.ContainsFunc(cfg.Bootstrap, func(peer string) bool {
+				return peer != "" && peer != autoconf.AutoPlaceholder
+			}) {
 				return fmt.Errorf("no valid bootstrap peers configured - provide bootstrap peers with --bootstrap or enable autoconf")
 			}
 		}
@@ -847,9 +914,6 @@ share the same seed as long as the indexes are different.
 			syscall.SIGHUP,
 		)
 
-		var wg sync.WaitGroup
-		wg.Add(2)
-
 		fmt.Printf("IPFS Gateway listening at %s\n\n", gatewayListen)
 
 		printIfListConfigured(fmt.Sprintf("  %-40s = ", "RAINBOW_GATEWAY_DOMAINS"), cfg.GatewayDomains)
@@ -866,6 +930,7 @@ share the same seed as long as the indexes are different.
 		// Show configurations with autoconf awareness
 		printAutoconfAwareConfig("RAINBOW_HTTP_ROUTERS", originalHTTPRouters, cfg.RoutingV1Endpoints, cfg.AutoConf.Enabled)
 		printAutoconfAwareConfig("RAINBOW_DNSLINK_RESOLVERS", originalDNSResolvers, customDNSResolvers, cfg.AutoConf.Enabled)
+		printIfListConfigured(fmt.Sprintf("  %-40s = ", "RAINBOW_DNSLINK_GATEWAY_DOMAINS"), cfg.DNSLinkGatewayDomains)
 		printIfListConfigured(fmt.Sprintf("  %-40s = ", "RAINBOW_REMOTE_BACKENDS"), cfg.RemoteBackends)
 		printAutoconfAwareConfig("RAINBOW_BOOTSTRAP", originalBootstrap, cfg.Bootstrap, cfg.AutoConf.Enabled)
 
@@ -873,27 +938,25 @@ share the same seed as long as the indexes are different.
 		fmt.Printf("CTL endpoint listening at http://%s\n", ctlListen)
 		fmt.Printf("  Metrics: http://%s/debug/metrics/prometheus\n\n", ctlListen)
 
-		go func() {
-			defer wg.Done()
+		var wg sync.WaitGroup
 
+		wg.Go(func() {
 			err := gatewaySrv.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				fmt.Fprintf(os.Stderr, "Failed to start gateway: %s\n", err)
 				quit <- os.Interrupt
 			}
-		}()
+		})
 
 		_ = gnd.periodicGC(cctx.Context, cfg.GCThreshold)
 
-		go func() {
-			defer wg.Done()
-
+		wg.Go(func() {
 			err := apiSrv.ListenAndServe()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				fmt.Fprintf(os.Stderr, "Failed to start metrics: %s\n", err)
 				quit <- os.Interrupt
 			}
-		}()
+		})
 
 		var gcTicker *time.Timer
 		var gcTickerDone chan bool
@@ -901,24 +964,20 @@ share the same seed as long as the indexes are different.
 		if cfg.GCInterval > 0 {
 			gcTicker = time.NewTimer(cfg.GCInterval)
 			gcTickerDone = make(chan bool)
-			wg.Add(1)
 
-			go func() {
-				defer wg.Done()
-
+			wg.Go(func() {
 				for {
 					select {
 					case <-gcTickerDone:
 						return
 					case <-gcTicker.C:
-						err = gnd.periodicGC(cctx.Context, cfg.GCThreshold)
-						if err != nil {
+						if err := gnd.periodicGC(cctx.Context, cfg.GCThreshold); err != nil {
 							goLog.Errorf("error when running periodic gc: %w", err)
 						}
 						gcTicker.Reset(cfg.GCInterval)
 					}
 				}
-			}()
+			})
 		}
 
 		sddaemon.SdNotify(false, sddaemon.SdNotifyReady)

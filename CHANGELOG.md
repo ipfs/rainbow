@@ -15,13 +15,168 @@ The following emojis are used to highlight certain changes:
 
 ### Added
 
+- [`RAINBOW_DEPRECATED_X_IPFS_PATH`](./docs/environment-variables.md#rainbow_deprecated_x_ipfs_path) restores the deprecated `X-Ipfs-Path` response header for clients that still read it; off by default
+
 ### Changed
+
+- require go1.26 or later
+- update `go-ds-pebble` to [v0.5.13](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.13)
+- upgrade go-libp2p-kad-dht to [v0.42.2](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.42.2)
+- 🛠 upgrade `boxo` to [v0.43.0](https://github.com/ipfs/boxo/releases/tag/v0.43.0)
+  - responses carry the new `Ipfs-Uri` header with a canonical `ipfs://` or `ipns://` URI for the requested content path ([IPIP-548](https://specs.ipfs.tech/ipips/ipip-0548/))
+  - the deprecated `X-Ipfs-Path` header is no longer sent by default; clients that read it must switch to `Ipfs-Uri`, or set [`RAINBOW_DEPRECATED_X_IPFS_PATH=true`](./docs/environment-variables.md#rainbow_deprecated_x_ipfs_path) meanwhile
+- CI runs [gateway-conformance v0.14](https://github.com/ipfs/gateway-conformance/releases/tag/v0.14.1), which asserts `Ipfs-Uri` instead of `X-Ipfs-Path`
+- upgrade opentelemetry to v1.46.0
+- Docker image now builds with [Go 1.27](https://go.dev/doc/go1.27)
 
 ### Fixed
 
 ### Removed
 
 ### Security
+
+## [1.24.1]
+
+### Changed
+
+- upgrade to `boxo` [v0.42.2](https://github.com/ipfs/boxo/releases/tag/v0.42.2)
+  - httpnet no longer probes every connected HTTP provider with a `GET /ipfs/bafkqaaa` every 5 seconds; idle HTTP peers generate no background traffic
+  - after a failed endpoint probe, `Connect` backs off per host (honoring `Retry-After`) instead of re-probing on every call
+
+## [1.24.0]
+
+### Changed
+
+- upgrade to `boxo` [v0.42.1](https://github.com/ipfs/boxo/releases/tag/v0.42.1)
+- update `go-ds-pebble` to [v0.5.12](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.12)
+- upgrade to `go-libp2p-kad-dht` [v0.42.1](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.42.1)
+- upgrade to `go-libp2p` [v0.49.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.49.0)
+- upgrade to `go-test` [v0.4.1](https://github.com/ipfs/go-test/releases/tag/v0.4.1) (includes [v0.4.0](https://github.com/ipfs/go-test/releases/tag/v0.4.0)).
+
+### Security
+
+- `go-libp2p` update contains security enhancements for DoS/hardening:
+  - fix for CVE-2026-57497: https://github.com/advisories/GHSA-g35j-m5xg-vh3q
+  - [3501](https://github.com/libp2p/go-libp2p/pull/3501) bounds protocols accepted per peer in identify (a peer could plant 1800+ protocol entries in your peerstore via chunked identify)
+  - [3486](https://github.com/libp2p/go-libp2p/pull/3486) caps unconnected addrs per peer (stops DHT gossip flooding the peerstore with stale addrs; relevant to us)
+  - [3500](https://github.com/libp2p/go-libp2p/pull/3500) caps webrtc remote addrs per ufrag
+  - [3487](https://github.com/libp2p/go-libp2p/pull/3487) evicts stale certified addrs when a newer signed peer record drops them (an address a peer once advertised no longer lingers after removal)
+
+## [1.23.2]
+
+### Changed
+
+- upgrade to `boxo` [v0.40.0](https://github.com/ipfs/boxo/releases/tag/v0.40.0)
+- upgrade to `go-libp2p-kad-dht` [v0.40.0](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.40.0)
+
+## [1.23.1]
+
+### Changed
+
+- update `go-libp2p-kad-dht` to [v0.39.2](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.39.2)
+- update `go-ds-pebble` to [v0.5.11](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.11)
+- update `go-log/v2` to [v2.9.2](https://github.com/ipfs/go-log/releases/tag/v2.9.2)
+- update `go-unixfsnode` to [v1.10.4](https://github.com/ipfs/go-unixfsnode/releases/tag/v1.10.4)
+- update opentelemetry dependencies
+
+### Fixed
+
+- Fix bitswap unable to retrieve content from providers whose advertised addresses are stale or unreachable but whose real listen addresses the DHT host has already learned. With `--dht-shared-host=false` (the default), addresses from the DHT host's peerstore are now merged into the bitswap host's peerstore on each `Connect`, matching kubo and ipfs-check (both of which run DHT and bitswap on the same host). ([#372](https://github.com/ipfs/rainbow/pull/372))
+
+## [1.23.0]
+
+### Added
+
+- Add `--max-request-duration` CLI flag (`RAINBOW_MAX_REQUEST_DURATION` env var) to configure the Boxo gateway `MaxRequestDuration` option. Defaults to 1 hour, matching Boxo's DefaultMaxRequestDuration. ([#350](https://github.com/ipfs/rainbow/pull/350))
+- Add [`RAINBOW_MAX_DESERIALIZED_RESPONSE_SIZE`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_max_deserialized_response_size) (`--max-deserialized-response-size`) to limit deserialized responses by content size. Trustless formats (raw, CAR) are not affected. Oversized responses return `410 Gone`. ([#364](https://github.com/ipfs/rainbow/pull/364))
+- Add [`RAINBOW_MAX_UNIXFS_DAG_RESPONSE_SIZE`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_max_unixfs_dag_response_size) (`--max-unixfs-dag-response-size`) to limit all response formats by UnixFS DAG size, including raw blocks, CAR, and TAR. Oversized responses return `410 Gone`. ([#364](https://github.com/ipfs/rainbow/pull/364))
+
+### Changed
+
+- upgrade to `boxo` [v0.39.0](https://github.com/ipfs/boxo/releases/tag/v0.39.0)
+- upgrade to `go-libp2p-kad-dht` [v0.39.1](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.39.1)
+- upgrade to `go-libp2p` [v0.48.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.48.0)
+- upgrade to `go-ds-pebble` [v0.5.10](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.10)
+
+## [1.22.0]
+
+### Added
+
+- Configurable routing timeouts: new options [`RAINBOW_HTTP_ROUTERS_TIMEOUT`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_http_routers_timeout) and [`RAINBOW_ROUTING_TIMEOUT`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_routing_timeout) (and the similar command-line flags) allow setting timeouts for routing operations. The former does it for delegated http routing requests. The latter specifies a timeout for routing requests.
+- Added [`BITSWAP_ENABLE_DUPLICATE_BLOCK_STATS`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#bitswap_enable_duplicate_block_stats): Controls whether bitswap duplicate block statistics are collected. This is disabled by default since it has a performance impact.
+- Allow specifying a DNSLink safelist: [`RAINBOW_DNSLINK_GATEWAY_DOMAINS`](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_dnslink_gateway_domains) defines which dnslink domains are allowed to use this gateway.
+- Added [reverse proxy documentation](https://github.com/ipfs/rainbow/blob/main/docs/environment-variables.md#rainbow_subdomain_gateway_domains) with `Host` header forwarding requirements for subdomain gateways behind nginx ([#317](https://github.com/ipfs/rainbow/pull/317)).
+
+### Changed
+
+- upgrade to `boxo` [v0.37.0](https://github.com/ipfs/boxo/releases/tag/v0.37.0)
+  - include upgrade to [v0.36.0](https://github.com/ipfs/boxo/releases/tag/v0.36.0)
+  - max block size raised from 1 MiB to 2 MiB, aligning with the [bitswap spec](https://specs.ipfs.tech/bitswap-protocol/#block-sizes)
+- upgrade to `gateway-conformance` [v0.10](https://github.com/ipfs/gateway-conformance/releases/tag/v0.10.2)
+  - [IPIP-523](https://github.com/ipfs/specs/pull/523): `?format=` URL query parameter now takes precedence over `Accept` HTTP header
+  - [IPIP-524](https://github.com/ipfs/specs/pull/524): codec conversion tests now expect HTTP 406 when requested format does not match native codec
+- upgrade to `go-ipld-prime` [v0.22.0](https://github.com/ipld/go-ipld-prime/releases/tag/v0.22.0)
+- upgrade to `go-libp2p-kad-dht` [v0.38.0](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.38.0)
+- upgrade to `go-libp2p` [v0.47.0](https://github.com/libp2p/go-libp2p/releases/tag/v0.47.0)
+- upgrade to `go-log/v2` [v2.9.1](https://github.com/ipfs/go-log/releases/tag/v2.9.1)
+  - wired slog handler as application-wide default ([see explainer in v2.9.0](https://github.com/ipfs/go-log/releases/tag/v2.9.0)), bridged to go-libp2p for per-subsystem log level control
+- upgrade to go-ds-pebble [v0.5.9](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.9)
+  - include upgrade to go-ds-pebble [v0.5.8](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.8)
+  - include upgrade to go-ds-pebble [v0.5.7](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.7)
+  - includes upgrade to pebble [v2.1.4](https://github.com/cockroachdb/pebble/releases/tag/v2.1.4)
+- upgrade to `go-ds-flatfs` [v0.6.0](https://github.com/ipfs/go-ds-flatfs/releases/tag/v0.6.0)
+- upgrade to badger/v4 [v4.9.1](https://github.com/dgraph-io/badger/releases/tag/v4.9.1)
+- Redesigned default landing page for third-party deployments: added `noindex` meta tag, dynamic WHOIS-based abuse reporting, dark mode support, and operator customization guidance ([#314](https://github.com/ipfs/rainbow/pull/314))
+- Docker image now builds with [Go 1.26](https://go.dev/doc/go1.26): the Green Tea GC is enabled by default reducing GC overhead, small object allocation is cheaper, and the compiler stack-allocates slice backing stores in more cases
+
+### Fixed
+
+- Upgrade go-ds-pebble to [v0.5.6](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.6) and pebble to [v2.1.1](https://github.com/cockroachdb/pebble/releases/tag/v2.1.1)
+
+### Removed
+
+### Security
+
+## [1.21.0]
+
+### Added
+
+### Changed
+
+### Fixed
+
+- Upgrade go-ds-pebble to [v0.5.6](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.6) and pebble to [v2.1.1](https://github.com/cockroachdb/pebble/releases/tag/v2.1.1)
+- Update to boxo [v0.35.1](https://github.com/ipfs/boxo/releases/tag/v0.35.1) with fixes for QUIC, httpnet and block tracing.
+
+### Removed
+
+### Security
+
+## v1.20.0
+
+### Added
+
+- `--diagnostic-service-url` / `RAINBOW_DIAGNOSTIC_SERVICE_URL`: Configure URL for CID retrievability diagnostic service (default: `https://check.ipfs.network`). When gateway returns 504 timeout, users see "Inspect retrievability of CID" button linking to diagnostic service. Set to empty string to disable.
+
+### Changed
+
+- Upgrade go-ds-pebble to [v0.5.3](https://github.com/ipfs/go-ds-pebble/releases/tag/v0.5.3)
+
+
+## v1.19.0
+
+### Added
+
+- `--max-range-request-file-size` / `RAINBOW_MAX_RANGE_REQUEST_FILE_SIZE`: Configurable limit for HTTP Range requests on large files (default: 5GiB). Range requests for files larger than this limit return HTTP 501 Not Implemented to protect against CDN issues. Specifically addresses Cloudflare's bug where range requests for files over 5GiB are silently ignored, causing the entire file to be returned instead of the requested range, leading to excess bandwidth consumption and billing.
+
+### Changed
+
+- Update to Boxo [v0.35.0](https://github.com/ipfs/boxo/releases/tag/v0.35.0)
+- Update to go-libp2p-kad-dht [v0.35.0](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.35.0)
+
+### Fixed
+
+- Fixed bitswap client initialization to use `time.Duration` instead of `delay.Fixed()` for rebroadcast delay, matching the updated bitswap client API
 
 
 ## v1.18.0
