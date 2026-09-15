@@ -369,3 +369,56 @@ func TestGetRoutingType(t *testing.T) {
 		})
 	}
 }
+
+func TestExpandAutoDNSResolversWithAutoConf(t *testing.T) {
+	autoConfData := &autoconf.Config{
+		DNSResolvers: map[string][]string{
+			"foo.": {"https://dns.foo.example/dns-query"},
+			"bar.": {"https://dns.bar.example/dns-query"},
+		},
+	}
+
+	cfg := Config{
+		AutoConf: AutoConfConfig{
+			Enabled: true,
+		},
+	}
+
+	t.Run("wildcard auto includes all autoconf resolvers", func(t *testing.T) {
+		result, err := expandAutoDNSResolvers([]string{". : auto"}, cfg, autoConfData)
+		require.NoError(t, err)
+		assert.NotEmpty(t, result["foo."], "should include foo. from autoconf")
+		assert.NotEmpty(t, result["bar."], "should include bar. from autoconf")
+		assert.Contains(t, result["foo."], "https://dns.foo.example")
+		assert.Contains(t, result["bar."], "https://dns.bar.example")
+	})
+
+	t.Run("specific domain auto includes only that domain", func(t *testing.T) {
+		result, err := expandAutoDNSResolvers([]string{"foo. : auto"}, cfg, autoConfData)
+		require.NoError(t, err)
+		assert.NotEmpty(t, result["foo."], "should include foo. from autoconf")
+		assert.Empty(t, result["bar."], "should not include bar. without wildcard")
+		assert.Contains(t, result["foo."], "https://dns.foo.example")
+	})
+
+	t.Run("mix autoconf and custom resolvers", func(t *testing.T) {
+		result, err := expandAutoDNSResolvers([]string{
+			"foo. : auto",
+			"baz. : https://dns.baz.example/dns-query",
+		}, cfg, autoConfData)
+		require.NoError(t, err)
+		assert.NotEmpty(t, result["foo."], "should include foo. from autoconf")
+		assert.Equal(t, "https://dns.baz.example/dns-query", result["baz."], "should include custom baz.")
+		assert.Empty(t, result["bar."], "should not include bar. without wildcard or explicit")
+	})
+
+	t.Run("custom resolver overrides autoconf", func(t *testing.T) {
+		result, err := expandAutoDNSResolvers([]string{
+			". : auto",
+			"foo. : https://custom.foo.resolver/dns-query",
+		}, cfg, autoConfData)
+		require.NoError(t, err)
+		assert.Equal(t, "https://custom.foo.resolver/dns-query", result["foo."], "custom should override autoconf")
+		assert.NotEmpty(t, result["bar."], "should still include other autoconf resolvers")
+	})
+}
