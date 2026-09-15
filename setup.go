@@ -199,6 +199,7 @@ type Config struct {
 	MaxDeserializedResponseSize int64
 	MaxUnixFSDAGResponseSize    int64
 	DiagnosticServiceURL        string
+	DeprecatedXIpfsPath         bool
 }
 
 func SetupNoLibp2p(ctx context.Context, cfg Config, dnsCache *cachedDNS) (*Node, error) {

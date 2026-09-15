@@ -37,6 +37,7 @@
   - [`RAINBOW_MAX_DESERIALIZED_RESPONSE_SIZE`](#rainbow_max_deserialized_response_size)
   - [`RAINBOW_MAX_UNIXFS_DAG_RESPONSE_SIZE`](#rainbow_max_unixfs_dag_response_size)
   - [`RAINBOW_DIAGNOSTIC_SERVICE_URL`](#rainbow_diagnostic_service_url)
+  - [`RAINBOW_DEPRECATED_X_IPFS_PATH`](#rainbow_deprecated_x_ipfs_path)
 - [Experiments](#experiments)
   - [`RAINBOW_SEED_PEERING`](#rainbow_seed_peering)
   - [`RAINBOW_SEED_PEERING_MAX_INDEX`](#rainbow_seed_peering_max_index)
@@ -457,6 +458,14 @@ The default service is provided by [Shipyard](https://ipshipyard.com) on best-ef
 Set to empty string to disable the button.
 
 Default: `https://check.ipfs.network`
+
+### `RAINBOW_DEPRECATED_X_IPFS_PATH`
+
+Set to `true` to keep sending the deprecated `X-Ipfs-Path` response header next to `Ipfs-Uri`, and to list it in `Access-Control-Expose-Headers`.
+
+`Ipfs-Uri` replaces `X-Ipfs-Path` ([IPIP-548](https://specs.ipfs.tech/ipips/ipip-0548/)). The old header cannot carry every UnixFS file name: even when enabled, it is omitted for content paths with bytes that are not valid in an HTTP field value, such as raw non-ASCII names. Use this only as a bridge while clients migrate to `Ipfs-Uri`.
+
+Default: `false`
 
 ## Experiments
 

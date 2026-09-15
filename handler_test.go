@@ -63,6 +63,44 @@ func TestTrustless(t *testing.T) {
 	})
 }
 
+func TestDeprecatedXIpfsPath(t *testing.T) {
+	t.Parallel()
+
+	get := func(t *testing.T, deprecated bool) http.Header {
+		ts, gnd := mustTestServer(t, Config{
+			Bitswap:             true,
+			GatewayDomains:      []string{"example.com"},
+			DeprecatedXIpfsPath: deprecated,
+			disableMetrics:      true,
+		})
+		cid := mustAddFile(t, gnd, []byte("hello world"))
+
+		req, err := http.NewRequest(http.MethodGet, ts.URL+"/ipfs/"+cid.String(), nil)
+		require.NoError(t, err)
+		req.Host = "example.com"
+
+		res, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		defer res.Body.Close()
+		require.Equal(t, http.StatusOK, res.StatusCode)
+		return res.Header
+	}
+
+	t.Run("off by default", func(t *testing.T) {
+		h := get(t, false)
+		assert.Equal(t, "ipfs://bafkreifzjut3te2nhyekklss27nh3k72ysco7y32koao5eei66wof36n5e", h.Get("Ipfs-Uri"))
+		assert.Empty(t, h.Values("X-Ipfs-Path"))
+		assert.NotContains(t, h.Values("Access-Control-Expose-Headers"), "X-Ipfs-Path")
+	})
+
+	t.Run("enabled", func(t *testing.T) {
+		h := get(t, true)
+		assert.Equal(t, "ipfs://bafkreifzjut3te2nhyekklss27nh3k72ysco7y32koao5eei66wof36n5e", h.Get("Ipfs-Uri"))
+		assert.Equal(t, "/ipfs/bafkreifzjut3te2nhyekklss27nh3k72ysco7y32koao5eei66wof36n5e", h.Get("X-Ipfs-Path"))
+		assert.Contains(t, h.Values("Access-Control-Expose-Headers"), "X-Ipfs-Path")
+	})
+}
+
 func TestNoBlockcacheHeader(t *testing.T) {
 	const authToken = "authorized"
 	const authHeader = "Authorization"

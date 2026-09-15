@@ -528,6 +528,12 @@ Generate an identity seed and launch a gateway:
 			EnvVars: []string{"RAINBOW_DIAGNOSTIC_SERVICE_URL"},
 			Usage:   "URL for a service to diagnose CID retrievability issues. When the gateway returns a 504 Gateway Timeout error, an \"Inspect retrievability of CID\" button will be shown. Set to empty string to disable",
 		},
+		&cli.BoolFlag{
+			Name:    "deprecated-x-ipfs-path",
+			Value:   false,
+			EnvVars: []string{"RAINBOW_DEPRECATED_X_IPFS_PATH"},
+			Usage:   "Send the deprecated X-Ipfs-Path response header alongside Ipfs-Uri. Only for clients that still read it",
+		},
 		&cli.StringSliceFlag{
 			Name:    "dnslink-resolvers",
 			Value:   cli.NewStringSlice(". : auto"),
@@ -781,6 +787,7 @@ share the same seed as long as the indexes are different.
 			MaxDeserializedResponseSize: cctx.Int64("max-deserialized-response-size"),
 			MaxUnixFSDAGResponseSize:    cctx.Int64("max-unixfs-dag-response-size"),
 			DiagnosticServiceURL:        cctx.String("diagnostic-service-url"),
+			DeprecatedXIpfsPath:         cctx.Bool("deprecated-x-ipfs-path"),
 		}
 
 		// Store original values for display
