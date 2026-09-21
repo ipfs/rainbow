@@ -25,7 +25,7 @@ require (
 	github.com/ipfs/go-test v0.4.1
 	github.com/ipfs/go-unixfsnode v1.10.6
 	github.com/ipld/go-codec-dagpb v1.7.0
-	github.com/libp2p/go-libp2p v0.49.0
+	github.com/libp2p/go-libp2p v0.50.0
 	github.com/libp2p/go-libp2p-kad-dht v0.42.2
 	github.com/libp2p/go-libp2p-record v0.3.1
 	github.com/libp2p/go-libp2p-routing-helpers v0.7.5
@@ -75,7 +75,7 @@ require (
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.1 // indirect
 	github.com/dgraph-io/ristretto/v2 v2.2.0 // indirect
-	github.com/dunglas/httpsfv v1.1.0 // indirect
+	github.com/dunglas/httpsfv v1.1.1 // indirect
 	github.com/filecoin-project/go-clock v0.1.0 // indirect
 	github.com/flynn/noise v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
@@ -174,8 +174,8 @@ require (
 	github.com/prometheus/procfs v0.21.1 // indirect
 	github.com/prometheus/statsd_exporter v0.27.1 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
-	github.com/quic-go/quic-go v0.60.0 // indirect
-	github.com/quic-go/webtransport-go v0.11.1 // indirect
+	github.com/quic-go/quic-go v0.62.0 // indirect
+	github.com/quic-go/webtransport-go v0.13.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
