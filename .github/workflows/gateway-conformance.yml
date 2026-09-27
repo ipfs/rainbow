@@ -11,7 +11,7 @@ on:
 
 env:
   GATEWAY_CONFORMANCE_TEST: true  # rainbow preset for conformance testing
-  KUBO_VER: 'v0.33.0-rc1'         # kubo daemon used as no-libp2p-remote-* backend
+  KUBO_VER: 'v0.36.0'             # kubo daemon used as no-libp2p-remote-* backend
 
 permissions:
   contents: read
@@ -36,7 +36,7 @@ jobs:
     steps:
       # 1. Start the Kubo gateway
       - name: Install Kubo
-        uses: ipfs/download-ipfs-distribution-action@v1
+        uses: ipfs/download-ipfs-distribution-action@v2
         with:
           name: kubo
           version: "${{ env.KUBO_VER }}"
