@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/rs/dnscache"
@@ -15,12 +16,21 @@ const dnsCacheRefreshInterval = 5 * time.Minute
 type cachedDNS struct {
 	resolver  *dnscache.Resolver
 	refresher *time.Ticker
+
+	// done is closed by Close to signal the refresh goroutine to exit.
+	// time.Ticker.Stop does not close Ticker.C, so we cannot rely on
+	// `for range cdns.refresher.C` to terminate.
+	done chan struct{}
+	// closeOnce guarantees done is closed and the goroutine is joined exactly once.
+	closeOnce sync.Once
+	wg        sync.WaitGroup
 }
 
 func newCachedDNS(refreshInterval time.Duration) *cachedDNS {
 	cache := &cachedDNS{
 		resolver:  &dnscache.Resolver{},
 		refresher: time.NewTicker(refreshInterval),
+		done:      make(chan struct{}),
 	}
 
 	// Configure DNS cache to not remove stale records to protect gateway from
@@ -31,10 +41,16 @@ func newCachedDNS(refreshInterval time.Duration) *cachedDNS {
 
 	// Every refreshInterval we check for updates, but if there is
 	// none, or if domain disappears, we keep the last cached version
+	cache.wg.Add(1)
 	go func(cdns *cachedDNS) {
-		defer cdns.refresher.Stop()
-		for range cdns.refresher.C {
-			cdns.resolver.RefreshWithOptions(options)
+		defer cdns.wg.Done()
+		for {
+			select {
+			case <-cdns.refresher.C:
+				cdns.resolver.RefreshWithOptions(options)
+			case <-cdns.done:
+				return
+			}
 		}
 	}(cache)
 
@@ -62,7 +78,13 @@ func (cdns *cachedDNS) dialWithCachedDNS(ctx context.Context, network string, ad
 	return
 }
 
+// Close stops the refresh goroutine and waits for it to exit. It is safe to
+// call multiple times.
 func (cdns *cachedDNS) Close() error {
-	cdns.refresher.Stop()
+	cdns.closeOnce.Do(func() {
+		cdns.refresher.Stop()
+		close(cdns.done)
+		cdns.wg.Wait()
+	})
 	return nil
 }

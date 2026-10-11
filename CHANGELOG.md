@@ -21,6 +21,8 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
+- stop the cached DNS refresh goroutine on `Close()` to avoid leaking a goroutine ([#431](https://github.com/ipfs/rainbow/pull/431))
+
 ### Removed
 
 ### Security
