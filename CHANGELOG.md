@@ -21,6 +21,8 @@ The following emojis are used to highlight certain changes:
 
 ### Fixed
 
+- Fix leaked blockstore key-enumeration goroutines when garbage collection stops before consuming all keys ([#432](https://github.com/ipfs/rainbow/pull/432))
+
 ### Removed
 
 ### Security

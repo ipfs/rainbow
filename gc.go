@@ -15,7 +15,11 @@ func (nd *Node) GC(ctx context.Context, todelete int64) error {
 		return nil
 	}
 
-	keys, err := nd.blockstore.AllKeysChan(ctx)
+	// GC can return before consuming every key. Always stop enumeration.
+	keyCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	keys, err := nd.blockstore.AllKeysChan(keyCtx)
 	if err != nil {
 		return err
 	}
